@@ -444,6 +444,7 @@ const POKEMON_NAMES = [
   ['Sylveon ex JP','Sylveon ex','jp'],['Vaporeon ex JP','Vaporeon ex','jp'],
 ];
 
+function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function searchName(){
   const raw = document.getElementById('searchInput').value;
   const q = norm(raw);
@@ -530,7 +531,6 @@ const PCA=['10','9.5','9','8.5','8','7','6','5'];
 const AKAT=['10','9.5','9','8.5','8','7','6','5','4','3','2','1'];
 
 // Sets autocomplete
-function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function filterSets(){
   const q=norm(document.getElementById('fSet').value);
   if(!q){hideSets();return}
