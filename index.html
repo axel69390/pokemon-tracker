@@ -128,6 +128,22 @@ td{padding:7px 9px;font-size:11px;vertical-align:middle}
 @keyframes mIn{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal h3{font-family:var(--fd);font-size:16px;letter-spacing:2px;color:var(--yellow);margin-bottom:14px}
 .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:14px}
+.scanner-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.scanner-overlay.open{display:flex}
+.scanner-box{width:90vw;max-width:420px;background:var(--s1);border:1px solid var(--border2);border-radius:14px;padding:24px;text-align:center}
+.scanner-box h3{font-family:var(--fd);font-size:20px;letter-spacing:2px;color:var(--yellow);margin-bottom:16px}
+.scanner-preview{width:100%;max-height:260px;object-fit:contain;border-radius:8px;display:none;margin-bottom:12px;border:1px solid var(--border2)}
+.scanner-result{background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:12px;text-align:left;display:none;margin-bottom:12px;font-size:12px;line-height:1.8}
+.scanner-result .sr-name{font-size:16px;font-weight:600;color:var(--yellow);margin-bottom:6px}
+#fileInput{display:none}
+.scan-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:8px;border:none;cursor:pointer;font-family:var(--fb);font-size:13px;font-weight:600;transition:all .18s}
+.scan-btn-photo{background:var(--yellow);color:#08080f;margin-bottom:8px}
+.scan-btn-photo:hover{background:var(--y2)}
+.scan-btn-cancel{background:transparent;color:var(--muted2);border:1px solid var(--border2)}
+.scan-btn-cancel:hover{border-color:var(--red);color:var(--red)}
+.scan-btn-add{background:var(--green);color:#08080f;display:none}
+.scan-analyzing{color:var(--muted2);font-size:12px;display:none}
+.spin-yellow{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--yellow);border-radius:50%;animation:rot .6s linear infinite;vertical-align:middle;margin-right:6px}
 .toast{position:fixed;bottom:16px;right:16px;z-index:999;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;animation:rowIn .2s ease;}
 .toast-ok{background:var(--green);color:#08080f}.toast-err{background:var(--red);color:#fff}
 @media(max-width:800px){.main{grid-template-columns:1fr}.panel{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}.stats-bar{grid-template-columns:repeat(2,1fr)}}
@@ -141,6 +157,7 @@ td{padding:7px 9px;font-size:11px;vertical-align:middle}
   </div>
   <div class="hdr-right">
     <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export</button>
+    <button class="btn btn-ghost" onclick="openScanner()" style="font-size:14px">📷 Scanner</button>
     <button class="btn btn-primary" onclick="document.getElementById('fName').focus()">+ Ajouter</button>
   </div>
 </header>
@@ -814,7 +831,134 @@ function toast(msg,type='ok'){
 }
 document.getElementById('editOverlay').addEventListener('click',function(e){if(e.target===this)closeEdit()});
 
+// ═══════════════════════════════════════════════════
+// SCANNER DE CARTES
+// ═══════════════════════════════════════════════════
+const SCAN_URL = 'http://192.168.1.147:1880/endpoint/scan';
+var scanResult = null;
+
+function openScanner(){
+  document.getElementById('scannerOverlay').classList.add('open');
+  resetScanner();
+}
+function closeScanner(){
+  document.getElementById('scannerOverlay').classList.remove('open');
+  resetScanner();
+}
+function resetScanner(){
+  scanResult = null;
+  document.getElementById('scanPreview').style.display='none';
+  document.getElementById('scanPreview').src='';
+  document.getElementById('scanResult').style.display='none';
+  document.getElementById('scanAnalyzing').style.display='none';
+  document.getElementById('scanAddBtn').style.display='none';
+  document.getElementById('fileInput').value='';
+}
+
+function triggerCamera(){
+  document.getElementById('fileInput').click();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('fileInput').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var dataUrl = ev.target.result;
+      var base64 = dataUrl.split(',')[1];
+      var mediaType = file.type || 'image/jpeg';
+      // Affiche preview
+      var preview = document.getElementById('scanPreview');
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      // Lance analyse
+      analyzeCard(base64, mediaType);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+async function analyzeCard(base64, mediaType){
+  document.getElementById('scanAnalyzing').style.display='block';
+  document.getElementById('scanResult').style.display='none';
+  document.getElementById('scanAddBtn').style.display='none';
+  try {
+    const r = await fetch(SCAN_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({image: base64, mediaType: mediaType}),
+      signal: AbortSignal.timeout(30000)
+    });
+    if(!r.ok) throw new Error('Erreur serveur');
+    const data = await r.json();
+    document.getElementById('scanAnalyzing').style.display='none';
+    if(data.error){
+      toast('Erreur: '+data.error, 'err');
+      return;
+    }
+    scanResult = data;
+    // Affiche résultat
+    var gradeStr = data.grader && data.grader !== 'raw' ? data.grader.toUpperCase()+' '+data.grade : 'Non gradée';
+    var langFlag = data.lang==='fr'?'🇫🇷':data.lang==='jp'?'🇯🇵':'🇬🇧';
+    document.getElementById('scanResult').style.display='block';
+    document.getElementById('scanResult').innerHTML =
+      '<div class="sr-name">'+langFlag+' '+data.name+'</div>'+
+      (data.number?'<div>#'+data.number+'</div>':'')+
+      (data.set?'<div>'+data.set+'</div>':'')+
+      (data.year?'<div>'+data.year+'</div>':'')+
+      '<div style="margin-top:6px;color:var(--yellow)">'+gradeStr+'</div>';
+    document.getElementById('scanAddBtn').style.display='flex';
+  } catch(e) {
+    document.getElementById('scanAnalyzing').style.display='none';
+    toast('Impossible d’analyser — vérifie ta connexion Wi-Fi', 'err');
+  }
+}
+
+function addScannedCard(){
+  if(!scanResult) return;
+  // Remplit le formulaire
+  document.getElementById('fName').value = scanResult.name || '';
+  document.getElementById('fNum').value = scanResult.number || '';
+  document.getElementById('fSet').value = scanResult.set || '';
+  document.getElementById('fYear').value = scanResult.year || '';
+  document.getElementById('fLang').value = scanResult.lang || 'fr';
+  // Grading
+  var g = scanResult.grader || 'raw';
+  var graderBtn = document.querySelector('[data-g="'+g+'"]');
+  if(graderBtn) setGrader(g, graderBtn);
+  if(g !== 'raw' && scanResult.grade) {
+    setTimeout(function(){
+      var gradeBtns = document.querySelectorAll('.gbtn');
+      gradeBtns.forEach(function(btn){
+        if(btn.textContent.includes(scanResult.grade)) {
+          pickGrade(scanResult.grade, btn);
+        }
+      });
+    }, 100);
+  }
+  updateExtLinks();
+  closeScanner();
+  document.getElementById('fBuy').focus();
+  toast('Carte détectée ! Saisis le prix d’achat.', 'ok');
+}
+
 updateExtLinks();render();updateStats();
 </script>
+<!-- SCANNER OVERLAY -->
+<div class="scanner-overlay" id="scannerOverlay">
+  <div class="scanner-box">
+    <h3>📷 SCANNER UNE CARTE</h3>
+    <img id="scanPreview" class="scanner-preview" alt="Aperçu">
+    <div id="scanAnalyzing" class="scan-analyzing">
+      <span class="spin-yellow"></span> Claude analyse ta carte...
+    </div>
+    <div id="scanResult" class="scanner-result"></div>
+    <input type="file" id="fileInput" accept="image/*" capture="environment">
+    <button class="scan-btn scan-btn-photo" onclick="triggerCamera()">📷 Prendre une photo</button>
+    <button class="scan-btn scan-btn-add" id="scanAddBtn" onclick="addScannedCard()">✅ Ajouter cette carte</button>
+    <button class="scan-btn scan-btn-cancel" onclick="closeScanner()">Annuler</button>
+  </div>
+</div>
 </body>
 </html>
