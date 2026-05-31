@@ -866,14 +866,26 @@ document.addEventListener('DOMContentLoaded', function(){
     var reader = new FileReader();
     reader.onload = function(ev){
       var dataUrl = ev.target.result;
-      var base64 = dataUrl.split(',')[1];
-      var mediaType = file.type || 'image/jpeg';
       // Affiche preview
       var preview = document.getElementById('scanPreview');
       preview.src = dataUrl;
       preview.style.display = 'block';
-      // Lance analyse
-      analyzeCard(base64, mediaType);
+      // Compresse l'image avant envoi
+      var img = new Image();
+      img.onload = function(){
+        var canvas = document.createElement('canvas');
+        var maxSize = 800;
+        var w = img.width, h = img.height;
+        if(w > h){ if(w > maxSize){h = Math.round(h*maxSize/w); w = maxSize;} }
+        else { if(h > maxSize){w = Math.round(w*maxSize/h); h = maxSize;} }
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        var compressed = canvas.toDataURL('image/jpeg', 0.7);
+        var base64 = compressed.split(',')[1];
+        analyzeCard(base64, 'image/jpeg');
+      };
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   });
