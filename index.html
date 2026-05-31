@@ -450,37 +450,79 @@ function searchName(){
   const q = norm(raw);
   const el = document.getElementById('nameResults');
   if(q.length < 2){ el.style.display='none'; el.innerHTML=''; return; }
-  const matches = POKEMON_NAMES.filter(function(p){
+
+  // Recherche locale d'abord
+  const localMatches = POKEMON_NAMES.filter(function(p){
     return norm(p[0]).includes(q) || norm(p[1]).includes(q);
-  }).slice(0,10);
-  if(!matches.length){
+  }).slice(0,6);
+
+  // Affiche résultats locaux immédiatement
+  el.style.display='block';
+  el.innerHTML='<div style="padding:6px 12px;font-size:10px;color:var(--muted2)">⏳ Recherche en cours...</div>';
+
+  if(localMatches.length) {
+    showNameResults(localMatches.map(function(p){ return {name:p[0], lang:p[2], src:'local', set:'', number:'', image:'', id:'local_'+p[0]}; }), el);
+  }
+
+  // Recherche API en parallèle
+  searchAPI(raw).then(function(apiResults) {
+    if(!apiResults || !apiResults.length) return;
+    // Merge local + API sans doublons
+    var seen = new Set(localMatches.map(function(p){ return norm(p[0]); }));
+    var merged = localMatches.map(function(p){ return {name:p[0], lang:p[2], src:'local', set:'', number:'', image:'', id:'local_'+p[0]}; });
+    apiResults.forEach(function(c) {
+      if(!seen.has(norm(c.name))) {
+        seen.add(norm(c.name));
+        merged.push(c);
+      } else {
+        // Enrichit avec image/set si carte locale
+        merged = merged.map(function(m) {
+          if(norm(m.name) === norm(c.name) && c.image) {
+            m.image = c.image;
+            m.set = c.set;
+            m.number = c.number;
+            m.marketPrice = c.marketPrice;
+            m.id = c.id;
+          }
+          return m;
+        });
+      }
+    });
+    showNameResults(merged, el);
+  });
+}
+
+function showNameResults(cards, el) {
+  if(!cards.length) {
     el.style.display='block';
     el.innerHTML='<div style="padding:10px 12px;font-size:11px;color:var(--muted2)">Aucun résultat</div>';
     return;
   }
   el.style.display='block';
   el.innerHTML='';
-  matches.forEach(function(p){
+  cards.slice(0,15).forEach(function(c) {
     var div = document.createElement('div');
     div.style.cssText='padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;transition:background .12s';
-    var flag = p[2]==='fr'?'🇫🇷':p[2]==='jp'?'🇯🇵':'🇬🇧';
-    div.innerHTML = flag+' <strong>'+p[0]+'</strong>'+(p[1]!==p[0]?' <span style="color:var(--muted2);font-size:10px">'+p[1]+'</span>':'');
+    var flag = c.lang==='fr'?'🇫🇷':c.lang==='jp'?'🇯🇵':'🇬🇧';
+    var imgEl = c.image ? '<img src="'+c.image+'" style="width:24px;height:34px;object-fit:contain;border-radius:2px">' : flag;
+    var setInfo = c.set ? '<span style="color:var(--muted2);font-size:10px"> · '+c.set+'</span>' : '';
+    var price = c.marketPrice ? '<span style="color:var(--yellow);font-size:10px;margin-left:auto">€'+c.marketPrice.toFixed(2)+'</span>' : '';
+    div.innerHTML = imgEl+' <strong>'+c.name+'</strong>'+setInfo+price;
     div.onmouseover = function(){ this.style.background='rgba(245,197,24,.1)'; };
     div.onmouseout  = function(){ this.style.background=''; };
-    div.onclick     = function(){ pickName(p[0], p[2]); };
+    div.onclick = function(){
+      document.getElementById('fName').value = c.name;
+      document.getElementById('fLang').value = c.lang || 'fr';
+      if(c.set) document.getElementById('fSet').value = c.set;
+      if(c.number) document.getElementById('fNum').value = c.number;
+      if(c.marketPrice) document.getElementById('fMkt').value = c.marketPrice.toFixed(2);
+      document.getElementById('searchInput').value = '';
+      document.getElementById('nameResults').style.display = 'none';
+      updateExtLinks();
+      toast(c.name + ' sélectionné ✓', 'ok');
+    };
     el.appendChild(div);
   });
-}
-
-function pickName(name, lang){
-  document.getElementById('fName').value = name;
-  document.getElementById('fLang').value = lang;
-  document.getElementById('searchInput').value = '';
-  document.getElementById('nameResults').style.display = 'none';
-  document.getElementById('nameResults').innerHTML = '';
-  updateExtLinks();
-  document.getElementById('fNum').focus();
-  toast(name + ' sélectionné ✓', 'ok');
 }
 
 document.addEventListener('click', function(e){
@@ -515,6 +557,23 @@ const SETS = [
   {n:'Prismatic Evolutions JP [SV8A]',l:'jp',y:2025},{n:'Journey Together JP [SV9]',l:'jp',y:2025},
   {n:'Promo SVP JP',l:'jp',y:2025},
 ];
+
+// ═══════════════════════════════════════════════════
+// CONFIG API RASPBERRY PI
+// ═══════════════════════════════════════════════════
+const API_URL = 'https://192.168.1.147:1880/endpoint/cards';
+
+async function searchAPI(name) {
+  try {
+    const r = await fetch(API_URL + '?name=' + encodeURIComponent(name) + '&lang=fr', {
+      signal: AbortSignal.timeout(6000)
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) {
+    return null;
+  }
+}
 
 // ═══════════════════════════════════════════════════
 // INIT
