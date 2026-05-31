@@ -156,7 +156,22 @@ td{padding:7px 9px;font-size:11px;vertical-align:middle}
 <div class="main">
   <div class="panel">
     <div class="panel-title">AJOUT RAPIDE</div>
-    <div class="panel-sub">Saisis ce que tu vois sur la slab ou la carte</div>
+    <div class="panel-sub">Tape un nom pour chercher, ou remplis directement</div>
+
+    <!-- RECHERCHE NOM -->
+    <div style="position:relative;margin-bottom:10px">
+      <div style="position:relative">
+        <input type="text" id="searchInput" placeholder="🔍 Recherche : Salamèche, Pikachu ex, Mew…"
+          oninput="searchName()" autocomplete="off"
+          style="padding-right:36px;background:var(--s3);border-color:var(--yellow);font-size:13px">
+        <button onclick="clearSearch()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);
+          background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">✕</button>
+      </div>
+      <div id="nameResults" style="display:none;background:var(--s2);border:1px solid var(--border2);
+        border-radius:8px;max-height:220px;overflow-y:auto;position:absolute;z-index:60;width:100%;top:100%;left:0;margin-top:3px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+      </div>
+    </div>
+
     <div class="fg"><span class="slabel">Nom *</span>
       <input type="text" id="fName" placeholder="Pikachu ex, Mew V…" oninput="updateExtLinks()">
     </div>
