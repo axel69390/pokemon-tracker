@@ -17,300 +17,312 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;
-  background-image:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(245,197,24,.07) 0%,transparent 60%),
-  radial-gradient(ellipse 35% 25% at 90% 70%,rgba(79,142,247,.05) 0%,transparent 50%);}
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;
-  border-bottom:1px solid var(--border);background:rgba(8,8,16,.92);backdrop-filter:blur(16px);
+  background-image:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(245,197,24,.07) 0%,transparent 60%)}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;
+  border-bottom:1px solid var(--border);background:rgba(8,8,16,.93);backdrop-filter:blur(16px);
   position:sticky;top:0;z-index:100;}
-.logo{display:flex;align-items:center;gap:12px}
-.logo-ball{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--yellow) 50%,#1a1a2e 50%);
-  border:3px solid var(--yellow);box-shadow:0 0 18px rgba(245,197,24,.35);position:relative;
+.logo{display:flex;align-items:center;gap:10px}
+.logo-ball{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--yellow) 50%,#1a1a2e 50%);
+  border:2px solid var(--yellow);box-shadow:0 0 16px rgba(245,197,24,.35);position:relative;
   display:flex;align-items:center;justify-content:center;}
 .logo-ball::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--bg);border:2px solid var(--yellow);position:absolute;}
-.logo-text h1{font-family:var(--fd);font-size:24px;letter-spacing:3px;color:var(--yellow);line-height:1}
-.logo-text span{font-size:9px;letter-spacing:3px;color:var(--muted2);text-transform:uppercase}
-.hdr-right{display:flex;align-items:center;gap:8px}
-.db-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;
-  border:1px solid rgba(62,207,122,.3);background:rgba(62,207,122,.08);font-size:10px;color:var(--green);}
-.db-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-.btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-family:var(--fb);font-size:12px;font-weight:500;transition:all .18s;white-space:nowrap}
+.logo-text h1{font-family:var(--fd);font-size:22px;letter-spacing:3px;color:var(--yellow);line-height:1}
+.logo-text span{font-size:9px;letter-spacing:2px;color:var(--muted2);text-transform:uppercase}
+.hdr-right{display:flex;align-items:center;gap:7px}
+.btn{padding:6px 13px;border-radius:7px;border:none;cursor:pointer;font-family:var(--fb);font-size:11px;font-weight:500;transition:all .18s;white-space:nowrap}
 .btn-primary{background:var(--yellow);color:#08080f}
-.btn-primary:hover{background:var(--y2);box-shadow:0 0 14px rgba(245,197,24,.4);transform:translateY(-1px)}
+.btn-primary:hover{background:var(--y2);box-shadow:0 0 12px rgba(245,197,24,.4);transform:translateY(-1px)}
 .btn-ghost{background:transparent;color:var(--muted2);border:1px solid var(--border2)}
 .btn-ghost:hover{border-color:var(--yellow);color:var(--yellow)}
-.btn-cm{background:var(--cmdim);color:var(--cm);border:1px solid rgba(0,151,178,.3);
-  padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;
-  text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:all .15s;font-family:var(--fb);}
-.btn-cm:hover{background:rgba(0,151,178,.2)}
-.btn-pcx{background:rgba(245,197,24,.08);color:var(--yellow);border:1px solid rgba(245,197,24,.25);
-  padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;
-  text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:all .15s;font-family:var(--fb);}
-.btn-pcx:hover{background:var(--ydim)}
-.btn-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 7px;border-radius:5px;font-size:12px;transition:all .15s}
-.btn-del:hover{color:var(--red);background:rgba(240,80,96,.12)}
 /* STATS */
 .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);background:var(--border);gap:1px;border-bottom:1px solid var(--border)}
-.scard{background:var(--s1);padding:14px 18px;position:relative;overflow:hidden}
+.scard{background:var(--s1);padding:13px 16px;position:relative}
 .scard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
 .scard.c1::before{background:var(--yellow)}.scard.c2::before{background:var(--green)}
 .scard.c3::before{background:var(--blue)}.scard.c4::before{background:var(--purple)}
 .scard.c5::before{background:var(--red)}
 .scard-label{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:5px}
-.scard-val{font-family:var(--fd);font-size:24px;letter-spacing:1px;line-height:1}
+.scard-val{font-family:var(--fd);font-size:22px;letter-spacing:1px;line-height:1}
 .scard-sub{font-size:10px;color:var(--muted2);margin-top:3px}
 .pos{color:var(--green)}.neg{color:var(--red)}
 /* LAYOUT */
-.main{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 118px)}
-.panel{border-right:1px solid var(--border);padding:18px 16px;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto}
-.content{padding:22px 26px}
-.panel-title{font-family:var(--fd);font-size:16px;letter-spacing:2px;color:var(--yellow);margin-bottom:14px}
-.slabel{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:7px;display:block}
-.fg{margin-bottom:11px}
+.main{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 112px)}
+.panel{border-right:1px solid var(--border);padding:16px 14px;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+.content{padding:20px 24px}
+.panel-title{font-family:var(--fd);font-size:15px;letter-spacing:2px;color:var(--yellow);margin-bottom:4px}
+.panel-sub{font-size:10px;color:var(--muted2);margin-bottom:14px}
+.slabel{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:6px;display:block}
+.fg{margin-bottom:10px}
 input,select{width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--text);
-  padding:8px 11px;border-radius:7px;font-family:var(--fb);font-size:13px;outline:none;transition:border-color .2s;}
+  padding:8px 10px;border-radius:7px;font-family:var(--fb);font-size:13px;outline:none;transition:border-color .2s;}
 input:focus,select:focus{border-color:var(--yellow)}
 input::placeholder{color:var(--muted)}
 select option{background:var(--s2)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-/* SEARCH */
-.search-wrap{position:relative;margin-bottom:6px}
-.search-wrap input{padding-right:40px;font-size:14px}
-.sgo{position:absolute;right:5px;top:50%;transform:translateY(-50%);background:var(--yellow);
-  border:none;color:#08080f;width:28px;height:28px;border-radius:5px;cursor:pointer;font-size:13px;
-  display:flex;align-items:center;justify-content:center;transition:all .15s}
-.sgo:hover{background:var(--y2)}
-/* RESULTS */
-.results-box{background:var(--s2);border:1px solid var(--border2);border-radius:8px;
-  max-height:300px;overflow-y:auto;display:none;margin-bottom:10px;}
-.result-row{display:flex;align-items:center;gap:9px;padding:8px 11px;cursor:pointer;
-  border-bottom:1px solid var(--border);transition:background .12s;}
-.result-row:last-child{border-bottom:none}.result-row:hover{background:var(--ydim)}
-.r-img{width:28px;height:39px;object-fit:contain;border-radius:3px;background:var(--border);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:16px;}
-.r-main{flex:1;min-width:0}
-.r-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.r-meta{font-size:10px;color:var(--muted2);margin-top:1px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
-.tag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;white-space:nowrap}
-.tag-fr{background:rgba(62,207,122,.15);color:var(--green)}
-.tag-en{background:rgba(79,142,247,.15);color:var(--blue)}
-.tag-db{background:rgba(245,197,24,.1);color:var(--yellow)}
-.tag-api{background:rgba(90,90,114,.15);color:var(--muted2)}
-.r-src{font-size:10px;color:var(--muted);margin-left:auto;white-space:nowrap}
-/* PREVIEW */
-.preview{display:none;background:var(--s2);border:1px solid var(--border2);border-radius:9px;
-  padding:10px;margin-bottom:10px;flex-direction:row;align-items:center;gap:10px;}
-.preview .p-img{width:48px;height:67px;object-fit:contain;border-radius:4px;background:var(--border);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:24px;}
-.pname{font-size:13px;font-weight:600;margin-bottom:2px}
-.pset{font-size:10px;color:var(--muted2)}
-.pmkt{font-size:11px;color:var(--yellow);margin-top:4px;font-weight:600}
-/* CM + PCX BANNERS */
-.link-row{display:flex;gap:6px;margin-bottom:10px}
-.link-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
-  padding:7px;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;transition:all .15s;cursor:pointer;border:none;font-family:var(--fb);}
-.link-cm{background:var(--cmdim);color:var(--cm);border:1px solid rgba(0,151,178,.25)}
-.link-cm:hover{background:rgba(0,151,178,.2)}
-.link-pcx{background:rgba(245,197,24,.08);color:var(--yellow);border:1px solid rgba(245,197,24,.2)}
-.link-pcx:hover{background:var(--ydim)}
-/* GRADER */
-.grade-toggle{display:flex;border:1px solid var(--border2);border-radius:7px;overflow:hidden;margin-bottom:11px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+/* QUICK FORM */
+.quick-form{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:12px}
+.quick-form-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--yellow);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+/* GRADE SELECTOR */
+.grade-toggle{display:flex;border:1px solid var(--border2);border-radius:7px;overflow:hidden;margin-bottom:10px}
 .grade-toggle button{flex:1;padding:7px 3px;background:transparent;border:none;color:var(--muted2);
   font-family:var(--fb);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;}
 .grade-toggle button.active{background:var(--ydim);color:var(--yellow)}
-.grade-selector{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:11px}
-.gbtn{padding:6px 3px;border:1px solid var(--border2);border-radius:6px;background:transparent;
-  color:var(--muted2);font-family:var(--fb);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .14s;}
+.grade-selector{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px}
+.gbtn{padding:5px 2px;border:1px solid var(--border2);border-radius:5px;background:transparent;
+  color:var(--muted2);font-family:var(--fb);font-size:10px;font-weight:600;cursor:pointer;text-align:center;transition:all .14s;}
 .gbtn:hover{border-color:var(--yellow);color:var(--yellow)}
 .gbtn.sel{color:#08080f;border-color:transparent}
-.gbtn.g10.sel{background:#f5c518;box-shadow:0 0 10px rgba(245,197,24,.45)}
-.gbtn.g95.sel{background:#e0b010}.gbtn.g9.sel{background:#3ecf7a}
-.gbtn.g85.sel{background:#2eb866}.gbtn.g8.sel{background:#4f8ef7}
-.gbtn.g7.sel{background:#a78bfa}
+.gbtn.g10.sel{background:#f5c518}.gbtn.g95.sel{background:#e0b010}.gbtn.g9.sel{background:#3ecf7a}
+.gbtn.g85.sel{background:#2eb866}.gbtn.g8.sel{background:#4f8ef7}.gbtn.g7.sel{background:#a78bfa}
 .gbtn.g6.sel,.gbtn.g5.sel,.gbtn.g4.sel,.gbtn.g3.sel,.gbtn.g2.sel,.gbtn.g1.sel{background:#f05060}
-.divider{height:1px;background:var(--border);margin:13px 0;position:relative}
-.divider span{position:absolute;top:-7px;left:50%;transform:translateX(-50%);background:var(--s1);
-  padding:0 9px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted)}
+/* EXTERNAL LINKS */
+.ext-links{display:flex;gap:5px;margin-top:8px}
+.ext-link{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;
+  padding:6px;border-radius:6px;font-size:10px;font-weight:600;text-decoration:none;
+  transition:all .15s;border:1px solid;cursor:pointer}
+.el-cm{background:var(--cmdim);color:var(--cm);border-color:rgba(0,151,178,.3)}
+.el-cm:hover{background:rgba(0,151,178,.2)}
+.el-pcx{background:rgba(245,197,24,.07);color:var(--yellow);border-color:rgba(245,197,24,.2)}
+.el-pcx:hover{background:var(--ydim)}
+.el-ebay{background:rgba(62,207,122,.07);color:var(--green);border-color:rgba(62,207,122,.2)}
+.el-ebay:hover{background:rgba(62,207,122,.12)}
 /* CONTENT */
-.content-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.content-hdr h2{font-family:var(--fd);font-size:19px;letter-spacing:2px}
-.filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
-.fbtn{padding:4px 11px;border-radius:14px;border:1px solid var(--border2);background:transparent;
+.content-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.content-hdr h2{font-family:var(--fd);font-size:18px;letter-spacing:2px}
+.filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.fbtn{padding:3px 10px;border-radius:12px;border:1px solid var(--border2);background:transparent;
   color:var(--muted2);font-size:10px;cursor:pointer;transition:all .14s;font-family:var(--fb);}
 .fbtn.active,.fbtn:hover{border-color:var(--yellow);color:var(--yellow);background:var(--ydim)}
 /* TABLE */
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 thead tr{border-bottom:1px solid var(--border2)}
-th{padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);
+th{padding:7px 9px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);
   font-weight:500;text-align:left;cursor:pointer;white-space:nowrap;user-select:none;}
 th:hover{color:var(--yellow)}
 tbody tr{border-bottom:1px solid rgba(37,37,53,.5);transition:background .12s;animation:rowIn .2s ease}
-@keyframes rowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rowIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 tbody tr:hover{background:var(--s2)}
-td{padding:8px 10px;font-size:12px;vertical-align:middle}
-.cthumb{width:26px;height:37px;object-fit:contain;border-radius:2px;background:var(--s3);
-  display:flex;align-items:center;justify-content:center;font-size:14px;}
+td{padding:7px 9px;font-size:11px;vertical-align:middle}
 .cname{font-size:12px;font-weight:500}
 .cmeta{font-size:10px;color:var(--muted2);margin-top:1px}
-.gbadge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;}
+.gbadge{display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;}
 .gbadge-psa{background:rgba(79,142,247,.15);color:var(--blue);border:1px solid rgba(79,142,247,.3)}
 .gbadge-pca{background:rgba(167,139,250,.15);color:var(--purple);border:1px solid rgba(167,139,250,.3)}
+.gbadge-akat{background:rgba(245,197,24,.12);color:var(--yellow);border:1px solid rgba(245,197,24,.25)}
 .gbadge-raw{background:rgba(90,90,114,.15);color:var(--muted2);border:1px solid var(--border2)}
-.gpill{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:800;}
+.gpill{display:inline-block;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:800;}
 .gp10{background:rgba(245,197,24,.2);color:var(--yellow)}.gp95{background:rgba(224,176,16,.2);color:#e0b010}
 .gp9{background:rgba(62,207,122,.2);color:var(--green)}.gp85{background:rgba(46,184,102,.2);color:#2eb866}
 .gp8{background:rgba(79,142,247,.2);color:var(--blue)}.gp7{background:rgba(167,139,250,.2);color:var(--purple)}
 .gp-low{background:rgba(240,80,96,.15);color:var(--red)}
-.roi-val{font-weight:600;font-size:12px}
-.act-cell{display:flex;align-items:center;gap:4px;white-space:nowrap}
-.empty{text-align:center;padding:55px 30px;color:var(--muted)}
-.empty .ico{font-size:48px;margin-bottom:14px;opacity:.3}
-.empty h3{font-family:var(--fd);font-size:19px;letter-spacing:2px;color:var(--muted2);margin-bottom:7px}
-.empty p{font-size:12px;line-height:1.8}
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(5px);
+.lang-tag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;margin-right:3px}
+.t-fr{background:rgba(62,207,122,.12);color:var(--green)}
+.t-en{background:rgba(79,142,247,.12);color:var(--blue)}
+.t-jp{background:rgba(240,80,96,.12);color:var(--red)}
+.act-cell{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.abtn{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;text-decoration:none;
+  cursor:pointer;border:none;font-family:var(--fb);transition:all .14s}
+.abtn-cm{background:var(--cmdim);color:var(--cm);border:1px solid rgba(0,151,178,.25)}
+.abtn-pcx{background:rgba(245,197,24,.07);color:var(--yellow);border:1px solid rgba(245,197,24,.2)}
+.abtn-del{background:none;color:var(--muted);border:1px solid transparent}
+.abtn-del:hover{color:var(--red);background:rgba(240,80,96,.1)}
+.roi-val{font-weight:600;font-size:11px}
+.empty{text-align:center;padding:50px 30px;color:var(--muted)}
+.empty .ico{font-size:44px;margin-bottom:12px;opacity:.3}
+.empty h3{font-family:var(--fd);font-size:18px;letter-spacing:2px;color:var(--muted2);margin-bottom:7px}
+.empty p{font-size:11px;line-height:1.8}
+/* EDIT MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);
   z-index:200;display:none;align-items:center;justify-content:center}
 .overlay.open{display:flex}
-.modal{background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:24px;
-  width:480px;max-width:94vw;animation:mIn .2s ease}
-@keyframes mIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal h3{font-family:var(--fd);font-size:18px;letter-spacing:2px;color:var(--yellow);margin-bottom:14px}
-.modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:16px}
-.cm-modal{display:flex;align-items:center;gap:8px;background:var(--cmdim);
-  border:1px solid rgba(0,151,178,.2);border-radius:7px;padding:8px 11px;margin-top:10px;}
-.cm-modal span{flex:1;font-size:10px;color:var(--muted2)}
-.cm-modal a,.pcx-modal a{padding:4px 11px;border-radius:5px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap}
-.cm-modal a{background:var(--cm);color:#fff}
-.pcx-modal{display:flex;align-items:center;gap:8px;background:rgba(245,197,24,.06);
-  border:1px solid rgba(245,197,24,.18);border-radius:7px;padding:8px 11px;margin-top:6px;}
-.pcx-modal span{flex:1;font-size:10px;color:var(--muted2)}
-.pcx-modal a{background:var(--yellow);color:#08080f}
-.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--border2);
-  border-top-color:var(--yellow);border-radius:50%;animation:rot .6s linear infinite;vertical-align:middle;margin-right:4px}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:22px;
+  width:460px;max-width:94vw;animation:mIn .2s ease;max-height:90vh;overflow-y:auto}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal h3{font-family:var(--fd);font-size:17px;letter-spacing:2px;color:var(--yellow);margin-bottom:14px}
+.modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:14px}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid var(--border2);
+  border-top-color:var(--yellow);border-radius:50%;animation:rot .6s linear infinite;vertical-align:middle;margin-right:3px}
 @keyframes rot{to{transform:rotate(360deg)}}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.toast{position:fixed;bottom:18px;right:18px;z-index:999;padding:9px 16px;border-radius:7px;font-size:12px;font-weight:600;animation:rowIn .2s ease;}
+.toast{position:fixed;bottom:16px;right:16px;z-index:999;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;animation:rowIn .2s ease;}
 .toast-ok{background:var(--green);color:#08080f}.toast-err{background:var(--red);color:#fff}
-@media(max-width:820px){
-  .main{grid-template-columns:1fr}
-  .panel{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
-  .stats-bar{grid-template-columns:repeat(2,1fr)}
-}
+.divider{height:1px;background:var(--border);margin:10px 0;position:relative}
+.divider span{position:absolute;top:-7px;left:50%;transform:translateX(-50%);background:var(--s1);
+  padding:0 8px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted)}
+/* SETS DROPDOWN */
+.set-suggest{background:var(--s3);border:1px solid var(--border2);border-radius:6px;
+  max-height:140px;overflow-y:auto;display:none;position:absolute;z-index:50;width:100%;top:100%;left:0}
+.set-item{padding:6px 10px;font-size:11px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.set-item:last-child{border-bottom:none}.set-item:hover{background:var(--ydim);color:var(--yellow)}
+.set-wrap{position:relative}
+@media(max-width:800px){.main{grid-template-columns:1fr}.panel{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}.stats-bar{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">
     <div class="logo-ball"></div>
-    <div class="logo-text"><h1>POKÉDEX INVEST</h1><span>Collection · Grading · ROI</span></div>
+    <div class="logo-text"><h1>POKÉDEX INVEST</h1><span>FR · EN · JP · Grading · ROI</span></div>
   </div>
   <div class="hdr-right">
-    <div class="db-pill"><div class="db-dot"></div><span id="dbCount">Base FR intégrée</span></div>
-    <button class="btn btn-ghost" style="font-size:11px;padding:5px 11px" onclick="exportCSV()">⬇ Export</button>
-    <button class="btn btn-ghost" style="font-size:11px;padding:5px 11px" onclick="openManual()">✏️ Manuel</button>
-    <button class="btn btn-primary" style="font-size:11px;padding:5px 13px" onclick="document.getElementById('si').focus()">+ Ajouter</button>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export</button>
+    <button class="btn btn-primary" onclick="document.getElementById('fName').focus()">+ Ajouter</button>
   </div>
 </header>
 
 <div class="stats-bar">
-  <div class="scard c1"><div class="scard-label">Valeur collection</div><div class="scard-val" id="stVal">—</div><div class="scard-sub" id="stCards">0 carte</div></div>
-  <div class="scard c2"><div class="scard-label">Investi</div><div class="scard-val" id="stInv">—</div><div class="scard-sub" id="stGC">dont grading: —</div></div>
+  <div class="scard c1"><div class="scard-label">Valeur totale</div><div class="scard-val" id="stVal">—</div><div class="scard-sub" id="stCards">0 carte</div></div>
+  <div class="scard c2"><div class="scard-label">Investi</div><div class="scard-val" id="stInv">—</div><div class="scard-sub" id="stGC">grading: —</div></div>
   <div class="scard c3"><div class="scard-label">Plus-value</div><div class="scard-val pos" id="stPnl">—</div><div class="scard-sub" id="stPct">—</div></div>
-  <div class="scard c4"><div class="scard-label">Gradées</div><div class="scard-val" id="stGr">—</div><div class="scard-sub" id="stGrSub">PSA / PCA</div></div>
-  <div class="scard c5"><div class="scard-label">Meilleur ROI</div><div class="scard-val" id="stBest" style="font-size:14px;margin-top:2px">—</div><div class="scard-sub pos" id="stBestR">—</div></div>
+  <div class="scard c4"><div class="scard-label">Gradées</div><div class="scard-val" id="stGr">—</div><div class="scard-sub" id="stGrSub">PSA · PCA · Akatsu</div></div>
+  <div class="scard c5"><div class="scard-label">Meilleur ROI</div><div class="scard-val" id="stBest" style="font-size:13px;margin-top:2px">—</div><div class="scard-sub pos" id="stBestR">—</div></div>
 </div>
 
 <div class="main">
+  <!-- PANEL AJOUT RAPIDE -->
   <div class="panel">
-    <div class="panel-title">AJOUTER UNE CARTE</div>
+    <div class="panel-title">AJOUT RAPIDE</div>
+    <div class="panel-sub">Saisis directement ce que tu vois sur la slab ou la carte</div>
 
-    <div class="search-wrap">
-      <input type="text" id="si" placeholder="Salamèche, Dracaufeu, Pikachu, Charizard…" autocomplete="off">
-      <button class="sgo" onclick="doSearch()" id="sgoBtn">→</button>
+    <!-- NOM -->
+    <div class="fg">
+      <span class="slabel">Nom de la carte *</span>
+      <input type="text" id="fName" placeholder="Ex: Flareon ex, Mew V, Évoli…" autocomplete="off" oninput="updateExtLinks()">
     </div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;padding:5px 9px;background:var(--s3);border-radius:5px">
-      🇫🇷 Base FR intégrée (Vintage + EX/GX/V/VMAX + EV) + 🇬🇧 API EN en temps réel
-    </div>
-    <div class="results-box" id="resultsBox"></div>
 
-    <div class="preview" id="prevBox">
-      <div class="p-img" id="prevImgWrap"><img id="prevImg" src="" alt="" style="width:48px;height:67px;object-fit:contain;border-radius:4px;display:none"><span id="prevEmoji" style="font-size:22px"></span></div>
-      <div>
-        <div class="pname" id="prevName">—</div>
-        <div class="pset" id="prevSet">—</div>
-        <div class="pmkt" id="prevMkt">—</div>
+    <!-- NUMÉRO + SET -->
+    <div class="row2">
+      <div class="fg">
+        <span class="slabel">Numéro</span>
+        <input type="text" id="fNum" placeholder="022/187">
+      </div>
+      <div class="fg">
+        <span class="slabel">Langue</span>
+        <select id="fLang" onchange="updateExtLinks()">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇬🇧 Anglais</option>
+          <option value="jp">🇯🇵 Japonais</option>
+        </select>
       </div>
     </div>
 
-    <div class="link-row" id="linkRow" style="display:none">
-      <a class="link-btn link-cm" href="#" id="linkCm" target="_blank" rel="noopener">🛒 Cardmarket</a>
-      <a class="link-btn link-pcx" href="#" id="linkPcx" target="_blank" rel="noopener">📋 Pokécardex</a>
+    <div class="fg">
+      <span class="slabel">Set / Extension</span>
+      <div class="set-wrap">
+        <input type="text" id="fSet" placeholder="Terastal Fest ex, EV Étincelles…" autocomplete="off"
+          oninput="filterSets()" onfocus="filterSets()" onblur="setTimeout(hideSets,200)" onchange="updateExtLinks()">
+        <div class="set-suggest" id="setSuggest"></div>
+      </div>
+    </div>
+
+    <div class="fg">
+      <span class="slabel">Année</span>
+      <input type="number" id="fYear" placeholder="2024" min="1999" max="2030">
     </div>
 
     <div class="divider"><span>Grading</span></div>
+
+    <!-- GRADER -->
+    <span class="slabel">Organisme</span>
     <div class="grade-toggle" id="graderToggle">
       <button class="active" data-g="raw" onclick="setGrader('raw',this)">🃏 Non gradée</button>
       <button data-g="psa" onclick="setGrader('psa',this)">🔵 PSA</button>
       <button data-g="pca" onclick="setGrader('pca',this)">🟣 PCA</button>
+      <button data-g="akat" onclick="setGrader('akat',this)">⛰ Akatsu</button>
     </div>
     <div id="gradeSection" style="display:none">
       <span class="slabel">Grade</span>
       <div class="grade-selector" id="gradeSelector"></div>
     </div>
     <div id="rawSection">
-      <span class="slabel">État</span>
       <div class="fg">
-        <select id="rawCond">
-          <option value="mint">Mint</option><option value="nm" selected>Near Mint</option>
-          <option value="ex">Excellent</option><option value="gd">Good</option>
+        <span class="slabel">État</span>
+        <select id="fCond">
+          <option value="mint">Mint</option>
+          <option value="nm" selected>Near Mint</option>
+          <option value="ex">Excellent</option>
+          <option value="gd">Good</option>
         </select>
       </div>
     </div>
 
-    <div class="divider"><span>Achat</span></div>
-    <div class="row2">
-      <div class="fg"><span class="slabel">Prix achat (€)</span><input type="number" id="buyP" placeholder="0.00" step="0.01" min="0"></div>
-      <div class="fg"><span class="slabel">Quantité</span><input type="number" id="qty" value="1" min="1" max="99"></div>
+    <div class="divider"><span>Prix</span></div>
+
+    <div class="row3">
+      <div class="fg">
+        <span class="slabel">Achat (€) *</span>
+        <input type="number" id="fBuy" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="fg">
+        <span class="slabel">Grading (€)</span>
+        <input type="number" id="fGC" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="fg">
+        <span class="slabel">Qté</span>
+        <input type="number" id="fQty" value="1" min="1" max="99">
+      </div>
     </div>
-    <div id="gcSection" style="display:none">
-      <div class="fg"><span class="slabel">Coût grading (€)</span><input type="number" id="gradingCost" placeholder="0.00" step="0.01" min="0"></div>
+
+    <div class="fg">
+      <span class="slabel">Cote marché (€) — vérifie sur les liens ci-dessous</span>
+      <input type="number" id="fMkt" placeholder="0.00" step="0.01" min="0">
     </div>
-    <div class="fg"><span class="slabel">Cote marché (€) — saisir après vérif CM/PCX</span><input type="number" id="mktInput" placeholder="0.00" step="0.01" min="0"></div>
-    <div class="fg"><span class="slabel">Note</span><input type="text" id="note" placeholder="Cardmarket, lot, cadeau…"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:2px" onclick="addCard()">Ajouter à la collection</button>
-    <div style="margin-top:8px"><button class="btn btn-ghost" style="width:100%;font-size:11px" onclick="openManual()">✏️ Saisie 100% manuelle</button></div>
+
+    <div class="fg">
+      <span class="slabel">Note</span>
+      <input type="text" id="fNote" placeholder="Cert. PSA: 109914655, lot, cadeau…">
+    </div>
+
+    <!-- LIENS EXTERNES -->
+    <div class="ext-links" id="extLinks">
+      <a class="ext-link el-cm" href="#" id="elCm" target="_blank" rel="noopener">🛒 Cardmarket</a>
+      <a class="ext-link el-pcx" href="#" id="elPcx" target="_blank" rel="noopener">📋 Pokécardex</a>
+      <a class="ext-link el-ebay" href="#" id="elEbay" target="_blank" rel="noopener">🔍 eBay vendu</a>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px" onclick="addCard()">
+      ✅ Ajouter à la collection
+    </button>
   </div>
 
   <!-- COLLECTION -->
   <div class="content">
     <div class="content-hdr">
       <h2>MA COLLECTION</h2>
-      <button class="btn btn-ghost" style="font-size:11px;padding:5px 11px" onclick="refreshAPIprices()" id="refreshBtn">🔄 Actualiser cotes EN</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost" onclick="openEdit(null)" style="font-size:10px">✏️ Modifier une cote</button>
+      </div>
     </div>
     <div class="filters">
       <button class="fbtn active" onclick="setF('all',this)">Toutes</button>
       <button class="fbtn" onclick="setF('psa',this)">🔵 PSA</button>
       <button class="fbtn" onclick="setF('pca',this)">🟣 PCA</button>
+      <button class="fbtn" onclick="setF('akat',this)">⛰ Akatsu</button>
       <button class="fbtn" onclick="setF('raw',this)">🃏 Non gradées</button>
-      <button class="fbtn" onclick="setF('fr',this)">🇫🇷 Françaises</button>
-      <button class="fbtn" onclick="setF('en',this)">🇬🇧 Anglaises</button>
+      <button class="fbtn" onclick="setF('fr',this)">🇫🇷 FR</button>
+      <button class="fbtn" onclick="setF('en',this)">🇬🇧 EN</button>
+      <button class="fbtn" onclick="setF('jp',this)">🇯🇵 JP</button>
       <button class="fbtn" onclick="setF('g10',this)">⭐ Grade 10</button>
       <button class="fbtn" onclick="setF('g9',this)">Grade 9+</button>
-      <button class="fbtn" onclick="setF('profit',this)">📈 En + value</button>
-      <button class="fbtn" onclick="setF('loss',this)">📉 En perte</button>
+      <button class="fbtn" onclick="setF('profit',this)">📈 + value</button>
+      <button class="fbtn" onclick="setF('loss',this)">📉 Perte</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th></th><th onclick="srt('name')">Carte ↕</th>
-          <th onclick="srt('grader')">Grading</th><th onclick="srt('grade')">Grade</th>
-          <th onclick="srt('qty')">Qté</th><th onclick="srt('buyPrice')">Acheté</th>
-          <th>Grading €</th><th onclick="srt('totalCost')">Coût total</th>
-          <th onclick="srt('marketPrice')">Cote marché</th><th onclick="srt('roi')">ROI</th>
+          <th onclick="srt('name')">Carte ↕</th>
+          <th onclick="srt('set')">Set</th>
+          <th onclick="srt('grader')">Grading</th>
+          <th onclick="srt('grade')">Grade</th>
+          <th onclick="srt('qty')">Qté</th>
+          <th onclick="srt('buyPrice')">Achat</th>
+          <th>Grading</th>
+          <th onclick="srt('totalCost')">Coût total</th>
+          <th onclick="srt('marketPrice')">Cote marché</th>
+          <th onclick="srt('roi')">ROI</th>
           <th>Actions</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
@@ -318,659 +330,236 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle}
       <div class="empty" id="emptyState">
         <div class="ico">🃏</div>
         <h3>COLLECTION VIDE</h3>
-        <p>Tape un nom FR ou EN — la base intégrée<br>couvre Vintage, EX/GX/V/VMAX et extensions récentes !</p>
+        <p>Remplis le formulaire à gauche<br>pour ajouter ta première carte !</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- MODAL MANUELLE -->
-<div class="overlay" id="manualOverlay">
+<!-- MODAL ÉDITION COTE -->
+<div class="overlay" id="editOverlay">
   <div class="modal">
-    <h3>SAISIE MANUELLE</h3>
-    <div class="fg"><span class="slabel">Nom *</span><input type="text" id="mName" placeholder="Salamèche" oninput="updateLinks()"></div>
-    <div class="row2">
-      <div class="fg"><span class="slabel">Set / Extension</span><input type="text" id="mSet" placeholder="Wizards Set de Base" oninput="updateLinks()"></div>
-      <div class="fg"><span class="slabel">Langue</span>
-        <select id="mLang"><option value="fr">🇫🇷 Français</option><option value="en">🇬🇧 Anglais</option><option value="jp">🇯🇵 Japonais</option></select>
-      </div>
-    </div>
-    <div class="row2">
-      <div class="fg"><span class="slabel">Grader</span>
-        <select id="mGrader"><option value="raw">Non gradée</option><option value="psa">PSA</option><option value="pca">PCA</option></select>
-      </div>
-      <div class="fg"><span class="slabel">Grade</span>
-        <select id="mGrade">
-          <option value="">—</option><option value="10">10</option><option value="9.5">9.5</option>
-          <option value="9">9</option><option value="8.5">8.5</option><option value="8">8</option>
-          <option value="7">7</option><option value="6">6</option><option value="5">5</option>
-          <option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option>
-        </select>
-      </div>
-    </div>
-    <div class="row3">
-      <div class="fg"><span class="slabel">Prix achat (€) *</span><input type="number" id="mBuy" placeholder="0.00" step="0.01"></div>
-      <div class="fg"><span class="slabel">Coût grading (€)</span><input type="number" id="mGC" placeholder="0.00" step="0.01"></div>
-      <div class="fg"><span class="slabel">Cote marché (€)</span><input type="number" id="mMkt" placeholder="0.00" step="0.01"></div>
-    </div>
-    <div class="fg"><span class="slabel">Quantité</span><input type="number" id="mQty" value="1" min="1"></div>
-    <div class="cm-modal">
-      <span>🛒 Vérifier la cote Cardmarket</span>
-      <a href="#" id="cmModalA" target="_blank" rel="noopener">Ouvrir →</a>
-    </div>
-    <div class="pcx-modal">
-      <span>📋 Vérifier sur Pokécardex</span>
-      <a href="#" id="pcxModalA" target="_blank" rel="noopener">Ouvrir →</a>
-    </div>
+    <h3 id="editTitle">MODIFIER LA COTE</h3>
+    <div id="editBody"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeManual()">Annuler</button>
-      <button class="btn btn-primary" onclick="addManual()">Ajouter</button>
+      <button class="btn btn-ghost" onclick="closeEdit()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Enregistrer</button>
     </div>
   </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════
-// BASE DE DONNÉES FR INTÉGRÉE
-// Pokémon FR → EN + sets FR complets
+// SETS DATABASE — FR + EN + JP
 // ═══════════════════════════════════════════════════
-const FR_EN = {
-  // GEN 1
-  'bulbizarre':'bulbasaur','herbizarre':'ivysaur','florizarre':'venusaur',
-  'salamèche':'charmander','salameche':'charmander','reptincel':'charmeleon','dracaufeu':'charizard',
-  'carapuce':'squirtle','carabaffe':'wartortle','tortank':'blastoise',
-  'chenipan':'caterpie','chrysacier':'metapod','papilusion':'butterfree',
-  'aspicot':'weedle','coconfort':'kakuna','dardargnan':'beedrill',
-  'roucool':'pidgey','roucoups':'pidgeotto','roucarnage':'pidgeot',
-  'rattata':'rattata','rattatac':'raticate',
-  'piafabec':'spearow','rapasdepic':'fearow',
-  'abo':'ekans','arbok':'arbok',
-  'pikachu':'pikachu','raichu':'raichu',
-  'sabelette':'sandshrew','sablaireau':'sandslash',
-  'nidoran♀':'nidoran-f','nidorina':'nidorina','nidoqueen':'nidoqueen',
-  'nidoran♂':'nidoran-m','nidorino':'nidorino','nidoking':'nidoking',
-  'mélofée':'clefairy','mélofée':'clefairy','melodelfe':'clefable',
-  'goupix':'vulpix','feunard':'ninetales',
-  'rondoudou':'jigglypuff','grodoudou':'wigglytuff',
-  'nosferapti':'zubat','nosferali':'golbat',
-  'mystherbe':'oddish','ortide':'gloom','rafflésia':'vileplume',
-  'paras':'paras','parasect':'parasect',
-  'arakdo':'venonat','aracide':'venomoth',
-  'taupiqueur':'diglett','triopikeur':'dugtrio',
-  'miaouss':'meowth','persian':'persian',
-  'psykokwak':'psyduck','akwakwak':'golduck',
-  'machoc':'machop','machopeur':'machoke','mackogneur':'machamp',
-  'chétiflor':'bellsprout','nœunœuf':'weepinbell','empiflor':'victreebel',
-  'tentacool':'tentacool','tentacruel':'tentacruel',
-  'racaillou':'geodude','gravalanch':'graveler','grolem':'golem',
-  'ponyta':'ponyta','galopa':'rapidash',
-  'flagadoss':'poliwag','têtarte':'poliwhirl','tarpaud':'poliwrath',
-  'abra':'abra','kadabra':'kadabra','alakazam':'alakazam',
-  'machoc':'machop','machopeur':'machoke','mackogneur':'machamp',
-  'soporifik':'drowzee','hypno':'hypno',
-  'krabby':'krabby','krabboss':'kingler',
-  'voltorbe':'voltorb','électrode':'electrode',
-  'nœunœuf':'exeggcute','noadkoko':'exeggutor',
-  'osselait':'cubone','ossatueur':'marowak',
-  'kicklee':'hitmonlee','tygnon':'hitmonchan',
-  'excelangue':'lickitung',
-  'smogo':'koffing','weezing':'weezing',
-  'rhinocorne':'rhyhorn','rhinoféros':'rhydon',
-  'leveinard':'chansey',
-  'saquedeneu':'tangela',
-  'kangourex':'kangaskhan',
-  'hypotrempe':'horsea','hypocean':'seadra',
-  'poissirène':'goldeen','poissoroy':'seaking',
-  'stari':'staryu','staross':'starmie',
-  'lippoutou':'mr-mime',
-  'insécateur':'scyther',
-  'élektek':'electabuzz',
-  'magmar':'magmar',
-  'pinsir':'pinsir',
-  'tauros':'tauros',
-  'magicarpe':'magikarp','léviator':'gyarados',
-  'lokhlass':'lapras',
-  'métamorph':'ditto',
-  'évoli':'eevee','aquali':'vaporeon','voltali':'jolteon','pyroli':'flareon',
-  'porygon':'porygon',
-  'amonita':'omanyte','amonistar':'omastar',
-  'kabuto':'kabuto','kabutops':'kabutops',
-  'aérodactyl':'aerodactyl',
-  'ronflex':'snorlax',
-  'artikodin':'articuno','électhor':'zapdos','sulfura':'moltres',
-  'minidraco':'dratini','draco':'dragonair','dracolosse':'dragonite',
-  'mewtwo':'mewtwo','mew':'mew',
-  // GEN 2
-  'germignon':'chikorita','macronium':'bayleef','méganium':'meganium',
-  'héricendre':'cyndaquil','feurisson':'quilava','typhlosion':'typhlosion',
-  'kaiminus':'totodile','crocrodil':'croconaw','aligatueur':'feraligatr',
-  'fouinette':'sentret','fouinar':'furret',
-  'hoothoot':'hoothoot','noarfang':'noctowl',
-  'lumivole':'ledyba','coxyclaque':'ledian',
-  'arakdo':'spinarak','migalos':'ariados',
-  'noctali':'umbreon','mentali':'espeon',
-  'natu':'natu','xatu':'xatu',
-  'floravol':'bellossom',
-  'marill':'marill','azumarill':'azumarill',
-  'simularbre':'sudowoodo',
-  'poltruc':'politoed',
-  'feuillajou':'hoppip','floravol':'skiploom','cotovol':'jumpluff',
-  'granivol':'aipom',
-  'sunkern':'sunkern','heliatronc':'sunflora',
-  'yanma':'yanma',
-  'muciole':'wooper','maraiste':'quagsire',
-  'rocgriffe':'gligar',
-  'qwilfish':'qwilfish',
-  'cizayox':'scizor',
-  'caratroc':'shuckle',
-  'heracross':'heracross',
-  'teddiursa':'teddiursa','ursaring':'ursaring',
-  'limagma':'slugma','magcargo':'magcargo',
-  'marcacrin':'swinub','cochignon':'piloswine',
-  'corsola':'corsola',
-  'rémoraid':'remoraid','octillery':'octillery',
-  'cadoizo':'delibird',
-  'mustang':'mantine',
-  'houndour':'houndour','houndoom':'houndoom',
-  'queulorior':'kingdra',
-  'donphan':'donphan',
-  'porygon2':'porygon2',
-  'stantler':'stantler',
-  'smeargle':'smeargle',
-  'élekid':'elekid',
-  'magby':'magby',
-  'tauros':'tauros',
-  'miltank':'miltank',
-  'ptitard':'blissey',
-  'raikou':'raikou','entei':'entei','suicune':'suicune',
-  'larvibule':'larvitar','écraseigneur':'pupitar','tyranocif':'tyranitar',
-  'lugia':'lugia','ho-oh':'ho-oh',
-  'celebi':'celebi',
-  // GEN 3
-  'poussifeu':'torchic','combustion':'combusken','brasegali':'blaziken',
-  'gobou':'mudkip','flobio':'marshtomp','laggron':'swampert',
-  'arcko':'treecko','éfflèche':'grovyle','jungko':'sceptile',
-  'meloebre':'poochyena','grahyena':'mightyena',
-  'zigzaton':'zigzagoon','linéon':'linoone',
-  'cheniti':'wurmple','blindalys':'silcoon','papinox':'beautifly',
-  'cocoplatre':'cascoon','parpqualifier':'dustox',
-  'lotad':'lotad','lombre':'lombre','ludicolo':'ludicolo',
-  'grainipiot':'seedot','pifeumax':'nuzleaf','tengalice':'shiftry',
-  'nirondelle':'taillow','vansériel':'swellow',
-  'triopikeur':'wingull','goélise':'pelipper',
-  'ralts':'ralts','kirlia':'kirlia','gardevoir':'gardevoir',
-  'nigosier':'surskit','aéromite':'masquerain',
-  'mushmero':'shroomish','chapignon':'breloom',
-  'makuhita':'makuhita','hariyama':'hariyama',
-  'ronflex':'slakoth','vigoroth':'vigoroth','paresseux':'slaking',
-  'galvaran':'nincada','muciole':'ninjask','muciole':'shedinja',
-  'whismur':'whismur','loudred':'loudred','exploud':'exploud',
-  'timid':'whismur',
-  'mucuscule':'meditite','méditikka':'medicham',
-  'élekid':'electrike','manectric':'manectric',
-  'skitty':'skitty','delcatty':'delcatty',
-  'sabelette':'sableye','mysdibule':'mawile',
-  'aron':'aron','lairon':'lairon','aggron':'aggron',
-  'marabarbe':'numel','camérupt':'camerupt',
-  'torkoal':'torkoal',
-  'spoink':'spoink','groret':'grumpig',
-  'spinda':'spinda',
-  'trapinch':'trapinch','vibrava':'vibrava','libégon':'flygon',
-  'cacnea':'cacnea','cacturne':'cacturne',
-  'tylton':'swablu','altaria':'altaria',
-  'zangoose':'zangoose',
-  'séviper':'seviper',
-  'solochi':'lunatone','rocheleyr':'solrock',
-  'barbicha':'barboach','wailmere':'whiscash',
-  'corphish':'corphish','écrevissor':'crawdaunt',
-  'balignon':'baltoy','claydol':'claydol',
-  'nénufar':'lileep','cerin':'cradily',
-  'anorith':'anorith','armaldo':'armaldo',
-  'feebas':'feebas','milobellus':'milotic',
-  'météno':'castform',
-  'kecleon':'kecleon',
-  'banlibou':'shuppet','branette':'banette',
-  'noctunoir':'duskull','noctunoir':'dusclops',
-  'tropius':'tropius',
-  'badgadule':'chimecho',
-  'absol':'absol',
-  'stalgamin':'wynaut',
-  'snover':'snorunt','givrali':'glalie',
-  'spheal':'spheal','phogleur':'sealeo','walrein':'walrein',
-  'coquiperl':'clamperl','serpang':'huntail','relicanth':'gorebyss',
-  'lovdisc':'luvdisc',
-  'draby':'bagon','shelgon':'shelgon','draces':'salamence',
-  'beldelf':'beldum','tarinorme':'metang','metagross':'metagross',
-  'regirock':'regirock','regice':'regice','registeel':'registeel',
-  'latias':'latias','latios':'latios',
-  'kyogre':'kyogre','groudon':'groudon','rayquaza':'rayquaza',
-  'jirachi':'jirachi','deoxys':'deoxys',
-  // GEN 4+
-  'tortipouss':'turtwig','torterrrible':'grotle','torterra':'torterra',
-  'ouisticram':'chimchar','chimpenfeu':'monferno','infernape':'infernape',
-  'tiplouf':'piplup','empolili':'prinplup','pingoléon':'empoleon',
-  'étourmi':'starly','étourvol':'staravia','étouraptor':'staraptor',
-  'bibarel':'bibarel',
-  'goinfrex':'bidoof',
-  'lucario':'lucario','riolu':'riolu',
-  'togékiss':'togekiss','togapi':'togepi','togétic':'togetic',
-  'roserade':'roserade',
-  'galvantule':'galvantula',
-  'lépidonille':'leafeon','givrali':'glaceon',
-  'magnézone':'magnezone',
-  'magneton':'magneton','magneti':'magnemite',
-  'garchomp':'garchomp','gabite':'gabite','griknot':'gible',
-  'carchacrok':'garchomp',
-  'spiritomb':'spiritomb',
-  'hippodocus':'hippowdon',
-  'scarhino':'rhyperior',
-  'grandcrément':'mamoswine',
-  'clamiral':'empoleon',
-  'porygon-z':'porygon-z',
-  'gallade':'gallade',
-  'froslass':'froslass',
-  'rotom':'rotom',
-  'uxie':'uxie','mesprit':'mesprit','azelf':'azelf',
-  'dialga':'dialga','palkia':'palkia','giratina':'giratina',
-  'créfolié':'shaymin','arceus':'arceus',
-  // GEN 5
-  'gruikui':'tepig','grotichon':'pignite','carchacrok':'emboar',
-  'moustillon':'oshawott','mireille':'dewott','samourasar':'samurott',
-  'vipélierre':'snivy','lianaja':'servine','majaspic':'serperior',
-  'zoroark':'zoroark','zorua':'zorua',
-  'reshiram':'reshiram','zekrom':'zekrom','kyurem':'kyurem',
-  'victini':'victini','meloetta':'meloetta','génesect':'genesect',
-  // GEN 6
-  'marisson':'chespin','boguérisse':'quilladin','blindépique':'chesnaught',
-  'feunnec':'fennekin','roussil':'braixen','goupelin':'delphox',
-  'greloupes':'froakie','croâporal':'frogadier','amphinobi':'greninja',
-  'xerneas':'xerneas','yveltal':'yveltal','zygarde':'zygarde',
-  'diancie':'diancie','hoopa':'hoopa','volcanion':'volcanion',
-  // GEN 7
-  'flamiaou':'litten','charbrûlon':'torracat','félinferno':'incineroar',
-  'otaquin':'popplio','otarlette':'brionne','démanta':'primarina',
-  'tropigal':'rowlet','brindibou':'dartrix','décidueye':'decidueye',
-  'solgaleo':'solgaleo','lunala':'lunala','nécrozma':'necrozma',
-  'marshadow':'marshadow','zeraora':'zeraora',
-  // GEN 8
-  'ouistempo':'grookey','badaboum':'thwackey','gorythmic':'rillaboom',
-  'flambino':'scorbunny','lapyro':'raboot','lapin-forme':'cinderace',
-  'larméléon':'sobble','lézargus':'drizzile','inteleon':'inteleon',
-  'zacian':'zacian','zamazenta':'zamazenta','éthernatos':'eternatus',
-  'calyrex':'calyrex','spectrier':'spectrier','glastrier':'glastrier',
-  'zarude':'zarude','regieleki':'regieleki','regidrago':'regidrago',
-  // GEN 9
-  'poussacha':'sprigatito','feuillajou':'floragato','miascarade':'meowscarada',
-  'chochodile':'fuecoco','crocopattes':'crocalor','skelédirge':'skeledirge',
-  'coiffeton':'quaxly','ecanard':'quaxwell','palmaval':'quaquaval',
-  'miraidon':'miraidon','koraidon':'koraidon',
-  'terapagos':'terapagos','pecharunt':'pecharunt',
-  // SPECIALS
-  'ex':'ex','gx':'gx','v':'v','vmax':'vmax','vstar':'vstar',
-  'mega':'mega','méga':'mega','dark':'dark','obscur':'dark',
-};
-
-// Base de données des sets FR
-const SETS_FR = [
-  // VINTAGE WIZARDS
-  {id:'base1',fr:'Set de Base',en:'Base Set',year:1999,era:'Vintage'},
-  {id:'jungle',fr:'Jungle',en:'Jungle',year:1999,era:'Vintage'},
-  {id:'fossil',fr:'Fossile',en:'Fossil',year:1999,era:'Vintage'},
-  {id:'teamrocket',fr:'Team Rocket',en:'Team Rocket',year:2000,era:'Vintage'},
-  {id:'gym1',fr:'Gym Heroes',en:'Gym Heroes',year:2000,era:'Vintage'},
-  {id:'gym2',fr:'Gym Challenge',en:'Gym Challenge',year:2000,era:'Vintage'},
-  {id:'neo1',fr:'Neo Genesis',en:'Neo Genesis',year:2000,era:'Vintage'},
-  {id:'neo2',fr:'Neo Discovery',en:'Neo Discovery',year:2001,era:'Vintage'},
-  {id:'neo3',fr:'Neo Revelation',en:'Neo Revelation',year:2001,era:'Vintage'},
-  {id:'neo4',fr:'Neo Destiny',en:'Neo Destiny',year:2002,era:'Vintage'},
-  {id:'si1',fr:'Légendes Secrètes',en:'Secret Wonders',year:2007,era:'Vintage'},
-  // EX ERA
-  {id:'ex1',fr:'EX Rubis et Saphir',en:'EX Ruby & Sapphire',year:2003,era:'EX'},
-  {id:'ex2',fr:'EX Sable Mouvant',en:'EX Sandstorm',year:2003,era:'EX'},
-  {id:'ex3',fr:'EX Dragon',en:'EX Dragon',year:2003,era:'EX'},
-  {id:'ex4',fr:'EX Team Magma VS Team Aqua',en:'EX Team Magma vs Team Aqua',year:2004,era:'EX'},
-  {id:'ex5',fr:'EX Tempête de Sable',en:'EX Hidden Legends',year:2004,era:'EX'},
-  {id:'ex6',fr:'EX FireRed LeafGreen',en:'EX FireRed & LeafGreen',year:2004,era:'EX'},
-  {id:'ex7',fr:'EX Team Rocket en Retour',en:'EX Team Rocket Returns',year:2004,era:'EX'},
-  {id:'ex8',fr:'EX Deoxys',en:'EX Deoxys',year:2005,era:'EX'},
-  {id:'ex9',fr:'EX Émeraude',en:'EX Emerald',year:2005,era:'EX'},
-  {id:'ex10',fr:'EX Griffe Delta',en:'EX Delta Species',year:2005,era:'EX'},
-  {id:'ex11',fr:'EX Légendes Oubliées',en:'EX Legend Maker',year:2006,era:'EX'},
-  {id:'ex12',fr:'EX Gardiens de Cristal',en:'EX Crystal Guardians',year:2006,era:'EX'},
-  {id:'ex13',fr:'EX Dragon Frontière',en:'EX Dragon Frontiers',year:2006,era:'EX'},
-  {id:'ex14',fr:'EX Gardiens du Pouvoir',en:'EX Power Keepers',year:2007,era:'EX'},
-  // DIAMANT PERLE
-  {id:'dp1',fr:'Diamant et Perle',en:'Diamond & Pearl',year:2007,era:'DP'},
-  {id:'dp2',fr:'Mystères de l\'Abîme',en:'Mysterious Treasures',year:2007,era:'DP'},
-  {id:'dp3',fr:'Duels au Sommet',en:'Secret Wonders',year:2007,era:'DP'},
-  {id:'dp4',fr:'Merveilles Secrètes',en:'Great Encounters',year:2008,era:'DP'},
-  {id:'dp5',fr:'Rencontres Fabuleuses',en:'Majestic Dawn',year:2008,era:'DP'},
-  {id:'dp6',fr:'Aube Majestueuse',en:'Legends Awakened',year:2008,era:'DP'},
-  {id:'dp7',fr:'Éveil des Légendes',en:'Stormfront',year:2008,era:'DP'},
-  // HEARTGOLD SOULSILVER
-  {id:'hgss1',fr:'HeartGold SoulSilver',en:'HeartGold SoulSilver',year:2010,era:'HGSS'},
-  {id:'hgss2',fr:'Débordement',en:'Unleashed',year:2010,era:'HGSS'},
-  {id:'hgss3',fr:'Indomptable',en:'Undaunted',year:2010,era:'HGSS'},
-  {id:'hgss4',fr:'Triomphe',en:'Triumphant',year:2010,era:'HGSS'},
-  // BLACK WHITE
-  {id:'bw1',fr:'Noir et Blanc',en:'Black & White',year:2011,era:'BW'},
-  {id:'bw2',fr:'Pouvoirs Émergents',en:'Emerging Powers',year:2011,era:'BW'},
-  {id:'bw3',fr:'Nobles Victoires',en:'Noble Victories',year:2011,era:'BW'},
-  {id:'bw4',fr:'Prochaine Destinée',en:'Next Destinies',year:2012,era:'BW'},
-  {id:'bw5',fr:'Obscurité Embrasée',en:'Dark Explorers',year:2012,era:'BW'},
-  {id:'bw6',fr:'Dragons Exaltés',en:'Dragons Exalted',year:2012,era:'BW'},
-  {id:'bw7',fr:'Frontières du Chaos',en:'Boundaries Crossed',year:2012,era:'BW'},
-  {id:'bw8',fr:'Blizzard Plasma',en:'Plasma Storm',year:2013,era:'BW'},
-  {id:'bw9',fr:'Glaciation Plasma',en:'Plasma Freeze',year:2013,era:'BW'},
-  {id:'bw10',fr:'Explosion Plasma',en:'Plasma Blast',year:2013,era:'BW'},
-  {id:'bw11',fr:'Légendaire Trésor',en:'Legendary Treasures',year:2013,era:'BW'},
-  // XY
-  {id:'xy1',fr:'XY',en:'XY',year:2014,era:'XY'},
-  {id:'xy2',fr:'Étincelles',en:'Flashfire',year:2014,era:'XY'},
-  {id:'xy3',fr:'Poings Furieux',en:'Furious Fists',year:2014,era:'XY'},
-  {id:'xy4',fr:'Vigueur Spectrale',en:'Phantom Forces',year:2014,era:'XY'},
-  {id:'xy5',fr:'Primo Choc',en:'Primal Clash',year:2015,era:'XY'},
-  {id:'xy6',fr:'Rugissement des Mers',en:'Roaring Skies',year:2015,era:'XY'},
-  {id:'xy7',fr:'Origines Antiques',en:'Ancient Origins',year:2015,era:'XY'},
-  {id:'xy8',fr:'Rupture Turbo',en:'BREAKthrough',year:2015,era:'XY'},
-  {id:'xy9',fr:'Offensive Turbo',en:'BREAKpoint',year:2016,era:'XY'},
-  {id:'xy10',fr:'Générations',en:'Generations',year:2016,era:'XY'},
-  {id:'xy11',fr:'Évolution Fulgurante',en:'Fates Collide',year:2016,era:'XY'},
-  {id:'xy12',fr:'Steam Siege',en:'Steam Siege',year:2016,era:'XY'},
-  {id:'xy13',fr:'Évolutions',en:'Evolutions',year:2016,era:'XY'},
-  // SOLEIL LUNE
-  {id:'sm1',fr:'Soleil et Lune',en:'Sun & Moon',year:2017,era:'SM'},
-  {id:'sm2',fr:'Gardiens Ascendants',en:'Guardians Rising',year:2017,era:'SM'},
-  {id:'sm3',fr:'Ombres Ardentes',en:'Burning Shadows',year:2017,era:'SM'},
-  {id:'sm35',fr:'Légendes Brillantes',en:'Shining Legends',year:2017,era:'SM'},
-  {id:'sm4',fr:'Invasion Carmin',en:'Crimson Invasion',year:2017,era:'SM'},
-  {id:'sm5',fr:'Ultra Prisme',en:'Ultra Prism',year:2018,era:'SM'},
-  {id:'sm6',fr:'Lumière Interdite',en:'Forbidden Light',year:2018,era:'SM'},
-  {id:'sm7',fr:'Tempête Céleste',en:'Celestial Storm',year:2018,era:'SM'},
-  {id:'sm75',fr:'Majesté des Dragons',en:'Dragon Majesty',year:2018,era:'SM'},
-  {id:'sm8',fr:'Tonnerre Perdu',en:'Lost Thunder',year:2018,era:'SM'},
-  {id:'sm9',fr:'Alliance Infaillible',en:'Team Up',year:2019,era:'SM'},
-  {id:'sm10',fr:'Détective Pikachu',en:'Detective Pikachu',year:2019,era:'SM'},
-  {id:'sm11',fr:'Harmonie des Esprits',en:'Unbroken Bonds',year:2019,era:'SM'},
-  {id:'sm12',fr:'Éclipse Cosmique',en:'Cosmic Eclipse',year:2019,era:'SM'},
-  // EPÉE BOUCLIER
-  {id:'swsh1',fr:'Épée et Bouclier',en:'Sword & Shield',year:2020,era:'SWSH'},
-  {id:'swsh2',fr:'Clash des Rebelles',en:'Rebel Clash',year:2020,era:'SWSH'},
-  {id:'swsh3',fr:'Ténèbres Embrasées',en:'Darkness Ablaze',year:2020,era:'SWSH'},
-  {id:'swsh35',fr:'Champion\'s Path',en:'Champion\'s Path',year:2020,era:'SWSH'},
-  {id:'swsh4',fr:'Vivid Voltage',en:'Vivid Voltage',year:2020,era:'SWSH'},
-  {id:'swsh45',fr:'Destins Radieux',en:'Shining Fates',year:2021,era:'SWSH'},
-  {id:'swsh5',fr:'Battle Styles',en:'Battle Styles',year:2021,era:'SWSH'},
-  {id:'swsh6',fr:'Règne de Glace',en:'Chilling Reign',year:2021,era:'SWSH'},
-  {id:'swsh7',fr:'Évolution Céleste',en:'Evolving Skies',year:2021,era:'SWSH'},
-  {id:'swsh75',fr:'Celebrations',en:'Celebrations',year:2021,era:'SWSH'},
-  {id:'swsh8',fr:'Fusion Strike',en:'Fusion Strike',year:2021,era:'SWSH'},
-  {id:'swsh9',fr:'Étoiles Brillantes',en:'Brilliant Stars',year:2022,era:'SWSH'},
-  {id:'swsh10',fr:'Origine Perdue',en:'Lost Origin',year:2022,era:'SWSH'},
-  {id:'swsh11',fr:'Tempête Argentée',en:'Silver Tempest',year:2022,era:'SWSH'},
-  {id:'swsh12',fr:'Couronnes Royales',en:'Crown Zenith',year:2023,era:'SWSH'},
-  // ÉCARLATE ET VIOLET
-  {id:'sv1',fr:'Écarlate et Violet',en:'Scarlet & Violet',year:2023,era:'EV'},
-  {id:'sv2',fr:'EV01 - Écarlate et Violet',en:'Scarlet & Violet Base Set',year:2023,era:'EV'},
-  {id:'sv2p',fr:'EV02 - Évolutions à Paldea',en:'Paldea Evolved',year:2023,era:'EV'},
-  {id:'sv3',fr:'EV03 - Flammes Obsidiennes',en:'Obsidian Flames',year:2023,era:'EV'},
-  {id:'sv35',fr:'EV03.5 - 151',en:'Scarlet & Violet—151',year:2023,era:'EV'},
-  {id:'sv4',fr:'EV04 - Faille Paradoxe',en:'Paradox Rift',year:2023,era:'EV'},
-  {id:'sv45',fr:'EV04.5 - Destins de Paldea',en:'Paldean Fates',year:2024,era:'EV'},
-  {id:'sv5',fr:'EV05 - Force Temporelle',en:'Temporal Forces',year:2024,era:'EV'},
-  {id:'sv6',fr:'EV06 - Mascarade Crépusculaire',en:'Twilight Masquerade',year:2024,era:'EV'},
-  {id:'sv65',fr:'EV06.5 - Méga Évolutions',en:'Shrouded Fable',year:2024,era:'EV'},
-  {id:'sv7',fr:'EV07 - Couronne Stellaire',en:'Stellar Crown',year:2024,era:'EV'},
-  {id:'sv75',fr:'EV07.5 - Flammes Fantasmagoriques',en:'Prismatic Evolutions',year:2025,era:'EV'},
-  {id:'sv8',fr:'EV08 - Surpuissance Prismatique',en:'Surging Sparks',year:2025,era:'EV'},
-  {id:'sv85',fr:'EV08.5 - Évolutions Prismatiques',en:'Prismatic Evolutions',year:2025,era:'EV'},
+const SETS = [
+  // VINTAGE FR
+  {n:'Set de Base',a:'Base Set',l:'fr',y:1999},
+  {n:'Jungle',a:'Jungle',l:'fr',y:1999},
+  {n:'Fossile',a:'Fossil',l:'fr',y:1999},
+  {n:'Team Rocket',a:'Team Rocket',l:'fr',y:2000},
+  {n:'Gym Heroes',a:'Gym Heroes',l:'fr',y:2000},
+  {n:'Gym Challenge',a:'Gym Challenge',l:'fr',y:2000},
+  {n:'Neo Genesis',a:'Neo Genesis',l:'fr',y:2000},
+  {n:'Neo Discovery',a:'Neo Discovery',l:'fr',y:2001},
+  {n:'Neo Revelation',a:'Neo Revelation',l:'fr',y:2001},
+  {n:'Neo Destiny',a:'Neo Destiny',l:'fr',y:2002},
+  // EX FR
+  {n:'EX Rubis et Saphir',a:'EX Ruby Sapphire',l:'fr',y:2003},
+  {n:'EX Sable Mouvant',a:'EX Sandstorm',l:'fr',y:2003},
+  {n:'EX Dragon',a:'EX Dragon',l:'fr',y:2003},
+  {n:'EX Team Magma VS Team Aqua',a:'EX Team Magma vs Aqua',l:'fr',y:2004},
+  {n:'EX FireRed LeafGreen',a:'EX FireRed LeafGreen',l:'fr',y:2004},
+  {n:'EX Team Rocket en Retour',a:'EX Team Rocket Returns',l:'fr',y:2004},
+  {n:'EX Deoxys',a:'EX Deoxys',l:'fr',y:2005},
+  {n:'EX Émeraude',a:'EX Emerald',l:'fr',y:2005},
+  {n:'EX Griffe Delta',a:'EX Delta Species',l:'fr',y:2005},
+  {n:'EX Légendes Oubliées',a:'EX Legend Maker',l:'fr',y:2006},
+  {n:'EX Gardiens de Cristal',a:'EX Crystal Guardians',l:'fr',y:2006},
+  {n:'EX Dragon Frontière',a:'EX Dragon Frontiers',l:'fr',y:2006},
+  {n:'EX Gardiens du Pouvoir',a:'EX Power Keepers',l:'fr',y:2007},
+  // DP/HGSS/BW/XY/SM/SWSH FR
+  {n:'Diamant et Perle',a:'Diamond Pearl',l:'fr',y:2007},
+  {n:'HeartGold SoulSilver',a:'HeartGold SoulSilver',l:'fr',y:2010},
+  {n:'Noir et Blanc',a:'Black White',l:'fr',y:2011},
+  {n:'Pouvoirs Émergents',a:'Emerging Powers',l:'fr',y:2011},
+  {n:'Nobles Victoires',a:'Noble Victories',l:'fr',y:2011},
+  {n:'Prochaine Destinée',a:'Next Destinies',l:'fr',y:2012},
+  {n:'Obscurité Embrasée',a:'Dark Explorers',l:'fr',y:2012},
+  {n:'Dragons Exaltés',a:'Dragons Exalted',l:'fr',y:2012},
+  {n:'Frontières du Chaos',a:'Boundaries Crossed',l:'fr',y:2012},
+  {n:'Blizzard Plasma',a:'Plasma Storm',l:'fr',y:2013},
+  {n:'Glaciation Plasma',a:'Plasma Freeze',l:'fr',y:2013},
+  {n:'Explosion Plasma',a:'Plasma Blast',l:'fr',y:2013},
+  {n:'XY',a:'XY',l:'fr',y:2014},
+  {n:'Étincelles',a:'Flashfire',l:'fr',y:2014},
+  {n:'Poings Furieux',a:'Furious Fists',l:'fr',y:2014},
+  {n:'Vigueur Spectrale',a:'Phantom Forces',l:'fr',y:2014},
+  {n:'Primo Choc',a:'Primal Clash',l:'fr',y:2015},
+  {n:'Rugissement des Mers',a:'Roaring Skies',l:'fr',y:2015},
+  {n:'Origines Antiques',a:'Ancient Origins',l:'fr',y:2015},
+  {n:'Rupture Turbo',a:'BREAKthrough',l:'fr',y:2015},
+  {n:'Offensive Turbo',a:'BREAKpoint',l:'fr',y:2016},
+  {n:'Évolutions',a:'Evolutions',l:'fr',y:2016},
+  {n:'Soleil et Lune',a:'Sun Moon',l:'fr',y:2017},
+  {n:'Gardiens Ascendants',a:'Guardians Rising',l:'fr',y:2017},
+  {n:'Ombres Ardentes',a:'Burning Shadows',l:'fr',y:2017},
+  {n:'Légendes Brillantes',a:'Shining Legends',l:'fr',y:2017},
+  {n:'Invasion Carmin',a:'Crimson Invasion',l:'fr',y:2017},
+  {n:'Ultra Prisme',a:'Ultra Prism',l:'fr',y:2018},
+  {n:'Lumière Interdite',a:'Forbidden Light',l:'fr',y:2018},
+  {n:'Tempête Céleste',a:'Celestial Storm',l:'fr',y:2018},
+  {n:'Tonnerre Perdu',a:'Lost Thunder',l:'fr',y:2018},
+  {n:'Alliance Infaillible',a:'Team Up',l:'fr',y:2019},
+  {n:'Harmonie des Esprits',a:'Unbroken Bonds',l:'fr',y:2019},
+  {n:'Éclipse Cosmique',a:'Cosmic Eclipse',l:'fr',y:2019},
+  {n:'Épée et Bouclier',a:'Sword Shield',l:'fr',y:2020},
+  {n:'Clash des Rebelles',a:'Rebel Clash',l:'fr',y:2020},
+  {n:'Ténèbres Embrasées',a:'Darkness Ablaze',l:'fr',y:2020},
+  {n:'Vivid Voltage',a:'Vivid Voltage',l:'fr',y:2020},
+  {n:'Destins Radieux',a:'Shining Fates',l:'fr',y:2021},
+  {n:'Battle Styles',a:'Battle Styles',l:'fr',y:2021},
+  {n:'Règne de Glace',a:'Chilling Reign',l:'fr',y:2021},
+  {n:'Évolution Céleste',a:'Evolving Skies',l:'fr',y:2021},
+  {n:'Fusion Strike',a:'Fusion Strike',l:'fr',y:2021},
+  {n:'Étoiles Brillantes',a:'Brilliant Stars',l:'fr',y:2022},
+  {n:'Origine Perdue',a:'Lost Origin',l:'fr',y:2022},
+  {n:'Tempête Argentée',a:'Silver Tempest',l:'fr',y:2022},
+  {n:'Couronnes Royales',a:'Crown Zenith',l:'fr',y:2023},
+  // ÉCARLATE ET VIOLET FR
+  {n:'EV01 Écarlate et Violet',a:'Scarlet Violet',l:'fr',y:2023},
+  {n:'EV02 Évolutions à Paldea',a:'Paldea Evolved',l:'fr',y:2023},
+  {n:'EV03 Flammes Obsidiennes',a:'Obsidian Flames',l:'fr',y:2023},
+  {n:'EV03.5 151',a:'Scarlet Violet 151',l:'fr',y:2023},
+  {n:'EV04 Faille Paradoxe',a:'Paradox Rift',l:'fr',y:2023},
+  {n:'EV04.5 Destins de Paldea',a:'Paldean Fates',l:'fr',y:2024},
+  {n:'EV05 Force Temporelle',a:'Temporal Forces',l:'fr',y:2024},
+  {n:'EV06 Mascarade Crépusculaire',a:'Twilight Masquerade',l:'fr',y:2024},
+  {n:'EV06.5 Méga Évolutions',a:'Shrouded Fable',l:'fr',y:2024},
+  {n:'EV07 Couronne Stellaire',a:'Stellar Crown',l:'fr',y:2024},
+  {n:'EV07.5 Flammes Fantasmagoriques',a:'Surging Sparks',l:'fr',y:2024},
+  {n:'EV08 Étincelles Déferlantes',a:'Surging Sparks',l:'fr',y:2024},
+  {n:'EV08.5 Évolutions Prismatiques',a:'Prismatic Evolutions',l:'fr',y:2025},
+  {n:'EV Pokémon Go Retour',a:'Pokemon GO Returns',l:'fr',y:2025},
+  {n:'EV Aventures Ensemble',a:'Journey Together',l:'fr',y:2025},
+  {n:'EV Batailles Légendaires',a:'Legendary Battles',l:'fr',y:2025},
+  // SETS JAPONAIS
+  {n:'Terastal Fest ex [SV8A]',a:'Terastal Fest ex',l:'jp',y:2024},
+  {n:'VSTAR Universe [S12a]',a:'VSTAR Universe',l:'jp',y:2022},
+  {n:'Pokémon GO [S10b]',a:'Pokemon GO',l:'jp',y:2022},
+  {n:'Fusion Arts [S8]',a:'Fusion Arts',l:'jp',y:2021},
+  {n:'Blue Sky Stream [S7R]',a:'Blue Sky Stream',l:'jp',y:2021},
+  {n:'Jet Black Spirit [S6K]',a:'Jet Black Spirit',l:'jp',y:2021},
+  {n:'Silver Lance [S6H]',a:'Silver Lance',l:'jp',y:2021},
+  {n:'Matchless Fighters [S5a]',a:'Matchless Fighters',l:'jp',y:2021},
+  {n:'Single Strike Master [S5I]',a:'Single Strike Master',l:'jp',y:2021},
+  {n:'Rapid Strike Master [S5R]',a:'Rapid Strike Master',l:'jp',y:2021},
+  {n:'Shiny Star V [S4a]',a:'Shiny Star V',l:'jp',y:2020},
+  {n:'Vivid Voltage JP [S4]',a:'Vivid Voltage JP',l:'jp',y:2020},
+  {n:'Scarlet ex [SV1S]',a:'Scarlet ex',l:'jp',y:2023},
+  {n:'Violet ex [SV1V]',a:'Violet ex',l:'jp',y:2023},
+  {n:'Snow Hazard [SV2P]',a:'Snow Hazard',l:'jp',y:2023},
+  {n:'Clay Burst [SV2D]',a:'Clay Burst',l:'jp',y:2023},
+  {n:'Ruler of the Black Flame [SV3]',a:'Ruler of the Black Flame',l:'jp',y:2023},
+  {n:'Raging Surf [SV3A]',a:'Raging Surf',l:'jp',y:2023},
+  {n:'Future Flash [SV4M]',a:'Future Flash',l:'jp',y:2023},
+  {n:'Ancient Roar [SV4K]',a:'Ancient Roar',l:'jp',y:2023},
+  {n:'Shiny Treasure ex [SV4A]',a:'Shiny Treasure ex',l:'jp',y:2023},
+  {n:'Wild Force [SV5K]',a:'Wild Force',l:'jp',y:2024},
+  {n:'Cyber Judge [SV5M]',a:'Cyber Judge',l:'jp',y:2024},
+  {n:'Night Wanderer [SV6]',a:'Night Wanderer',l:'jp',y:2024},
+  {n:'Mask of Change [SV6A]',a:'Mask of Change',l:'jp',y:2024},
+  {n:'Stars of Stellar [SV7]',a:'Stars of Stellar',l:'jp',y:2024},
+  {n:'Paradise Dragona [SV7A]',a:'Paradise Dragona',l:'jp',y:2024},
+  {n:'Super Electric Breaker [SV8]',a:'Super Electric Breaker',l:'jp',y:2024},
+  {n:'Prismatic Evolutions JP [SV8A]',a:'Prismatic Evolutions JP',l:'jp',y:2025},
+  {n:'Journey Together JP [SV9]',a:'Journey Together JP',l:'jp',y:2025},
+  // PROMOS
+  {n:'Promo SVP FR',a:'Promo SVP',l:'fr',y:2025},
+  {n:'Promo SVP JP',a:'Promo SVP JP',l:'jp',y:2025},
+  {n:'Promo Black Star',a:'Black Star Promo',l:'en',y:2024},
 ];
 
-// Base de Pokémon FR avec leurs noms, pour la recherche rapide
-const POKEMON_FR_DB = [];
-
-// Construit la DB en croisant FR_EN avec les sets
-function buildDB(){
-  const pokemonList = Object.keys(FR_EN);
-  const setList = SETS_FR;
-  // Pour chaque Pokémon FR, on crée des entrées par ère
-  const eras = ['Vintage','EX','DP','HGSS','BW','XY','SM','SWSH','EV'];
-  pokemonList.forEach(frName => {
-    const enName = FR_EN[frName];
-    if(['ex','gx','v','vmax','vstar','mega','méga','dark','obscur'].includes(frName)) return;
-    // On crée une entrée générique
-    POKEMON_FR_DB.push({
-      id: 'fr_'+frName.replace(/[^a-z]/g,'_'),
-      name: frName.charAt(0).toUpperCase()+frName.slice(1),
-      nameFR: frName.charAt(0).toUpperCase()+frName.slice(1),
-      nameEN: enName,
-      lang: 'fr',
-      src: 'base-fr',
-      set: '', setFR: '', setEN: '',
-      image: '',
-      marketPrice: null,
-    });
-  });
-  document.getElementById('dbCount').textContent = `${POKEMON_FR_DB.length} Pokémon FR + ${setList.length} sets`;
-}
-
-buildDB();
+// ═══════════════════════════════════════════════════
+// ETAT
+// ═══════════════════════════════════════════════════
+let col = JSON.parse(localStorage.getItem('pokeCol7')||'[]');
+let grader='raw', selGrade=null, filter='all', sortF='roi', sortD=-1;
+let editId=null;
+const PSA=['10','9.5','9','8.5','8','7','6','5'];
+const PCA=['10','9.5','9','8.5','8','7','6','5'];
+const AKAT=['10','9.5','9','8.5','8','7','6','5','4','3','2','1'];
 
 // ═══════════════════════════════════════════════════
-// RECHERCHE
+// SET AUTOCOMPLETE
 // ═══════════════════════════════════════════════════
-let col = JSON.parse(localStorage.getItem('pokeCol6') || '[]');
-let selCard = null, grader = 'raw', selGrade = null;
-let filter = 'all', sortF = 'roi', sortD = -1;
-const PSA_GRADES = ['10','9.5','9','8.5','8','7','6','5'];
-const PCA_GRADES = ['10','9.5','9','8.5','8','7','6','5'];
-const TCGIO = 'https://api.pokemontcg.io/v2';
-const USD_EUR = 0.92;
+function norm(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') }
 
-function normalize(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim() }
-
-let sTimer=null;
-document.getElementById('si').addEventListener('input',function(){
-  clearTimeout(sTimer);
-  if(this.value.length<2){hideRes();return}
-  sTimer=setTimeout(doSearch,300);
-});
-document.getElementById('si').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch()});
-
-async function doSearch(){
-  const q = document.getElementById('si').value.trim();
-  if(!q) return;
-  const btn = document.getElementById('sgoBtn');
-  btn.innerHTML='<span class="spin"></span>'; btn.disabled=true;
-
-  const qNorm = normalize(q);
-
-  // 1. Recherche dans la base FR intégrée
-  const frResults = POKEMON_FR_DB.filter(p => {
-    const n = normalize(p.nameFR);
-    const en = normalize(p.nameEN);
-    return n.startsWith(qNorm) || n.includes(qNorm) || en.startsWith(qNorm) || en.includes(qNorm);
-  }).slice(0,10);
-
-  // 2. Recherche dans les sets FR
-  const setResults = SETS_FR.filter(s => {
-    return normalize(s.fr).includes(qNorm) || normalize(s.en).includes(qNorm);
-  }).slice(0,3);
-
-  // 3. API TCG.io EN en parallèle
-  const enQ = FR_EN[qNorm] || q;
-  let apiResults = [];
-  try {
-    const r = await fetch(`${TCGIO}/cards?q=name:${encodeURIComponent(enQ)}*&pageSize=8&orderBy=-set.releaseDate`);
-    if(r.ok){
-      const d = await r.json();
-      apiResults = (d.data||[]).map(c => {
-        const p = c?.tcgplayer?.prices;
-        const mkt = p?(p.holofoil?.market||p['1stEditionHolofoil']?.market||p.normal?.market||p.reverseHolofoil?.market||null):null;
-        return {
-          id: c.id, name: c.name, nameFR: '', nameEN: c.name,
-          lang: 'en', src: 'tcgio',
-          set: c.set?.name||'', setFR: '', setEN: c.set?.name||'',
-          number: c.number||'',
-          image: c.images?.small||'',
-          marketPrice: mkt ? mkt*USD_EUR : null,
-          _tcgioId: c.id,
-        };
-      });
-    }
-  } catch{}
-
-  btn.innerHTML='→'; btn.disabled=false;
-
-  // Merge : FR en premier, puis EN API
-  const seen = new Set();
-  const merged = [];
-  frResults.forEach(c => { if(!seen.has(c.id)){seen.add(c.id);merged.push(c)} });
-  apiResults.forEach(c => { if(!seen.has(c.id)){seen.add(c.id);merged.push(c)} });
-
-  showRes(merged, q, setResults);
-}
-
-function showRes(cards, query, sets=[]){
-  const el = document.getElementById('resultsBox');
+function filterSets(){
+  const q = norm(document.getElementById('fSet').value);
+  const lang = document.getElementById('fLang').value;
+  if(!q){ hideSets(); return; }
+  const matches = SETS.filter(s =>
+    norm(s.n).includes(q) || norm(s.a).includes(q)
+  ).slice(0,8);
+  const el = document.getElementById('setSuggest');
+  if(!matches.length){ hideSets(); return; }
   el.style.display='block';
-
-  if(!cards.length && !sets.length){
-    el.innerHTML=`<div style="padding:12px;font-size:11px;color:var(--muted);line-height:1.7">
-      Aucun résultat — essaie le nom anglais ou
-      <button onclick="openManual()" style="background:none;border:none;color:var(--yellow);cursor:pointer;font-size:11px;font-family:var(--fb);text-decoration:underline">la saisie manuelle</button>.
-    </div>`;
-    return;
-  }
-
-  let html = '';
-
-  // Sets correspondants en tête si recherche de set
-  if(sets.length){
-    html += `<div style="padding:6px 11px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);background:var(--s3)">Sets trouvés</div>`;
-    html += sets.map(s=>`
-      <div class="result-row" onclick="pickSet(${JSON.stringify(s).replace(/"/g,'&quot;')})">
-        <div class="r-img">📦</div>
-        <div class="r-main">
-          <div class="r-name">${s.fr}</div>
-          <div class="r-meta"><span class="tag tag-fr">FR</span><span style="color:var(--muted2)">${s.year} · ${s.era}</span></div>
-        </div>
-        <div class="r-src">Set complet</div>
-      </div>`).join('');
-  }
-
-  if(cards.length){
-    if(sets.length) html += `<div style="padding:6px 11px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);background:var(--s3)">Pokémon</div>`;
-    html += cards.map(c=>{
-      const price = c.marketPrice ? `€${c.marketPrice.toFixed(2)}` : '—';
-      const langTag = c.lang==='fr'
-        ? `<span class="tag tag-fr">FR</span>`
-        : `<span class="tag tag-en">EN</span>`;
-      const srcTag = c.src==='base-fr'
-        ? `<span class="tag tag-db">Base FR</span>`
-        : `<span class="tag tag-api">API EN</span>`;
-      const imgEl = c.image
-        ? `<img src="${c.image}" style="width:28px;height:39px;object-fit:contain;border-radius:3px">`
-        : `<div class="r-img">${c.lang==='fr'?'🃏':'🎴'}</div>`;
-      const safe = JSON.stringify(c).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      const setDisplay = c.set || (c.src==='base-fr' ? 'Toutes extensions disponibles' : '');
-      return`<div class="result-row" onclick="pick(JSON.parse(this.dataset.card))" data-card="${safe}">
-        <div class="r-img">${imgEl}</div>
-        <div class="r-main">
-          <div class="r-name">${c.name}${c.nameFR&&c.nameEN?` <span style="color:var(--muted);font-size:10px">/ ${c.nameEN}</span>`:''}</div>
-          <div class="r-meta">${langTag} ${srcTag} <span style="color:var(--muted2)">${setDisplay}</span></div>
-        </div>
-        <div class="r-src">${price}</div>
-      </div>`;
-    }).join('');
-  }
-
-  el.innerHTML = html;
+  el.innerHTML = matches.map(s=>`
+    <div class="set-item" onclick="pickSet('${s.n.replace(/'/g,"\\'")}','${s.y}')">
+      <span style="font-size:9px;color:var(--muted);margin-right:5px">${s.l==='fr'?'🇫🇷':s.l==='jp'?'🇯🇵':'🇬🇧'} ${s.y}</span>
+      ${s.n}
+    </div>`).join('');
 }
 
-function hideRes(){ document.getElementById('resultsBox').style.display='none' }
-
-function pickSet(set){
-  // Sélectionne un set pour la saisie manuelle
-  hideRes();
-  document.getElementById('si').value = set.fr;
-  openManual();
-  setTimeout(()=>{
-    document.getElementById('mSet').value = set.fr;
-    updateLinks();
-  }, 100);
+function pickSet(name, year){
+  document.getElementById('fSet').value = name;
+  document.getElementById('fYear').value = year;
+  hideSets();
+  updateExtLinks();
 }
+function hideSets(){ document.getElementById('setSuggest').style.display='none' }
 
-function pick(card){
-  selCard = card; hideRes();
-  document.getElementById('si').value = card.name;
+// ═══════════════════════════════════════════════════
+// LIENS EXTERNES
+// ═══════════════════════════════════════════════════
+function updateExtLinks(){
+  const name = document.getElementById('fName').value||'';
+  const set  = document.getElementById('fSet').value||'';
+  const lang = document.getElementById('fLang').value;
 
-  // Preview
-  document.getElementById('prevBox').style.display='flex';
-  const img = document.getElementById('prevImg');
-  const emoji = document.getElementById('prevEmoji');
-  if(card.image){ img.src=card.image; img.style.display='block'; emoji.style.display='none'; }
-  else { img.style.display='none'; emoji.style.display='block'; emoji.textContent=card.lang==='fr'?'🃏':'🎴'; }
+  // Cardmarket — language=5 pour FR, 7 pour JP, 1 pour EN
+  const cmLang = lang==='fr'?'5':lang==='jp'?'7':'1';
+  const cmQ = set ? `${name} ${set}` : name;
+  document.getElementById('elCm').href =
+    `https://www.cardmarket.com/fr/Pokemon/Products/Singles?searchString=${encodeURIComponent(cmQ)}&language=${cmLang}`;
 
-  const langEmoji = card.lang==='fr'?'🇫🇷':card.lang==='jp'?'🇯🇵':'🇬🇧';
-  document.getElementById('prevName').textContent = `${langEmoji} ${card.name}`;
-  document.getElementById('prevSet').textContent = card.set || (card.src==='base-fr' ? 'Précise le set ci-dessous si nécessaire':'');
-  document.getElementById('prevMkt').textContent = card.marketPrice
-    ? `Cote TCG: €${card.marketPrice.toFixed(2)}`
-    : card.src==='base-fr'
-      ? '→ Vérifie la cote sur Cardmarket ou Pokécardex'
-      : 'Cote non disponible';
+  // Pokécardex
+  document.getElementById('elPcx').href =
+    `https://www.pokecardex.com/search/${lang==='jp'?'jp':'fr'}?search=${encodeURIComponent(name+' '+set)}`;
 
-  // Liens externes
-  document.getElementById('linkRow').style.display='flex';
-  document.getElementById('linkCm').href = buildCmUrl(card.nameEN||card.name, card.set||'');
-  document.getElementById('linkPcx').href = buildPcxUrl(card.name, card.set||'');
-
-  // Si carte FR de la base, ouvre la saisie du set
-  if(card.src==='base-fr'){
-    document.getElementById('mktInput').placeholder = 'Saisis après vérif CM/PCX';
-  }
-}
-
-// Cardmarket URL
-function buildCmUrl(name, set=''){
-  const enName = FR_EN[normalize(name)] || name;
-  const q = set ? `${enName} ${set}` : enName;
-  return `https://www.cardmarket.com/fr/Pokemon/Products/Singles?searchString=${encodeURIComponent(q)}&language=5`;
-}
-
-// Pokécardex URL
-function buildPcxUrl(name, set=''){
-  const q = set ? `${name} ${set}` : name;
-  return `https://www.pokecardex.com/search/fr?search=${encodeURIComponent(q)}`;
-}
-
-function updateLinks(){
-  const name = document.getElementById('mName')?.value||'';
-  const set = document.getElementById('mSet')?.value||'';
-  const enName = FR_EN[normalize(name)] || name;
-  document.getElementById('cmModalA').href = buildCmUrl(enName, set);
-  document.getElementById('pcxModalA').href = buildPcxUrl(name, set);
+  // eBay ventes terminées
+  document.getElementById('elEbay').href =
+    `https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(name+' '+set+(lang==='jp'?' japanese':''))}&LH_Complete=1&LH_Sold=1`;
 }
 
 // ═══════════════════════════════════════════════════
 // GRADER
 // ═══════════════════════════════════════════════════
-function setGrader(g, btn){
+function setGrader(g,btn){
   grader=g; selGrade=null;
   document.querySelectorAll('#graderToggle button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('gradeSection').style.display=g==='raw'?'none':'block';
   document.getElementById('rawSection').style.display=g==='raw'?'block':'none';
-  document.getElementById('gcSection').style.display=g==='raw'?'none':'block';
   if(g!=='raw') buildGrades(g);
 }
 function buildGrades(g){
-  const grades=g==='psa'?PSA_GRADES:PCA_GRADES;
-  document.getElementById('gradeSelector').innerHTML=grades.map(gr=>{
+  const grades = g==='psa'?PSA:g==='akat'?AKAT:PCA;
+  document.getElementById('gradeSelector').innerHTML = grades.map(gr=>{
     const n=parseFloat(gr);
     let c=n>=10?'g10':n>=9.5?'g95':n>=9?'g9':n>=8.5?'g85':n>=8?'g8':n>=7?'g7':'g6';
-    return`<button class="gbtn ${c}" onclick="pickGrade('${gr}',this)">${g.toUpperCase()} ${gr}</button>`;
+    return`<button class="gbtn ${c}" onclick="pickGrade('${gr}',this)">${g==='akat'?'AKT':g.toUpperCase()} ${gr}</button>`;
   }).join('');
 }
 function pickGrade(g,btn){
@@ -980,89 +569,84 @@ function pickGrade(g,btn){
 }
 
 // ═══════════════════════════════════════════════════
-// ADD / MANUAL
+// ADD CARD
 // ═══════════════════════════════════════════════════
 function addCard(){
-  if(!selCard){toast('Sélectionne une carte !','err');return}
-  const buy=parseFloat(document.getElementById('buyP').value);
+  const name = document.getElementById('fName').value.trim();
+  const buy  = parseFloat(document.getElementById('fBuy').value);
+  if(!name){toast('Saisis un nom de carte','err');return}
   if(!buy||buy<=0){toast('Prix d\'achat requis','err');return}
-  if(grader!=='raw'&&!selGrade){toast('Sélectionne un grade !','err');return}
-  const gc=grader!=='raw'?(parseFloat(document.getElementById('gradingCost').value)||0):0;
-  const mkt=parseFloat(document.getElementById('mktInput').value)||selCard.marketPrice||null;
+  if(grader!=='raw'&&!selGrade){toast('Sélectionne un grade','err');return}
+
+  const set  = document.getElementById('fSet').value.trim();
+  const num  = document.getElementById('fNum').value.trim();
+  const lang = document.getElementById('fLang').value;
+  const year = document.getElementById('fYear').value||'';
+  const gc   = parseFloat(document.getElementById('fGC').value)||0;
+  const mkt  = parseFloat(document.getElementById('fMkt').value)||null;
+  const qty  = parseInt(document.getElementById('fQty').value)||1;
+  const note = document.getElementById('fNote').value.trim();
+  const cond = grader==='raw'?document.getElementById('fCond').value:null;
+
   col.push({
-    id:Date.now()+Math.random(),
-    cardId:selCard._tcgioId||null,
-    name:selCard.name, nameEN:selCard.nameEN||selCard.name,
-    set:selCard.set||'', lang:selCard.lang||'fr',
-    image:selCard.image||'', src:selCard.src||'base-fr',
-    grader, grade:grader!=='raw'?selGrade:null,
-    condition:grader==='raw'?document.getElementById('rawCond').value:null,
-    qty:parseInt(document.getElementById('qty').value)||1,
-    buyPrice:buy, gradingCost:gc, marketPrice:mkt,
-    note:document.getElementById('note').value,
-    addedAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+    id: Date.now()+Math.random(),
+    name, set, num, lang, year,
+    grader, grade: grader!=='raw'?selGrade:null, condition: cond,
+    qty, buyPrice: buy, gradingCost: gc, marketPrice: mkt,
+    note, addedAt: new Date().toISOString()
   });
-  save();render();updateStats();resetForm();
-  toast(`${selCard.name} ajoutée !`,'ok');
+  save(); render(); updateStats(); resetForm();
+  toast(`${name} ajoutée !`,'ok');
 }
 
 function resetForm(){
-  selCard=null;selGrade=null;
-  ['si','buyP','gradingCost','mktInput','note'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('qty').value='1';
-  document.getElementById('prevBox').style.display='none';
-  document.getElementById('linkRow').style.display='none';
+  ['fName','fNum','fSet','fYear','fBuy','fGC','fMkt','fNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fQty').value='1';
+  document.getElementById('fLang').value='fr';
+  selGrade=null;
   setGrader('raw',document.querySelector('[data-g="raw"]'));
   document.querySelectorAll('#graderToggle button').forEach(b=>b.classList.remove('active'));
   document.querySelector('[data-g="raw"]').classList.add('active');
-}
-
-function openManual(){ updateLinks(); document.getElementById('manualOverlay').classList.add('open') }
-function closeManual(){ document.getElementById('manualOverlay').classList.remove('open') }
-function addManual(){
-  const name=document.getElementById('mName').value.trim();
-  const buy=parseFloat(document.getElementById('mBuy').value);
-  if(!name||!buy){toast('Nom et prix requis','err');return}
-  const g=document.getElementById('mGrader').value;
-  const enName=FR_EN[normalize(name)]||name;
-  col.push({
-    id:Date.now()+Math.random(),cardId:null,
-    name,nameEN:enName,set:document.getElementById('mSet').value,
-    lang:document.getElementById('mLang').value,
-    image:'',src:'manual',
-    grader:g,grade:g!=='raw'?(document.getElementById('mGrade').value||null):null,
-    condition:g==='raw'?'nm':null,
-    qty:parseInt(document.getElementById('mQty').value)||1,
-    buyPrice:buy,gradingCost:parseFloat(document.getElementById('mGC').value)||0,
-    marketPrice:parseFloat(document.getElementById('mMkt').value)||null,
-    note:'Saisie manuelle',addedAt:new Date().toISOString(),updatedAt:new Date().toISOString()
-  });
-  save();render();updateStats();closeManual();
-  toast('Carte ajoutée !','ok');
+  updateExtLinks();
 }
 
 // ═══════════════════════════════════════════════════
-// REFRESH (cartes EN uniquement)
+// EDIT COTE
 // ═══════════════════════════════════════════════════
-async function refreshAPIprices(){
-  const btn=document.getElementById('refreshBtn');
-  btn.innerHTML='<span class="spin"></span> Mise à jour…';btn.disabled=true;
-  let n=0;
-  for(let i=0;i<col.length;i++){
-    if(!col[i].cardId)continue;
-    try{
-      const r=await fetch(`${TCGIO}/cards/${col[i].cardId}`);
-      if(!r.ok)continue;
-      const d=await r.json();
-      const p=d.data?.tcgplayer?.prices;
-      const mkt=p?(p.holofoil?.market||p['1stEditionHolofoil']?.market||p.normal?.market||p.reverseHolofoil?.market||null):null;
-      if(mkt){col[i].marketPrice=mkt*USD_EUR;col[i].updatedAt=new Date().toISOString();n++}
-    }catch{}
-    await new Promise(r=>setTimeout(r,120));
-  }
-  save();render();updateStats();
-  btn.innerHTML='🔄 Actualiser cotes EN';btn.disabled=false;
-  toast(n>0?`${n} cote(s) EN mise(s) à jour`:'Cartes FR → vérifie sur Cardmarket/PCX','ok');
+function openEdit(id){
+  // Si id null, ouvre pour toutes les cartes sans cote
+  const cards = id ? col.filter(c=>String(c.id)===String(id)) : col.filter(c=>!c.marketPrice);
+  if(!cards.length){ toast('Toutes les cartes ont une cote !','ok'); return }
+  editId = cards[0].id;
+  const c = cards[0];
+  document.getElementById('editTitle').textContent = `MODIFIER — ${c.name}`;
+  document.getElementById('editBody').innerHTML = `
+    <div style="font-size:11px;color:var(--muted2);margin-bottom:10px">${c.set||''} · ${c.lang==='fr'?'🇫🇷':c.lang==='jp'?'🇯🇵':'🇬🇧'} · ${c.grader==='raw'?'Non gradée':(c.grader.toUpperCase()+' '+c.grade)}</div>
+    <div class="fg"><span class="slabel">Nouvelle cote marché (€)</span>
+      <input type="number" id="editMkt" value="${c.marketPrice||''}" placeholder="0.00" step="0.01" min="0">
+    </div>
+    <div class="fg"><span class="slabel">Note</span>
+      <input type="text" id="editNote" value="${c.note||''}" placeholder="Mise à jour cote…">
+    </div>
+    <div style="display:flex;gap:5px;margin-top:6px">
+      <a class="ext-link el-cm" href="${buildCmUrl(c.name,c.set,c.lang)}" target="_blank" rel="noopener" style="flex:1;padding:6px;font-size:10px">🛒 Cardmarket</a>
+      <a class="ext-link el-ebay" href="https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(c.name+' '+(c.set||'')+(c.lang==='jp'?' japanese':''))}&LH_Complete=1&LH_Sold=1" target="_blank" style="flex:1;padding:6px;font-size:10px">🔍 eBay vendu</a>
+    </div>`;
+  document.getElementById('editOverlay').classList.add('open');
+}
+function closeEdit(){ document.getElementById('editOverlay').classList.remove('open'); editId=null }
+function saveEdit(){
+  const mkt = parseFloat(document.getElementById('editMkt').value)||null;
+  const note = document.getElementById('editNote').value;
+  const i = col.findIndex(c=>String(c.id)===String(editId));
+  if(i>=0){ col[i].marketPrice=mkt; col[i].note=note; }
+  save(); render(); updateStats(); closeEdit();
+  toast('Cote mise à jour !','ok');
+}
+
+function buildCmUrl(name,set,lang){
+  const l = lang==='fr'?'5':lang==='jp'?'7':'1';
+  return `https://www.cardmarket.com/fr/Pokemon/Products/Singles?searchString=${encodeURIComponent((name+' '+set).trim())}&language=${l}`;
 }
 
 // ═══════════════════════════════════════════════════
@@ -1075,9 +659,11 @@ function filtered(){
     if(filter==='all')return true;
     if(filter==='psa')return c.grader==='psa';
     if(filter==='pca')return c.grader==='pca';
+    if(filter==='akat')return c.grader==='akat';
     if(filter==='raw')return c.grader==='raw';
     if(filter==='fr')return c.lang==='fr';
     if(filter==='en')return c.lang==='en';
+    if(filter==='jp')return c.lang==='jp';
     if(filter==='g10')return c.grade==='10';
     if(filter==='g9')return parseFloat(c.grade)>=9;
     if(filter==='profit')return c.marketPrice&&c.marketPrice*c.qty>tc(c);
@@ -1086,11 +672,13 @@ function filtered(){
   });
 }
 
-function gbadge(c){
-  if(c.grader==='psa')return`<span class="gbadge gbadge-psa">PSA</span>`;
-  if(c.grader==='pca')return`<span class="gbadge gbadge-pca">PCA</span>`;
-  return`<span class="gbadge gbadge-raw">RAW</span>`;
-}
+const GRADER_BADGE={
+  psa:'<span class="gbadge gbadge-psa">PSA</span>',
+  pca:'<span class="gbadge gbadge-pca">PCA</span>',
+  akat:'<span class="gbadge gbadge-akat">AKATSU</span>',
+  raw:'<span class="gbadge gbadge-raw">RAW</span>'
+};
+
 function gpill(g){
   if(!g)return'—';
   const n=parseFloat(g);
@@ -1117,21 +705,26 @@ function render(){
   tbody.innerHTML=rows.map(c=>{
     const t=tc(c);
     const roi=c.marketPrice?((c.marketPrice*c.qty-t)/t*100):null;
-    const roiStr=roi!==null?`<span class="roi-val ${roi>=0?'pos':'neg'}">${roi>=0?'+':''}${roi.toFixed(1)}%</span>`:'<span style="color:var(--muted)">—</span>';
-    const mktStr=c.marketPrice?`€${(c.marketPrice*c.qty).toFixed(2)}`:'<span style="color:var(--muted)">—</span>';
-    const imgEl=c.image?`<img class="cthumb" src="${c.image}" alt="">`:`<div class="cthumb">${lfe[c.lang]||'🃏'}</div>`;
-    const cmUrl=buildCmUrl(c.nameEN||c.name,c.set||'');
-    const pcxUrl=buildPcxUrl(c.name,c.set||'');
+    const roiStr=roi!==null
+      ?`<span class="roi-val ${roi>=0?'pos':'neg'}">${roi>=0?'+':''}${roi.toFixed(1)}%</span>`
+      :'<span style="color:var(--muted);font-size:10px">✏️ saisir</span>';
+    const mktStr=c.marketPrice
+      ?`€${(c.marketPrice*c.qty).toFixed(2)}`
+      :'<span style="color:var(--muted2)">—</span>';
+    const cmUrl=buildCmUrl(c.name,c.set||'',c.lang);
+    const pcxUrl=`https://www.pokecardex.com/search/${c.lang==='jp'?'jp':'fr'}?search=${encodeURIComponent(c.name+' '+(c.set||''))}`;
     return`<tr>
-      <td>${imgEl}</td>
       <td>
         <div class="cname">${lfe[c.lang]||'🃏'} ${c.name}</div>
-        <div class="cmeta">${c.set||''}${c.number&&c.number!=='?'?' · #'+c.number:''}</div>
-        ${c.grader==='raw'&&c.condition?`<div class="cmeta">${cond[c.condition]||''}</div>`:''}
+        ${c.num?`<div class="cmeta">#${c.num}</div>`:''}
         ${c.note?`<div class="cmeta" style="color:var(--yellow)">📝 ${c.note}</div>`:''}
       </td>
-      <td>${gbadge(c)}</td>
-      <td>${c.grader!=='raw'?gpill(c.grade):'—'}</td>
+      <td>
+        <div style="font-size:11px">${c.set||'<span style="color:var(--muted)">—</span>'}</div>
+        ${c.year?`<div class="cmeta">${c.year}</div>`:''}
+      </td>
+      <td>${GRADER_BADGE[c.grader]||GRADER_BADGE.raw}</td>
+      <td>${c.grader!=='raw'?gpill(c.grade):(c.condition?cond[c.condition]:'—')}</td>
       <td style="text-align:center">${c.qty}</td>
       <td>€${c.buyPrice.toFixed(2)}</td>
       <td>${c.gradingCost>0?`€${c.gradingCost.toFixed(2)}`:'<span style="color:var(--muted)">—</span>'}</td>
@@ -1139,9 +732,10 @@ function render(){
       <td>${mktStr}</td>
       <td>${roiStr}</td>
       <td><div class="act-cell">
-        <a class="btn-cm" href="${cmUrl}" target="_blank" rel="noopener">🛒</a>
-        <a class="btn-pcx" href="${pcxUrl}" target="_blank" rel="noopener">📋</a>
-        <button class="btn-del" onclick="del('${c.id}')">✕</button>
+        <a class="abtn abtn-cm" href="${cmUrl}" target="_blank" rel="noopener">🛒</a>
+        <a class="abtn abtn-pcx" href="${pcxUrl}" target="_blank" rel="noopener">📋</a>
+        <button class="abtn abtn-del" onclick="openEdit('${c.id}')" title="Modifier la cote">✏️</button>
+        <button class="abtn abtn-del" onclick="del('${c.id}')" title="Supprimer">✕</button>
       </div></td>
     </tr>`;
   }).join('');
@@ -1156,32 +750,37 @@ function updateStats(){
   const graded=col.filter(c=>c.grader!=='raw').length;
   const psa=col.filter(c=>c.grader==='psa').length;
   const pca=col.filter(c=>c.grader==='pca').length;
+  const akat=col.filter(c=>c.grader==='akat').length;
   document.getElementById('stCards').textContent=`${n} carte${n>1?'s':''}`;
   document.getElementById('stVal').textContent=n?`€${val.toFixed(0)}`:'—';
   document.getElementById('stInv').textContent=n?`€${invested.toFixed(0)}`:'—';
-  document.getElementById('stGC').textContent=gc>0?`dont grading: €${gc.toFixed(0)}`:'dont grading: —';
+  document.getElementById('stGC').textContent=gc>0?`grading: €${gc.toFixed(0)}`:'grading: —';
   document.getElementById('stPnl').textContent=n?`${pnl>=0?'+':''}€${pnl.toFixed(0)}`:'—';
   document.getElementById('stPnl').className='scard-val '+(pnl>=0?'pos':'neg');
   document.getElementById('stPct').textContent=n?`${pct>=0?'+':''}${pct.toFixed(1)}% ROI global`:'—';
   document.getElementById('stGr').textContent=graded||'—';
-  document.getElementById('stGrSub').textContent=`PSA: ${psa} · PCA: ${pca}`;
+  document.getElementById('stGrSub').textContent=`PSA:${psa} · PCA:${pca} · AKT:${akat}`;
   let best=null,bRoi=-Infinity;
   col.forEach(c=>{if(!c.marketPrice)return;const t=tc(c);const r=(c.marketPrice*c.qty-t)/t*100;if(r>bRoi){bRoi=r;best=c}});
   document.getElementById('stBest').textContent=best?best.name:'—';
-  document.getElementById('stBestR').textContent=best?`+${bRoi.toFixed(1)}%`:'Ajoute des cartes';
+  document.getElementById('stBestR').textContent=best?`+${bRoi.toFixed(1)}%`:'—';
 }
 
-function del(id){col=col.filter(c=>String(c.id)!==String(id));save();render();updateStats()}
+function del(id){
+  if(!confirm('Supprimer cette carte ?'))return;
+  col=col.filter(c=>String(c.id)!==String(id));
+  save();render();updateStats();
+}
 function setF(f,btn){filter=f;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
 function srt(f){if(sortF===f)sortD*=-1;else{sortF=f;sortD=-1}render()}
-function save(){localStorage.setItem('pokeCol6',JSON.stringify(col))}
+function save(){localStorage.setItem('pokeCol7',JSON.stringify(col))}
 
 function exportCSV(){
-  const h='Langue,Carte,Set,Grader,Grade,Qté,Prix achat,Coût grading,Coût total,Cote marché,Valeur,ROI%,Cardmarket,Pokécardex';
+  const h='Langue,Carte,Numéro,Set,Année,Grader,Grade,Qté,Achat,Grading,Coût total,Cote marché,Valeur,ROI%,Note';
   const rows=col.map(c=>{
     const t=tc(c);
     const roi=c.marketPrice?((c.marketPrice*c.qty-t)/t*100).toFixed(1):'';
-    return`"${c.lang}","${c.name}","${c.set||''}",${c.grader},${c.grade||c.condition||''},${c.qty},${c.buyPrice},${c.gradingCost||0},${t.toFixed(2)},${c.marketPrice||''},${(c.marketPrice?c.marketPrice*c.qty:t).toFixed(2)},${roi},"${buildCmUrl(c.nameEN||c.name,c.set||'')}","${buildPcxUrl(c.name,c.set||'')}"`;
+    return`"${c.lang}","${c.name}","${c.num||''}","${c.set||''}","${c.year||''}",${c.grader},${c.grade||c.condition||''},${c.qty},${c.buyPrice},${c.gradingCost||0},${t.toFixed(2)},${c.marketPrice||''},${c.marketPrice?(c.marketPrice*c.qty).toFixed(2):t.toFixed(2)},${roi},"${c.note||''}"`;
   });
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h,...rows].join('\n'));
@@ -1192,9 +791,9 @@ function toast(msg,type='ok'){
   const t=document.createElement('div');t.className=`toast toast-${type}`;t.textContent=msg;
   document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
 }
-document.getElementById('manualOverlay').addEventListener('click',function(e){if(e.target===this)closeManual()});
+document.getElementById('editOverlay').addEventListener('click',function(e){if(e.target===this)closeEdit()});
 
-render(); updateStats();
+updateExtLinks(); render(); updateStats();
 </script>
 </body>
 </html>
