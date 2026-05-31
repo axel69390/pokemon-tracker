@@ -156,24 +156,21 @@ td{padding:7px 9px;font-size:11px;vertical-align:middle}
 <div class="main">
   <div class="panel">
     <div class="panel-title">AJOUT RAPIDE</div>
-    <div class="panel-sub">Tape un nom pour chercher, ou remplis directement</div>
+    <div class="panel-sub">Tape un nom pour chercher et sélectionner</div>
 
-    <!-- RECHERCHE NOM -->
-    <div style="position:relative;margin-bottom:10px">
-      <div style="position:relative">
-        <input type="text" id="searchInput" placeholder="🔍 Recherche : Salamèche, Pikachu ex, Mew…"
-          oninput="searchName()" autocomplete="off"
-          style="padding-right:36px;background:var(--s3);border-color:var(--yellow);font-size:13px">
-        <button onclick="clearSearch()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);
-          background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">✕</button>
-      </div>
-      <div id="nameResults" style="display:none;background:var(--s2);border:1px solid var(--border2);
-        border-radius:8px;max-height:220px;overflow-y:auto;position:absolute;z-index:60;width:100%;top:100%;left:0;margin-top:3px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-      </div>
+    <!-- RECHERCHE NOM - inline pour éviter le clipping du panel -->
+    <div class="fg">
+      <span class="slabel">🔍 Recherche par nom</span>
+      <input type="text" id="searchInput" placeholder="Salamèche, Pikachu ex, Flareon, Mew…"
+        oninput="searchName()" autocomplete="off"
+        style="background:var(--s3);border-color:rgba(245,197,24,.5)">
+    </div>
+    <div id="nameResults" style="display:none;background:var(--s2);border:1px solid rgba(245,197,24,.3);
+      border-radius:8px;max-height:200px;overflow-y:auto;margin-top:-8px;margin-bottom:10px">
     </div>
 
-    <div class="fg"><span class="slabel">Nom *</span>
-      <input type="text" id="fName" placeholder="Pikachu ex, Mew V…" oninput="updateExtLinks()">
+    <div class="fg"><span class="slabel">Nom sélectionné *</span>
+      <input type="text" id="fName" placeholder="Se remplit après recherche, ou saisir direct" oninput="updateExtLinks()">
     </div>
     <div class="row2">
       <div class="fg"><span class="slabel">Numéro</span><input type="text" id="fNum" placeholder="022/187"></div>
@@ -301,7 +298,7 @@ const INIT_COLLECTION = [
   {id:13,name:'Opermine',num:'042/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'',addedAt:'2024-01-01'},
   {id:14,name:'Énergie Croissante',num:'086/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'Énergie spéciale',addedAt:'2024-01-01'},
   {id:15,name:'Effleche',num:'011/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'',addedAt:'2024-01-01'},
-  {id:16,name:'Encouragement d\'Écho',num:'084/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'Supporter',addedAt:'2024-01-01'},
+  {id:16,name:'Encouragement d\u2019Écho',num:'084/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'Supporter',addedAt:'2024-01-01'},
   // ── NON GRADÉES JTG FR ───────────────────────────
   {id:17,name:'Wailord',num:'049/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'',addedAt:'2024-01-01'},
   {id:18,name:'Statitik de N',num:'040/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'',addedAt:'2024-01-01'},
@@ -313,6 +310,183 @@ const INIT_COLLECTION = [
   {id:24,name:'Darumacho de N',num:'022/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'',addedAt:'2024-01-01'},
   {id:25,name:'Draby',num:'132/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,note:'',addedAt:'2024-01-01'},
 ];
+
+// ═══════════════════════════════════════════════════
+// BASE NOMS POKÉMON FR / EN / JP
+// ═══════════════════════════════════════════════════
+const POKEMON_NAMES = [
+  // GEN 1 FR
+  ['Bulbizarre','Bulbasaur','fr'],['Herbizarre','Ivysaur','fr'],['Florizarre','Venusaur','fr'],
+  ['Salamèche','Charmander','fr'],['Reptincel','Charmeleon','fr'],['Dracaufeu','Charizard','fr'],
+  ['Carapuce','Squirtle','fr'],['Carabaffe','Wartortle','fr'],['Tortank','Blastoise','fr'],
+  ['Pikachu','Pikachu','fr'],['Raichu','Raichu','fr'],['Ronflex','Snorlax','fr'],
+  ['Mewtwo','Mewtwo','fr'],['Mew','Mew','fr'],['Évoli','Eevee','fr'],
+  ['Aquali','Vaporeon','fr'],['Voltali','Jolteon','fr'],['Pyroli','Flareon','fr'],
+  ['Noctali','Umbreon','fr'],['Mentali','Espeon','fr'],['Givrali','Glaceon','fr'],
+  ['Phyllali','Leafeon','fr'],['Mucuscule','Sylveon','fr'],
+  ['Magicarpe','Magikarp','fr'],['Léviator','Gyarados','fr'],
+  ['Artikodin','Articuno','fr'],['Électhor','Zapdos','fr'],['Sulfura','Moltres','fr'],
+  ['Minidraco','Dratini','fr'],['Draco','Dragonair','fr'],['Dracolosse','Dragonite','fr'],
+  ['Métamorph','Ditto','fr'],['Lokhlass','Lapras','fr'],
+  ['Abra','Abra','fr'],['Kadabra','Kadabra','fr'],['Alakazam','Alakazam','fr'],
+  ['Machoc','Machop','fr'],['Mackogneur','Machamp','fr'],
+  ['Tentacruel','Tentacruel','fr'],['Gengar','Gengar','fr'],
+  ['Hypno','Hypno','fr'],['Électrode','Electrode','fr'],['Voltorbe','Voltorb','fr'],
+  ['Osselait','Cubone','fr'],['Ossatueur','Marowak','fr'],
+  ['Kicklee','Hitmonlee','fr'],['Tygnon','Hitmonchan','fr'],
+  ['Smogo','Koffing','fr'],['Rhinocorne','Rhyhorn','fr'],['Leveinard','Chansey','fr'],
+  ['Kangourex','Kangaskhan','fr'],['Porygon','Porygon','fr'],
+  ['Aérodactyl','Aerodactyl','fr'],['Miaouss','Meowth','fr'],['Persian','Persian','fr'],
+  ['Psykokwak','Psyduck','fr'],['Akwakwak','Golduck','fr'],
+  ['Goupix','Vulpix','fr'],['Feunard','Ninetales','fr'],
+  ['Rondoudou','Jigglypuff','fr'],['Grodoudou','Wigglytuff','fr'],
+  ['Nosferapti','Zubat','fr'],['Nosferali','Golbat','fr'],
+  ['Mystherbe','Oddish','fr'],['Rafflésia','Vileplume','fr'],
+  ['Flagadoss','Poliwag','fr'],['Tarpaud','Poliwrath','fr'],
+  ['Magneti','Magnemite','fr'],['Magneton','Magneton','fr'],
+  ['Doduo','Doduo','fr'],['Dodrio','Dodrio','fr'],
+  ['Excelangue','Lickitung','fr'],['Scyther','Scyther','fr'],
+  ['Élektek','Electabuzz','fr'],['Magmar','Magmar','fr'],['Pinsir','Pinsir','fr'],
+  ['Tauros','Tauros','fr'],['Lippoutou','Mr. Mime','fr'],
+  ['Stari','Staryu','fr'],['Staross','Starmie','fr'],
+  ['Nidoking','Nidoking','fr'],['Nidoqueen','Nidoqueen','fr'],
+  // GEN 2 FR
+  ['Germignon','Chikorita','fr'],['Héricendre','Cyndaquil','fr'],['Kaiminus','Totodile','fr'],
+  ['Méganium','Meganium','fr'],['Typhlosion','Typhlosion','fr'],['Aligatueur','Feraligatr','fr'],
+  ['Lugia','Lugia','fr'],['Ho-Oh','Ho-Oh','fr'],['Celebi','Celebi','fr'],
+  ['Raikou','Raikou','fr'],['Entei','Entei','fr'],['Suicune','Suicune','fr'],
+  ['Tyranocif','Tyranitar','fr'],['Larvibule','Larvitar','fr'],
+  ['Natu','Natu','fr'],['Xatu','Xatu','fr'],['Marill','Marill','fr'],
+  ['Azumarill','Azumarill','fr'],['Teddiursa','Teddiursa','fr'],['Ursaring','Ursaring','fr'],
+  ['Houndoom','Houndoom','fr'],['Donphan','Donphan','fr'],['Miltank','Miltank','fr'],
+  ['Blissey','Blissey','fr'],['Yanma','Yanma','fr'],
+  // GEN 3 FR
+  ['Poussifeu','Torchic','fr'],['Gobou','Mudkip','fr'],['Arcko','Treecko','fr'],
+  ['Brasegali','Blaziken','fr'],['Laggron','Swampert','fr'],['Jungko','Sceptile','fr'],
+  ['Gardevoir','Gardevoir','fr'],['Kirlia','Kirlia','fr'],['Ralts','Ralts','fr'],
+  ['Libégon','Flygon','fr'],['Trapinch','Trapinch','fr'],
+  ['Kyogre','Kyogre','fr'],['Groudon','Groudon','fr'],['Rayquaza','Rayquaza','fr'],
+  ['Latias','Latias','fr'],['Latios','Latios','fr'],
+  ['Regirock','Regirock','fr'],['Regice','Regice','fr'],['Registeel','Registeel','fr'],
+  ['Jirachi','Jirachi','fr'],['Deoxys','Deoxys','fr'],
+  ['Absol','Absol','fr'],['Metagross','Metagross','fr'],
+  ['Draby','Bagon','fr'],['Shelgon','Shelgon','fr'],['Draces','Salamence','fr'],
+  // GEN 4 FR
+  ['Lucario','Lucario','fr'],['Riolu','Riolu','fr'],
+  ['Togékiss','Togekiss','fr'],['Togapi','Togepi','fr'],['Togétic','Togetic','fr'],
+  ['Garchomp','Garchomp','fr'],['Gabite','Gabite','fr'],
+  ['Dialga','Dialga','fr'],['Palkia','Palkia','fr'],['Giratina','Giratina','fr'],
+  ['Arceus','Arceus','fr'],['Darkrai','Darkrai','fr'],
+  ['Roserade','Roserade','fr'],['Porygon-Z','Porygon-Z','fr'],['Gallade','Gallade','fr'],
+  ['Magnézone','Magnezone','fr'],['Électivire','Electivire','fr'],
+  // GEN 5 FR
+  ['Reshiram','Reshiram','fr'],['Zekrom','Zekrom','fr'],['Kyurem','Kyurem','fr'],
+  ['Zoroark','Zoroark','fr'],['Zorua','Zorua','fr'],
+  ['Victini','Victini','fr'],['Méloetta','Meloetta','fr'],['Génesect','Genesect','fr'],
+  ['Darumacho','Darmanitan','fr'],['Maganon','Heatmor','fr'],
+  // GEN 6 FR
+  ['Xerneas','Xerneas','fr'],['Yveltal','Yveltal','fr'],['Zygarde','Zygarde','fr'],
+  ['Diancie','Diancie','fr'],['Hoopa','Hoopa','fr'],['Volcanion','Volcanion','fr'],
+  ['Greninja','Greninja','fr'],['Amphinobi','Greninja','fr'],
+  ['Gardevoir Méga','Mega Gardevoir','fr'],['Dracaufeu Méga','Mega Charizard','fr'],
+  // GEN 7 FR
+  ['Solgaleo','Solgaleo','fr'],['Lunala','Lunala','fr'],['Nécrozma','Necrozma','fr'],
+  ['Marshadow','Marshadow','fr'],['Zeraora','Zeraora','fr'],
+  ['Incineroar','Incineroar','fr'],['Primarina','Primarina','fr'],['Décidueye','Decidueye','fr'],
+  // GEN 8 FR
+  ['Zacian','Zacian','fr'],['Zamazenta','Zamazenta','fr'],['Éthernatos','Eternatus','fr'],
+  ['Calyrex','Calyrex','fr'],['Zarude','Zarude','fr'],
+  ['Corvaillus','Corviknight','fr'],['Dracolosse','Dragonite','fr'],
+  ['Zacian ex de Nabil','Zacian ex Nabil','fr'],
+  // GEN 9 FR
+  ['Miraidon','Miraidon','fr'],['Koraidon','Koraidon','fr'],
+  ['Meowscarada','Meowscarada','fr'],['Skelédirge','Skeledirge','fr'],['Palmaval','Quaquaval','fr'],
+  ['Terapagos','Terapagos','fr'],
+  // SPÉCIAUX FR (cartes de ta collection)
+  ['Pikachu ex','Pikachu ex','fr'],['Mélofée ex','Clefairy ex','fr'],
+  ['Mélofée ex de Lilie','Clefairy ex Lillie','fr'],
+  ['Méga-Mélodœlfe ex','Mega Wigglytuff ex','fr'],
+  ['Ronflex','Snorlax','fr'],['Opermine','Flapple','fr'],['Effleche','Dartrix','fr'],
+  ['Démétéros','Kleavor','fr'],['Tritox','Houndstone','fr'],
+  ['Wailord','Wailord','fr'],['Statitik de N','Togedemaru','fr'],
+  ['Craparoi','Krabby','fr'],['Pandespiègle','Pancham','fr'],['Pandarbare','Pangoro','fr'],
+  ['Darumacho de N','Darmanitan','fr'],['Zekrom ex','Zekrom ex','fr'],
+  ['Encouragement d\u2019Echo','Echo Encouragement','fr'],
+  ['Énergie Croissante','Growing Energy','fr'],
+  // EN
+  ['Charizard','Charizard','en'],['Pikachu','Pikachu','en'],['Mewtwo','Mewtwo','en'],
+  ['Mew','Mew','en'],['Eevee','Eevee','en'],['Umbreon','Umbreon','en'],
+  ['Espeon','Espeon','en'],['Vaporeon','Vaporeon','en'],['Flareon','Flareon','en'],
+  ['Jolteon','Jolteon','en'],['Glaceon','Glaceon','en'],['Leafeon','Leafeon','en'],
+  ['Sylveon','Sylveon','en'],['Snorlax','Snorlax','en'],['Gyarados','Gyarados','en'],
+  ['Gardevoir','Gardevoir','en'],['Lucario','Lucario','en'],
+  ['Rayquaza','Rayquaza','en'],['Metagross','Metagross','en'],
+  ['Charizard ex','Charizard ex','en'],['Pikachu ex','Pikachu ex','en'],
+  ['Mew V','Mew V','en'],['Mew VMAX','Mew VMAX','en'],
+  ['Charizard VSTAR','Charizard VSTAR','en'],['Dragonite VSTAR','Dragonite VSTAR','en'],
+  ['Umbreon VMAX','Umbreon VMAX','en'],['Espeon VMAX','Espeon VMAX','en'],
+  ['Zacian V','Zacian V','en'],['Zamazenta V','Zamazenta V','en'],
+  ['Reshiram','Reshiram','en'],['Zekrom','Zekrom','en'],['Kyurem','Kyurem','en'],
+  ['Lugia V','Lugia V','en'],['Ho-Oh V','Ho-Oh V','en'],
+  ['Darkrai VSTAR','Darkrai VSTAR','en'],['Arceus VSTAR','Arceus VSTAR','en'],
+  ['Miraidon ex','Miraidon ex','en'],['Koraidon ex','Koraidon ex','en'],
+  ['Flareon ex','Flareon ex','en'],['Vaporeon ex','Vaporeon ex','en'],
+  ['Sylveon ex','Sylveon ex','en'],['Umbreon ex','Umbreon ex','en'],
+  ['Clefairy ex','Clefairy ex','en'],['Wigglytuff ex','Wigglytuff ex','en'],
+  ['Charmander','Charmander','en'],['Bulbasaur','Bulbasaur','en'],['Squirtle','Squirtle','en'],
+  // JP
+  ['Flareon ex JP','Flareon ex','jp'],['Mew V JP','Mew V','jp'],
+  ['Dracolosse VSTAR JP','Dragonite VSTAR','jp'],['Charizard VSTAR JP','Charizard VSTAR','jp'],
+  ['Umbreon VMAX JP','Umbreon VMAX','jp'],['Espeon VMAX JP','Espeon VMAX','jp'],
+  ['Pikachu ex JP','Pikachu ex','jp'],['Mewtwo V JP','Mewtwo V','jp'],
+  ['Arceus VSTAR JP','Arceus VSTAR','jp'],['Darkrai VSTAR JP','Darkrai VSTAR','jp'],
+  ['Miraidon ex JP','Miraidon ex','jp'],['Koraidon ex JP','Koraidon ex','jp'],
+  ['Sylveon ex JP','Sylveon ex','jp'],['Vaporeon ex JP','Vaporeon ex','jp'],
+];
+
+function searchName(){
+  const raw = document.getElementById('searchInput').value;
+  const q = norm(raw);
+  const el = document.getElementById('nameResults');
+  if(q.length < 2){ el.style.display='none'; el.innerHTML=''; return; }
+  const matches = POKEMON_NAMES.filter(function(p){
+    return norm(p[0]).includes(q) || norm(p[1]).includes(q);
+  }).slice(0,10);
+  if(!matches.length){
+    el.style.display='block';
+    el.innerHTML='<div style="padding:10px 12px;font-size:11px;color:var(--muted2)">Aucun résultat</div>';
+    return;
+  }
+  el.style.display='block';
+  el.innerHTML='';
+  matches.forEach(function(p){
+    var div = document.createElement('div');
+    div.style.cssText='padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;transition:background .12s';
+    var flag = p[2]==='fr'?'🇫🇷':p[2]==='jp'?'🇯🇵':'🇬🇧';
+    div.innerHTML = flag+' <strong>'+p[0]+'</strong>'+(p[1]!==p[0]?' <span style="color:var(--muted2);font-size:10px">'+p[1]+'</span>':'');
+    div.onmouseover = function(){ this.style.background='rgba(245,197,24,.1)'; };
+    div.onmouseout  = function(){ this.style.background=''; };
+    div.onclick     = function(){ pickName(p[0], p[2]); };
+    el.appendChild(div);
+  });
+}
+
+function pickName(name, lang){
+  document.getElementById('fName').value = name;
+  document.getElementById('fLang').value = lang;
+  document.getElementById('searchInput').value = '';
+  document.getElementById('nameResults').style.display = 'none';
+  document.getElementById('nameResults').innerHTML = '';
+  updateExtLinks();
+  document.getElementById('fNum').focus();
+  toast(name + ' sélectionné ✓', 'ok');
+}
+
+document.addEventListener('click', function(e){
+  if(!e.target.closest('#nameResults') && e.target.id !== 'searchInput'){
+    document.getElementById('nameResults').style.display='none';
+  }
+});
 
 // ═══════════════════════════════════════════════════
 // SETS
