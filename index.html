@@ -561,7 +561,8 @@ const SETS = [
 // ═══════════════════════════════════════════════════
 // CONFIG API RASPBERRY PI
 // ═══════════════════════════════════════════════════
-const API_URL = 'https://192.168.1.147:1880/endpoint/cards';
+// Détecte si on est sur le réseau local ou non
+const API_URL = 'http://192.168.1.147:1880/endpoint/cards';
 
 async function searchAPI(name) {
   try {
