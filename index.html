@@ -267,6 +267,7 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
 </div>
 
 <div class="main">
+  <!-- PANEL -->
   <div class="panel">
     <div class="panel-title">AJOUT RAPIDE</div>
     <div class="fg">
@@ -330,6 +331,7 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
     <button class="btn btn-primary" style="width:100%;margin-top:9px;padding:9px" onclick="addCard()">✅ Ajouter à la collection</button>
   </div>
 
+  <!-- COLLECTION -->
   <div class="content">
     <div class="content-hdr">
       <h2>MA COLLECTION</h2>
@@ -352,6 +354,7 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
       <button class="fbtn" onclick="setF('loss',this)">📉 Perte</button>
     </div>
 
+    <!-- TABLE VIEW -->
     <div id="tableView">
       <div class="table-wrap">
         <table>
@@ -375,10 +378,12 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
       </div>
     </div>
 
+    <!-- GRID VIEW -->
     <div class="card-grid" id="gridView"></div>
   </div>
 </div>
 
+<!-- EDIT MODAL -->
 <div class="overlay" id="editOverlay">
   <div class="modal">
     <h3 id="editTitle">MODIFIER</h3>
@@ -390,6 +395,7 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
   </div>
 </div>
 
+<!-- SCANNER -->
 <div class="scanner-overlay" id="scannerOverlay">
   <div class="scanner-box">
     <h3>📷 SCANNER UNE CARTE</h3>
@@ -411,7 +417,7 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
 function getBase() {
   var h = window.location.hostname;
   if(h === '192.168.1.147') return 'http://192.168.1.147:1880/endpoint';
-  return 'https://axelmaison.freeboxos.fr/pokemon/endpoint'; // Correction de l'endpoint externe Freebox
+  return 'https://axelmaison.freeboxos.fr/pokemon';
 }
 const BASE_URL = getBase();
 const API_URL  = BASE_URL + '/cards';
@@ -419,10 +425,34 @@ const SCAN_API = BASE_URL + '/scan';
 const COL_API  = BASE_URL + '/collection';
 
 // ═══════════════════════════════════════════
-// DONNÉES INIT (Fallback au cas où)
+// DONNÉES INIT
 // ═══════════════════════════════════════════
 const INIT_COLLECTION = [
-  {id:1,name:'Kicklee',num:'42/105',set:'Neo Destiny',lang:'fr',year:'2002',grader:'akat',grade:'9',condition:null,qty:1,buyPrice:45,gradingCost:0,marketPrice:null,image:'',note:'Wizards Destiny FR 2002',addedAt:'2024-01-01'}
+  {id:1,name:'Kicklee',num:'42/105',set:'Neo Destiny',lang:'fr',year:'2002',grader:'akat',grade:'9',condition:null,qty:1,buyPrice:45,gradingCost:0,marketPrice:null,image:'',note:'Wizards Destiny FR 2002',addedAt:'2024-01-01'},
+  {id:2,name:'Flareon ex',num:'022/187',set:'Terastal Fest ex [SV8A]',lang:'jp',year:'2024',grader:'pca',grade:'9.5',condition:null,qty:1,buyPrice:40,gradingCost:0,marketPrice:null,image:'',note:'PCA 78901468',addedAt:'2024-01-01'},
+  {id:3,name:'Mew V',num:'053/172',set:'VSTAR Universe [S12a]',lang:'jp',year:'2022',grader:'pca',grade:'9.5',condition:null,qty:1,buyPrice:35,gradingCost:0,marketPrice:null,image:'',note:'PCA 97889548',addedAt:'2024-01-01'},
+  {id:4,name:'Évoli',num:'173',set:'Promo SVP FR',lang:'fr',year:'2025',grader:'psa',grade:'9',condition:null,qty:1,buyPrice:55,gradingCost:0,marketPrice:null,image:'',note:'PSA 109914655',addedAt:'2024-01-01'},
+  {id:5,name:'Pikachu ex',num:'057/191',set:'EV08 Étincelles Déferlantes',lang:'fr',year:'2024',grader:'pca',grade:'9.5',condition:null,qty:1,buyPrice:45,gradingCost:0,marketPrice:null,image:'',note:'PCA 78374929',addedAt:'2024-01-01'},
+  {id:6,name:'Mélofée ex de Lilie',num:'056/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'pca',grade:'9.5',condition:null,qty:1,buyPrice:45,gradingCost:0,marketPrice:null,image:'',note:'PCA 54383710',addedAt:'2024-01-01'},
+  {id:7,name:'Dracolosse VSTAR',num:'050/071',set:'Pokémon GO [S10b]',lang:'jp',year:'2022',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'Dans pochette',addedAt:'2024-01-01'},
+  {id:8,name:'Zekrom ex',num:'158/086',set:'EV Batailles Légendaires',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:9,name:'Méga-Mélodœlfe ex',num:'037/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:10,name:'Démétéros',num:'047/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:11,name:'Tritox',num:'013/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:12,name:'Ronflex',num:'063/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:2,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'x2',addedAt:'2024-01-01'},
+  {id:13,name:'Opermine',num:'042/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:14,name:'Énergie Croissante',num:'086/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'Énergie spéciale',addedAt:'2024-01-01'},
+  {id:15,name:'Effleche',num:'011/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:16,name:'Encouragement d\u2019Écho',num:'084/088',set:'EV Pokémon Go Retour',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'Supporter',addedAt:'2024-01-01'},
+  {id:17,name:'Wailord',num:'049/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:18,name:'Statitik de N',num:'040/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:19,name:'Craparoi',num:'090/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:20,name:'Zacian ex de Nabil',num:'117/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:21,name:'Pandespiègle',num:'062/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:22,name:'Pandarbare',num:'099/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:23,name:'Maganon',num:'121/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:24,name:'Darumacho de N',num:'022/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
+  {id:25,name:'Draby',num:'132/159',set:'EV Aventures Ensemble',lang:'fr',year:'2025',grader:'raw',grade:null,condition:'nm',qty:1,buyPrice:0,gradingCost:0,marketPrice:null,image:'',note:'',addedAt:'2024-01-01'},
 ];
 
 const POKEMON_NAMES = [
@@ -514,47 +544,40 @@ const GB={
 // COLLECTION SERVER SYNC
 // ═══════════════════════════════════════════
 async function loadCollection() {
+  // Toujours charger depuis le serveur en priorité
   try {
     const r = await fetch(COL_API + '?t=' + Date.now(), {
-      signal: AbortSignal.timeout(10000), // Augmenté à 10s pour la 4G externe
+      signal: AbortSignal.timeout(5000),
       cache: 'no-store'
     });
     if(r.ok) {
       const data = await r.json();
-      if(Array.isArray(data)) {
+      if(Array.isArray(data) && data.length > 0) {
         col = data;
-        localStorage.setItem('pokeCol8', JSON.stringify(col));
+        localStorage.setItem('pokeCol8', JSON.stringify(col)); // sync local
         render(); updateStats(); return;
       }
     }
-  } catch(e) {
-    console.error("Erreur chargement serveur:", e);
-  }
-  
-  // Utilise la mémoire locale si le serveur de la maison est inaccessible
+  } catch(e) {}
+  // Fallback localStorage seulement si serveur inaccessible
   var local = JSON.parse(localStorage.getItem('pokeCol8')||'null');
   if(local && local.length > 0) {
     col = local;
-    toast('Mode hors-ligne : Données locales chargées', 'err');
   } else {
-    col = [];
+    col = INIT_COLLECTION.map(function(c){ return Object.assign({},c,{id:Date.now()+Math.random()+c.id}); });
+    saveCollection();
   }
   render(); updateStats();
 }
 
 async function saveCollection() {
-  localStorage.setItem('pokeCol8', JSON.stringify(col)); // Sauvegarde immédiate dans le navigateur
   try {
-    const response = await fetch(COL_API, {
+    await fetch(COL_API, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(col), signal:AbortSignal.timeout(10000)
+      body:JSON.stringify(col), signal:AbortSignal.timeout(5000)
     });
-    if(!response.ok) throw new Error('Erreur HTTP ' + response.status);
-    toast('Synchronisé avec la maison ! ✓', 'ok');
-  } catch(e) {
-    console.error("Erreur sauvegarde serveur:", e);
-    toast('Erreur synchro : Sauvegardé uniquement sur ce téléphone', 'err');
-  }
+  } catch(e) {}
+  localStorage.setItem('pokeCol8', JSON.stringify(col));
 }
 
 function save(){ saveCollection(); }
@@ -731,8 +754,9 @@ function addCard(){
   var buy=parseFloat(document.getElementById('fBuy').value)||0;
   if(!name){toast('Saisis un nom','err');return}
   if(grader!=='raw'&&!selGrade){toast('Sélectionne un grade','err');return}
+  // Récupère l'image du scan si disponible
   var cardImage = (scanResult && scanResult._image) ? scanResult._image : '';
-  if(scanResult) scanResult = null;
+  if(scanResult) scanResult = null; // Reset après utilisation
 
   col.push({
     id:Date.now()+Math.random(),
@@ -1061,7 +1085,7 @@ async function analyzeCard(base64,mediaType){
     document.getElementById('scanAddBtn').style.display='flex';
   }catch(e){
     document.getElementById('scanAnalyzing').style.display='none';
-    toast('Erreur analyse \u2014 v\u00e9rifie la connexion externe','err');
+    toast('Erreur analyse \u2014 v\u00e9rifie ta connexion Wi-Fi','err');
   }
 }
 
