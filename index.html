@@ -229,6 +229,35 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
   border-top-color:var(--yellow);border-radius:50%;animation:rot .6s linear infinite;vertical-align:middle;margin-right:5px}
 @keyframes rot{to{transform:rotate(360deg)}}
 
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--s1);position:sticky;top:54px;z-index:99}
+.tab{padding:10px 20px;font-size:11px;font-weight:600;color:var(--muted2);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;font-family:var(--fb);background:none;border-top:none;border-left:none;border-right:none;}
+.tab.active{color:var(--yellow);border-bottom-color:var(--yellow)}
+.tab:hover{color:var(--text)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* PACKS */
+.packs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:20px}
+.pack-tile{background:var(--s1);border:1px solid var(--border2);border-radius:10px;overflow:hidden;transition:all .2s}
+.pack-tile:hover{border-color:var(--yellow);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.pack-tile-header{padding:12px;background:linear-gradient(135deg,var(--s2),var(--s3))}
+.pack-tile-type{font-size:8px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+.pack-tile-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.pack-tile-set{font-size:10px;color:var(--muted2)}
+.pack-tile-body{padding:10px 12px}
+.pack-stat{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px}
+.pack-stat-label{color:var(--muted2)}
+.pack-stat-val{font-weight:600}
+.pack-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;margin-bottom:8px}
+.ps-sealed{background:rgba(62,207,122,.15);color:var(--green);border:1px solid rgba(62,207,122,.3)}
+.ps-opened{background:rgba(240,80,96,.12);color:var(--red);border:1px solid rgba(240,80,96,.25)}
+.pack-tile-actions{display:flex;gap:4px}
+
+/* PACK STATS BAR */
+.pack-stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--border);gap:1px;border-bottom:1px solid var(--border)}
+
 /* TOAST */
 .toast{position:fixed;bottom:14px;right:14px;z-index:999;padding:8px 14px;border-radius:7px;font-size:11px;font-weight:600;animation:rowIn .2s ease;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toast-ok{background:var(--green);color:#08080f}.toast-err{background:var(--red);color:#fff}
@@ -266,6 +295,12 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
   <div class="sc c5"><div class="sc-label">Meilleur ROI</div><div class="sc-val" id="stBest" style="font-size:12px;margin-top:2px">—</div><div class="sc-sub pos" id="stBestR">—</div></div>
 </div>
 
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('collection',this)">🃏 Collection</button>
+  <button class="tab" onclick="switchTab('packs',this)">📦 Packs & ETB</button>
+</div>
+
+<div id="tab-collection" class="tab-content active">
 <div class="main">
   <!-- PANEL -->
   <div class="panel">
@@ -380,6 +415,78 @@ td{padding:6px 8px;font-size:11px;vertical-align:middle}
 
     <!-- GRID VIEW -->
     <div class="card-grid" id="gridView"></div>
+  </div>
+</div>
+
+</div><!-- fin tab-collection -->
+
+<!-- TAB PACKS -->
+<div id="tab-packs" class="tab-content">
+
+  <!-- STATS PACKS -->
+  <div class="pack-stats">
+    <div class="sc c1"><div class="sc-label">Total investi</div><div class="sc-val" id="pkInv">—</div><div class="sc-sub" id="pkNb">0 produit</div></div>
+    <div class="sc c2"><div class="sc-label">Valeur estimée</div><div class="sc-val" id="pkVal">—</div><div class="sc-sub" id="pkPnl">—</div></div>
+    <div class="sc c4"><div class="sc-label">Scellés</div><div class="sc-val" id="pkSealed">—</div><div class="sc-sub">en stock</div></div>
+    <div class="sc c5"><div class="sc-label">Ouverts</div><div class="sc-val" id="pkOpened">—</div><div class="sc-sub">déjà ouverts</div></div>
+  </div>
+
+  <!-- FORM AJOUT PACK -->
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+    <div style="font-family:var(--fd);font-size:14px;letter-spacing:2px;color:var(--yellow);margin-bottom:12px">AJOUTER UN PRODUIT</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:8px">
+      <div><span class="slabel">Nom du produit *</span>
+        <input type="text" id="pkName" placeholder="ETB Évolutions Prismatiques, Display SV8…"></div>
+      <div><span class="slabel">Type</span>
+        <select id="pkType">
+          <option value="etb">ETB</option>
+          <option value="display">Display (36 boosters)</option>
+          <option value="booster">Booster seul</option>
+          <option value="collection">Coffret collection</option>
+          <option value="box">Booster Box</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div><span class="slabel">État</span>
+        <select id="pkStatus">
+          <option value="sealed">🔒 Scellé</option>
+          <option value="opened">📭 Ouvert</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+      <div><span class="slabel">Set / Extension</span>
+        <input type="text" id="pkSet" placeholder="Évolutions Prismatiques, SV8…"></div>
+      <div><span class="slabel">Prix achat (€)</span>
+        <input type="number" id="pkBuy" placeholder="0.00" step="0.01"></div>
+      <div><span class="slabel">Valeur actuelle (€)</span>
+        <input type="number" id="pkMkt" placeholder="0.00" step="0.01"></div>
+      <div><span class="slabel">Quantité</span>
+        <input type="number" id="pkQty" value="1" min="1"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 3fr;gap:8px;margin-bottom:10px">
+      <div><span class="slabel">Date achat</span>
+        <input type="date" id="pkDate"></div>
+      <div><span class="slabel">Langue</span>
+        <select id="pkLang">
+          <option value="fr">🇫🇷 FR</option>
+          <option value="en">🇬🇧 EN</option>
+          <option value="jp">🇯🇵 JP</option>
+        </select>
+      </div>
+      <div><span class="slabel">Note</span>
+        <input type="text" id="pkNote" placeholder="Cadeau, lot, promo…"></div>
+    </div>
+    <button class="btn btn-primary" style="padding:8px 20px" onclick="addPack()">✅ Ajouter le produit</button>
+  </div>
+
+  <!-- LISTE PACKS -->
+  <div class="packs-grid" id="packsGrid">
+    <div class="empty" style="grid-column:1/-1">
+      <div class="ico">📦</div>
+      <h3>AUCUN PRODUIT</h3>
+      <p>Ajoute tes ETB, displays et boosters !</p>
+    </div>
   </div>
 </div>
 
@@ -1124,13 +1231,152 @@ function toast(msg,type){
 }
 
 document.getElementById('editOverlay').addEventListener('click',function(e){if(e.target===this)closeEdit();});
+
+document.getElementById('packsGrid').addEventListener('click', function(e) {
+  var btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  var id = btn.getAttribute('data-id');
+  var action = btn.getAttribute('data-action');
+  if(action === 'toggle') togglePackStatus(id);
+  if(action === 'delete') deletePack(id);
+});
 document.getElementById('scannerOverlay').addEventListener('click',function(e){if(e.target===this)closeScanner();});
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// PACKS
+// ═══════════════════════════════════════════
+const PACKS_API = BASE_URL + '/packs';
+var packs = [];
+
+async function loadPacks() {
+  try {
+    var r = await fetch(PACKS_API + '?t=' + Date.now(), {signal: AbortSignal.timeout(5000), cache: 'no-store'});
+    if(r.ok) {
+      var data = await r.json();
+      if(Array.isArray(data) && data.length > 0) { packs = data; renderPacks(); updatePackStats(); return; }
+    }
+  } catch(e) {}
+  var local = JSON.parse(localStorage.getItem('pokePacks')||'null');
+  if(local && local.length > 0) { packs = local; savePacks(); }
+  renderPacks(); updatePackStats();
+}
+
+async function savePacks() {
+  try {
+    await fetch(PACKS_API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(packs), signal:AbortSignal.timeout(5000)});
+  } catch(e) {}
+  localStorage.setItem('pokePacks', JSON.stringify(packs));
+}
+
+function addPack() {
+  var name = document.getElementById('pkName').value.trim();
+  if(!name) { toast('Saisis un nom de produit','err'); return; }
+  var buy = parseFloat(document.getElementById('pkBuy').value)||0;
+  packs.push({
+    id: Date.now()+Math.random(),
+    name: name,
+    type: document.getElementById('pkType').value,
+    status: document.getElementById('pkStatus').value,
+    set: document.getElementById('pkSet').value.trim(),
+    buyPrice: buy,
+    marketPrice: parseFloat(document.getElementById('pkMkt').value)||null,
+    qty: parseInt(document.getElementById('pkQty').value)||1,
+    date: document.getElementById('pkDate').value,
+    lang: document.getElementById('pkLang').value,
+    note: document.getElementById('pkNote').value.trim(),
+    addedAt: new Date().toISOString()
+  });
+  savePacks(); renderPacks(); updatePackStats();
+  ['pkName','pkSet','pkBuy','pkMkt','pkNote'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('pkQty').value='1';
+  document.getElementById('pkDate').value='';
+  toast(name+' ajouté !','ok');
+}
+
+function deletePack(id) {
+  if(!confirm('Supprimer ?')) return;
+  packs = packs.filter(function(p){return String(p.id)!==String(id);});
+  savePacks(); renderPacks(); updatePackStats();
+}
+
+function togglePackStatus(id) {
+  var i = packs.findIndex(function(p){return String(p.id)===String(id);});
+  if(i>=0) packs[i].status = packs[i].status==='sealed'?'opened':'sealed';
+  savePacks(); renderPacks(); updatePackStats();
+  toast('Statut mis à jour !','ok');
+}
+
+const PACK_TYPES = {etb:'ETB',display:'Display',booster:'Booster',collection:'Coffret',box:'Booster Box',autre:'Autre'};
+const PACK_FLAGS = {fr:'🇫🇷',en:'🇬🇧',jp:'🇯🇵'};
+
+function renderPacks() {
+  var grid = document.getElementById('packsGrid');
+  if(!packs.length) {
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="ico">📦</div><h3>AUCUN PRODUIT</h3><p>Ajoute tes ETB, displays et boosters !</p></div>';
+    return;
+  }
+  grid.innerHTML = packs.map(function(p) {
+    var cost = p.buyPrice * p.qty;
+    var val = p.marketPrice ? p.marketPrice * p.qty : cost;
+    var roi = cost > 0 ? ((val-cost)/cost*100) : 0;
+    var roiStr = cost > 0 ? '<span class="roi-val '+(roi>=0?'pos':'neg')+'">'+(roi>=0?'+':'')+roi.toFixed(1)+'%</span>' : '—';
+    var statusClass = p.status==='sealed'?'ps-sealed':'ps-opened';
+    var statusLabel = p.status==='sealed'?'🔒 Scellé':'📭 Ouvert';
+    var dateStr = p.date ? new Date(p.date).toLocaleDateString('fr') : '—';
+    return '<div class="pack-tile">'+
+      '<div class="pack-tile-header">'+
+        '<div class="pack-tile-type">'+(PACK_FLAGS[p.lang]||'')+ ' '+(PACK_TYPES[p.type]||p.type)+(p.qty>1?' x'+p.qty:'')+'</div>'+
+        '<div class="pack-tile-name">'+p.name+'</div>'+
+        '<div class="pack-tile-set">'+(p.set||'')+'</div>'+
+      '</div>'+
+      '<div class="pack-tile-body">'+
+        '<span class="pack-status '+statusClass+'">'+statusLabel+'</span>'+
+        '<div class="pack-stat"><span class="pack-stat-label">Acheté</span><span class="pack-stat-val">€'+cost.toFixed(2)+'</span></div>'+
+        '<div class="pack-stat"><span class="pack-stat-label">Valeur actuelle</span><span class="pack-stat-val">'+(p.marketPrice?'€'+val.toFixed(2):'à saisir')+'</span></div>'+
+        '<div class="pack-stat"><span class="pack-stat-label">ROI</span><span class="pack-stat-val">'+roiStr+'</span></div>'+
+        '<div class="pack-stat"><span class="pack-stat-label">Date</span><span class="pack-stat-val" style="color:var(--muted2)">'+dateStr+'</span></div>'+
+        (p.note?'<div style="font-size:9px;color:var(--yellow);margin-top:4px">📝 '+p.note+'</div>':'')+
+        '<div class="pack-tile-actions" style="margin-top:8px" data-id="'+p.id+'">'+
+          '<button data-action="toggle" data-id="'+p.id+'" style="flex:1;padding:4px;border-radius:4px;font-size:9px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--s2);color:var(--text);font-family:var(--fb)">'+
+            (p.status==='sealed'?'📭 Marquer ouvert':'🔒 Marquer scellé')+'</button>'+
+          '<button data-action="delete" data-id="'+p.id+'" style="padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;border:1px solid transparent;background:rgba(240,80,96,.08);color:var(--red);font-family:var(--fb)">✕</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function updatePackStats() {
+  var invested = packs.reduce(function(s,p){return s+p.buyPrice*p.qty;},0);
+  var val = packs.reduce(function(s,p){return s+(p.marketPrice?p.marketPrice*p.qty:p.buyPrice*p.qty);},0);
+  var pnl = val - invested;
+  var sealed = packs.filter(function(p){return p.status==='sealed';}).reduce(function(s,p){return s+p.qty;},0);
+  var opened = packs.filter(function(p){return p.status==='opened';}).reduce(function(s,p){return s+p.qty;},0);
+  document.getElementById('pkInv').textContent = invested>0?'€'+invested.toFixed(0):'—';
+  document.getElementById('pkNb').textContent = packs.length+' produit'+(packs.length>1?'s':'');
+  document.getElementById('pkVal').textContent = val>0?'€'+val.toFixed(0):'—';
+  document.getElementById('pkPnl').textContent = invested>0?(pnl>=0?'+':'')+'€'+pnl.toFixed(0)+' ROI':'—';
+  document.getElementById('pkSealed').textContent = sealed||'0';
+  document.getElementById('pkOpened').textContent = opened||'0';
+}
 
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 updateExtLinks();
 loadCollection();
+loadPacks();
+document.getElementById('pkDate').valueAsDate = new Date();
 </script>
 </body>
 </html>
