@@ -1065,20 +1065,29 @@ function updateStats(){
   var n=col.length;
   var invested=col.reduce(function(s,c){return s+tc(c);},0);
   var val=col.reduce(function(s,c){return s+(c.marketPrice?c.marketPrice*c.qty:tc(c));},0);
-  var pnl=val-invested,pct=invested>0?(pnl/invested*100):0;
   var gc=col.reduce(function(s,c){return s+(c.gradingCost||0);},0);
   var graded=col.filter(function(c){return c.grader!=='raw';});
   var psa=col.filter(function(c){return c.grader==='psa';}).length;
   var pca=col.filter(function(c){return c.grader==='pca';}).length;
   var akat=col.filter(function(c){return c.grader==='akat';}).length;
   var totalCards=col.reduce(function(s,c){return s+c.qty;},0);
+
+  // Additionne les packs
+  var pkInvested=packs.reduce(function(s,p){return s+p.buyPrice*p.qty;},0);
+  var pkVal=packs.reduce(function(s,p){return s+(p.marketPrice?p.marketPrice*p.qty:p.buyPrice*p.qty);},0);
+
+  var totalInvested = invested + pkInvested;
+  var totalVal = val + pkVal;
+  var pnl = totalVal - totalInvested;
+  var pct = totalInvested > 0 ? (pnl / totalInvested * 100) : 0;
+
   document.getElementById('stCards').textContent=totalCards+' carte'+(totalCards>1?'s':'')+' ('+n+' réf.)';
-  document.getElementById('stVal').textContent=invested>0?'€'+val.toFixed(0):'—';
-  document.getElementById('stInv').textContent=invested>0?'€'+invested.toFixed(0):'—';
+  document.getElementById('stVal').textContent=totalInvested>0?'€'+totalVal.toFixed(0):'—';
+  document.getElementById('stInv').textContent=totalInvested>0?'€'+totalInvested.toFixed(0):'—';
   document.getElementById('stGC').textContent=gc>0?'grading: €'+gc.toFixed(0):'grading: —';
-  document.getElementById('stPnl').textContent=invested>0?(pnl>=0?'+':'')+' €'+pnl.toFixed(0):'—';
+  document.getElementById('stPnl').textContent=totalInvested>0?(pnl>=0?'+':'')+' €'+pnl.toFixed(0):'—';
   document.getElementById('stPnl').className='sc-val '+(pnl>=0?'pos':'neg');
-  document.getElementById('stPct').textContent=invested>0?(pct>=0?'+':'')+pct.toFixed(1)+'% ROI global':'—';
+  document.getElementById('stPct').textContent=totalInvested>0?(pct>=0?'+':'')+pct.toFixed(1)+'% ROI global':'—';
   document.getElementById('stGr').textContent=graded.length||'—';
   document.getElementById('stGrSub').textContent='PSA:'+psa+' · PCA:'+pca+' · AKT:'+akat;
   var best=null,bRoi=-Infinity;
@@ -1263,12 +1272,14 @@ async function loadPacks() {
     var r = await fetch(PACKS_API + '?t=' + Date.now(), {signal: AbortSignal.timeout(5000), cache: 'no-store'});
     if(r.ok) {
       var data = await r.json();
-      if(Array.isArray(data) && data.length > 0) { packs = data; renderPacks(); updatePackStats(); return; }
+      if(Array.isArray(data) && data.length > 0) {
+        packs = data; renderPacks(); updatePackStats(); updateStats(); return;
+      }
     }
   } catch(e) {}
   var local = JSON.parse(localStorage.getItem('pokePacks')||'null');
   if(local && local.length > 0) { packs = local; savePacks(); }
-  renderPacks(); updatePackStats();
+  renderPacks(); updatePackStats(); updateStats();
 }
 
 async function savePacks() {
