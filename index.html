@@ -943,12 +943,16 @@ function openEdit(id){
 
     // Saisie cote
     '<div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:6px">Saisir la cote</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'+
       '<div><span class="slabel">Cote marché (€)</span>'+
         '<input type="number" id="editMkt" value="'+(c.marketPrice||'')+'" placeholder="0.00" step="0.01" style="font-size:14px;font-weight:600;color:var(--yellow)"></div>'+
-      '<div><span class="slabel">Image URL</span>'+
-        '<input type="text" id="editImg" value="'+(c.image||'')+'" placeholder="https://..."></div>'+
+      '<div><span class="slabel">Prix achat (€)</span>'+
+        '<input type="number" id="editBuy" value="'+(c.buyPrice||'')+'" placeholder="0.00" step="0.01"></div>'+
+      '<div><span class="slabel">Frais grading (€)</span>'+
+        '<input type="number" id="editGC" value="'+(c.gradingCost||'')+'" placeholder="0.00" step="0.01"></div>'+
     '</div>'+
+    '<div class="fg"><span class="slabel">Image URL</span>'+
+      '<input type="text" id="editImg" value="'+(c.image||'')+'" placeholder="https://..."></div>'+
     '<div class="fg"><span class="slabel">Note</span>'+
       '<input type="text" id="editNote" value="'+(c.note||'')+'" placeholder="Source du prix, date..."></div>';
 
@@ -961,6 +965,8 @@ function saveEdit(){
   var i=col.findIndex(function(c){return String(c.id)===String(editId);});
   if(i>=0){
     col[i].marketPrice=parseFloat(document.getElementById('editMkt').value)||null;
+    col[i].buyPrice=parseFloat(document.getElementById('editBuy').value)||col[i].buyPrice||0;
+    col[i].gradingCost=parseFloat(document.getElementById('editGC').value)||0;
     col[i].note=document.getElementById('editNote').value;
     col[i].image=document.getElementById('editImg').value||col[i].image||'';
   }
