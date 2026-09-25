@@ -4,7 +4,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 let cache = null;
 export function loadSealed() {
   if (!cache) {
-    cache = fetch('assets/data/sealed.json?v=2.2.1')
+    cache = fetch('assets/data/sealed.json?v=2.2.2')
       .then((r) => { if (!r.ok) throw new Error('Catalogue indisponible'); return r.json(); })
       .then((d) => d.products.map((p) => ({ ...p, key: fold(`${p.n} ${p.c}`) })))
       .catch((e) => { cache = null; throw e; });

@@ -2,15 +2,15 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-} from './store.js?v=2.2.1';
+} from './store.js?v=2.2.2';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.2.1';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.2.1';
-import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.2.1';
-import { settings } from './settings.js?v=2.2.1';
-import { renderChart } from './chart.js?v=2.2.1';
+} from './ui.js?v=2.2.2';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.2.2';
+import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.2.2';
+import { settings } from './settings.js?v=2.2.2';
+import { renderChart } from './chart.js?v=2.2.2';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];

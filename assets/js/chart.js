@@ -1,5 +1,5 @@
 // Lightweight SVG line chart with touch/mouse scrubbing (no dependency).
-import { money, dateFr, esc } from './ui.js?v=2.2.1';
+import { money, dateFr, esc } from './ui.js?v=2.2.2';
 
 const DAY = 86400e3;
 const ts = (d) => new Date(d + 'T12:00:00').getTime();

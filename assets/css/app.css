@@ -496,3 +496,14 @@ a.row { color: inherit; }
 
 .price-run { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 12.5px; }
 .price-run .muted { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* Uniform tiles: fixed-ratio frames (images never stretch them) and bottom-aligned price blocks. */
+.grid { align-items: stretch; }
+.tile { height: 100%; }
+.tile .art { overflow: hidden; flex: none; }
+.tile .art > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tile .art.cat > img, .tile .item-art.cat > img { padding: 10px; object-fit: contain; }
+.tile .meta { flex: 1; }
+.tile .meta .foot { margin-top: auto; padding-top: 6px; }
+.tile .meta b { min-height: 1.3em; }
+.tile .meta small { min-height: 1.35em; }
