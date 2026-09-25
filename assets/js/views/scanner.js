@@ -1,7 +1,7 @@
-import { settings } from '../settings.js';
-import { server, searchCards, tcgLang, cardImage } from '../api.js';
-import { esc, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js';
-import { openCatalogueCard, openForm } from '../sheets.js';
+import { settings } from '../settings.js?v=2.2.1';
+import { server, searchCards, tcgLang, cardImage } from '../api.js?v=2.2.1';
+import { esc, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js?v=2.2.1';
+import { openCatalogueCard, openForm } from '../sheets.js?v=2.2.1';
 
 let last = null; // { photo, result, matches, error } — kept while navigating
 
