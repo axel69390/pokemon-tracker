@@ -30,7 +30,7 @@ export function render(main) {
     <section class="section">
       <div class="section-head"><h2>Mes données</h2></div>
       <div class="list">
-        <button class="row" data-export="json"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Sauvegarde complète</b><small>Fichier JSON (cartes, items, ventes, historique)</small></span>${icon('chev', 'sm faint')}</button>
+        <button class="row" data-export="json"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Sauvegarde complète</b><small>Fichier JSON (cartes, items, ventes, sets, historique)</small></span>${icon('chev', 'sm faint')}</button>
         <button class="row" data-export="csv"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Export tableur</b><small>Fichier CSV compatible Excel</small></span>${icon('chev', 'sm faint')}</button>
         <button class="row" data-import><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('upload')}</span></span><span class="main"><b>Restaurer une sauvegarde</b><small>Remplace la collection actuelle</small></span>${icon('chev', 'sm faint')}</button>
       </div>
@@ -92,7 +92,7 @@ function importBackup() {
       const data = JSON.parse(await file.text());
       if (!Array.isArray(data.cards) || !Array.isArray(data.items)) throw new Error('Ce fichier n’est pas une sauvegarde Pokédex Invest');
       if (!(await confirmSheet(`Remplacer la collection actuelle par cette sauvegarde (${data.cards.length} cartes, ${data.items.length} items) ?`, { ok: 'Restaurer', danger: true }))) return;
-      replaceAll({ cards: data.cards, items: data.items, sales: data.sales || [], history: data.history || [] });
+      replaceAll({ cards: data.cards, items: data.items, sales: data.sales || [], sets: data.sets || [], history: data.history || [] });
       toast('Sauvegarde restaurée');
     } catch (e) { toast(e.message, { error: true }); }
   };
