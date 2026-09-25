@@ -158,6 +158,40 @@ def describe(en_name, set_names, names):
     return [e for e in extras if e]
 
 
+EXTRA_WORDS = [(r'\b1st Edition\b', '1ère édition'), (r'\bUnlimited Edition\b', 'édition illimitée'),
+               (r'\bUnlimited\b', 'illimitée'), (r'\bShadowless\b', 'sans ombre')]
+
+
+def finalize(products, names):
+    """French clean-up of generated names, then de-duplication."""
+    out, seen = [], set()
+    for x in products:
+        for a, r in EXTRA_WORDS:
+            x['n'] = re.sub(a, r, x['n'])
+        m = re.match(r'^(.*?) \((.*)\)$', x['n'])
+        if m:
+            head, inner = m.groups()
+            parts = []
+            for part in inner.split(', '):
+                p = part.strip()
+                if p.lower() == x['s'].lower():
+                    continue
+                if p.lower().startswith(x['s'].lower() + ' '):
+                    p = p[len(x['s']) + 1:]
+                if p and p[0].islower():
+                    p = translate(p, names)
+                    p = {'classic': 'Classique'}.get(p.lower(), p)
+                    p = p[:1].upper() + p[1:]
+                if p and p not in parts:
+                    parts.append(p)
+            x['n'] = head + (' (' + ', '.join(parts) + ')' if parts else '')
+        k = fold(x['n'])
+        if k not in seen:
+            seen.add(k)
+            out.append(x)
+    return out
+
+
 def classify(name):
     n = name.lower()
     for pat, cat, label in RULES:
@@ -202,7 +236,8 @@ def main():
             if key in seen:
                 continue
             seen.add(key)
-            out.append({'id': p['productId'], 'n': name, 'c': cat, 's': fr_set, 'd': (g.get('publishedOn') or '')[:7]})
+            out.append({'id': p['productId'], 'g': g['groupId'], 'n': name, 'c': cat, 's': fr_set, 'd': (g.get('publishedOn') or '')[:7]})
+    out = finalize(out, names)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({'built': time.strftime('%Y-%m-%d'), 'products': out}, ensure_ascii=False, separators=(',', ':')))
     print(f'{len(out)} produits -> {OUT} ({OUT.stat().st_size // 1024} Ko)')

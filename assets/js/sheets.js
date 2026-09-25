@@ -1,6 +1,6 @@
 // Modal sheets: asset detail, add/edit form, sell, sales history, catalogue card & picker.
 import {
-  store, find, addAsset, updateAsset, removeAsset, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
+  store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
 } from './store.js';
 import {
@@ -73,8 +73,19 @@ export function openDetail(kind, id) {
         </div>
       </div>
 
+      ${marketBlock(a)}
+
       <div class="section">
-        <div class="section-head"><h2>Mettre à jour la valeur</h2></div>
+        <div class="section-head"><h2>Cote</h2>
+          ${kind === 'card' ? `<div class="seg small" style="width:170px">
+            <button data-mode="auto" class="${priceModeOf(kind, a) === 'auto' ? 'on' : ''}">Auto</button>
+            <button data-mode="manual" class="${priceModeOf(kind, a) === 'manual' ? 'on' : ''}">Manuelle</button></div>` : ''}</div>
+        ${a.pendingValue ? `<div class="banner" style="margin:0 0 10px">${icon('info')}<div class="main"><b>Nouvelle cote proposée : ${money(a.pendingValue.v)}</b><br>
+          <small class="muted">${esc(a.pendingValue.src)} · variation de ${pct(((a.pendingValue.v - a.value) / a.value) * 100)}, à valider</small></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm primary" data-pending="apply">Appliquer</button><button class="btn sm" data-pending="skip">Ignorer</button></div></div>` : ''}
+        <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'auto'
+          ? `Mise à jour automatique chaque nuit${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
+          : 'Cote saisie par vous : elle n’est jamais modifiée automatiquement.'}</p>
         <form class="quick-value" data-quick>
           <label class="field"><div class="suffix" data-suffix="€"><input name="value" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Valeur unitaire" value="${hasValue(a) ? +a.value : ''}"></div></label>
           <button class="btn primary" type="submit">${icon('check')}Enregistrer</button>
@@ -120,10 +131,24 @@ export function openDetail(kind, id) {
     if (kind === 'card' && !gcc && settings.isServer()) loadGcc(a);
   }
 
+  function marketBlock(a) {
+    const m = a.market;
+    if (!m) return '';
+    const gcc = m.src === 'GCC';
+    const box = (label, v, sub) => `<div class="m"><span><small>${label}</small><b class="num">${v != null ? money(v) : '—'}</b>${sub ? `<small style="font-weight:600">${sub}</small>` : ''}</span>${v != null ? `<button class="use" data-use="${v}">Utiliser</button>` : ''}</div>`;
+    return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span class="pill gold">${esc(m.src)}</span></div>
+      <div class="market">
+        ${box(gcc ? 'Dernière vente' : 'Moyenne du jour', m.d1, gcc ? dateFr(m.d1At) : '')}
+        ${box('Moyenne 30 jours', m.d30, gcc ? `${m.n30 || 0} vente${m.n30 > 1 ? 's' : ''}` : m.src.startsWith('TCG') && m.n30 < 30 ? `${m.n30} jour${m.n30 > 1 ? 's' : ''} relevé${m.n30 > 1 ? 's' : ''}` : '')}
+      </div>
+      <div class="note">${m.src === 'Cardmarket' ? 'Cardmarket, version exacte' + (a.variant ? ' (' + esc(a.variant) + ')' : '') + ', non gradée.' : gcc ? 'Ventes réalisées sur Graded Card Center, même note.' : 'Prix du marché américain converti en euros ; la moyenne 30 jours se construit chaque nuit.'} Relevé du ${dateFr(m.at)}.</div>
+    </div>`;
+  }
+
   function marketHtml(a) {
     if (!a.tcgdexId) {
-      return `<div class="section"><div class="section-head"><h2>Cote du marché</h2></div>
-        <div class="banner" style="margin-top:0">${icon('link')}<div class="main">Associez cette carte à sa fiche catalogue pour afficher la cote Cardmarket de sa version exacte.</div>
+      return `<div class="section"><div class="section-head"><h2>Version de la carte</h2></div>
+        <div class="banner" style="margin-top:0">${icon('link')}<div class="main">Associez cette carte à sa fiche catalogue pour suivre automatiquement le prix de sa version exacte.</div>
         <button class="btn sm primary" data-link>Associer</button></div></div>`;
     }
     let inner;
@@ -139,7 +164,7 @@ export function openDetail(kind, id) {
         ${v.tp ? `<div class="note">TCGplayer (US) : ${v.tp.market != null ? '$' + v.tp.market.toFixed(2) : '—'} (market price)</div>` : ''}
         <div class="note">Source : Cardmarket via TCGdex${cm.updated ? ' · mis à jour le ' + dateFr(cm.updated) : ''}. Prix d’une carte non gradée, tous états confondus.</div>`;
     }
-    return `<div class="section"><div class="section-head"><h2>Cote du marché</h2><button class="link" data-link>Changer de fiche ${icon('chev', 'sm')}</button></div>${inner}</div>`;
+    return `<div class="section"><div class="section-head"><h2>Version de la carte</h2><button class="link" data-link>Changer de fiche ${icon('chev', 'sm')}</button></div>${inner}</div>`;
   }
 
   function gccHtml(a) {
@@ -209,7 +234,7 @@ export function openDetail(kind, id) {
   }
 
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed]');
+    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed],[data-mode],[data-pending]');
     if (!t) return;
     const a = find(kind, id);
     if ('zoom' in t.dataset) lightbox(t.src.replace('/low.webp', '/high.webp'));
@@ -231,14 +256,20 @@ export function openDetail(kind, id) {
     if (t.dataset.gccScope) { gcc.scope = t.dataset.gccScope; draw(); }
     if (t.dataset.gccEd) { gcc.edition = t.dataset.gccEd; draw(); }
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
-    if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2) }); toast('Valeur mise à jour'); }
+    if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
+    if (t.dataset.mode) { updateAsset(kind, id, { priceMode: t.dataset.mode }); toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle'); }
+    if (t.dataset.pending) {
+      const pv = a.pendingValue;
+      if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
+      else updateAsset(kind, id, { pendingValue: null });
+    }
   });
   sheet.body.addEventListener('submit', (e) => {
     e.preventDefault();
     const v = e.target.value.value;
     if (v === '') return;
-    updateAsset(kind, id, { value: +(+v).toFixed(2) });
-    toast('Valeur mise à jour');
+    updateAsset(kind, id, { value: +(+v).toFixed(2), priceMode: 'manual', valueSource: null });
+    toast('Cote enregistrée (manuelle)');
   });
 
   draw();
@@ -434,7 +465,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         condition: a.grader && a.grader !== 'raw' ? null : a.condition, gradingCost: num(a.gradingCost) ?? 0,
         tcgdexId: a.tcgdexId || null, tcgLang: a.tcgLang || null, tcgdexVariant: a.tcgdexVariant || null,
       });
-      else Object.assign(data, { category: a.category || 'Autre', status: a.status || 'sealed', tcgplayerId: a.tcgplayerId || null });
+      else Object.assign(data, { category: a.category || 'Autre', status: a.status || 'sealed', tcgplayerId: a.tcgplayerId || null, tcgplayerGroup: a.tcgplayerGroup || null });
 
       if (existing) { updateAsset(kind, existing.id, data); toast('Modifications enregistrées'); sheet.close(); }
       else {

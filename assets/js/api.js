@@ -42,6 +42,7 @@ export const server = {
   uploadPhoto: (id, data) => call('photo', { method: 'POST', body: { id, data }, timeout: 45000 }),
   deletePhoto: (id) => call('photo-delete', { method: 'POST', body: { id } }).catch(() => {}),
   scan: (image) => call('scan', { method: 'POST', body: { image }, timeout: 60000 }),
+  refreshPrices: () => call('prices', { method: 'POST', body: {} }),
   gccSales: (q) => call('gcc', { params: { q }, timeout: 30000 }).then((r) => r.sales || []),
   photoUrl: (id) => serverUrl('img', { id }),
 };

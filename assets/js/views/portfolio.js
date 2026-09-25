@@ -1,11 +1,12 @@
-import { store, portfolio, monthPerformers, salesSummary, series, imageOf } from '../store.js';
+import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, pendingPrices } from '../store.js';
 import { settings } from '../settings.js';
-import { money, signed, pct, pill, icon, esc, trend } from '../ui.js';
+import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js';
 import { renderChart, filterPeriod, PERIODS } from '../chart.js';
 import { openDetail, openSales } from '../sheets.js';
 
 let period = 'max';
 let perfMode = 'eur';
+let refreshing = false;
 
 export function render(main) {
   const p = portfolio();
@@ -26,6 +27,7 @@ export function render(main) {
         <div class="chart-legend"><span>Valeur</span><span class="inv">Investi</span></div>
         <div class="periods">${PERIODS.map((x) => `<button data-period="${x.id}" class="${x.id === period ? 'on' : ''}">${x.label}</button>`).join('')}</div>
       </section>
+      ${settings.isServer() ? priceRunHtml() : ''}
       ${s.error && !s.local ? `<div class="banner">${icon('info')}<div class="main">Hors ligne — affichage des dernières données connues.<br><small class="muted">${esc(s.error)}</small></div></div>` : ''}
       ${empty && !settings.isServer() ? `<div class="banner">${icon('server')}<div class="main"><b>Votre collection est sur votre serveur ?</b><br><small class="muted">Collez votre lien de connexion dans les réglages.</small></div><a class="btn sm primary" href="#/settings">Connecter</a></div>` : ''}
       ${empty ? `<div class="section empty"><div class="ico">${icon('sparkle', 'lg')}</div><h3>Bienvenue dans Pokédex Invest</h3>
@@ -65,13 +67,22 @@ export function render(main) {
   drawChart(main);
 
   main.onclick = (e) => {
-    const t = e.target.closest('[data-period],[data-perf],[data-open],[data-sales],[data-go]');
+    const t = e.target.closest('[data-period],[data-perf],[data-open],[data-sales],[data-go],[data-refresh]');
     if (!t) return;
     if (t.dataset.period) { period = t.dataset.period; main.querySelectorAll('[data-period]').forEach((b) => b.classList.toggle('on', b === t)); drawChart(main); }
     if (t.dataset.perf) { perfMode = t.dataset.perf; main.querySelectorAll('[data-perf]').forEach((b) => b.classList.toggle('on', b === t)); main.querySelector('#perf').innerHTML = perfList(); }
     if (t.dataset.open) { const [kind, id] = t.dataset.open.split(':'); openDetail(kind, id); }
     if (t.dataset.sales) openSales(t.dataset.sales);
     if (t.dataset.go) location.hash = t.dataset.go;
+    if ('refresh' in t.dataset && !refreshing) {
+      refreshing = true;
+      render(main);
+      toast('Mise à jour des cotes lancée (environ 1 minute)');
+      refreshPrices()
+        .then((r) => toast(`Cotes à jour : ${r.updated} carte${r.updated > 1 ? 's' : ''}${r.pending ? `, ${r.pending} à valider` : ''}`))
+        .catch((err) => toast(err.message, { error: true }))
+        .finally(() => { refreshing = false; const m = document.querySelector('main.view'); if (m && location.hash.replace('#', '').replace('/', '') === '') render(m); });
+    }
   };
 }
 
@@ -119,4 +130,19 @@ function perfList() {
         ${pill(x.delta, perfMode === 'pct' ? pct(x.pct) : signed(x.delta))}</span>
     </button>`;
   }).join('')}</div>`;
+}
+
+function priceRunHtml() {
+  const run = store.get().priceRun;
+  const pend = pendingPrices();
+  const when = run ? `${dateFr(run.at.slice(0, 10), false)} à ${new Date(run.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : 'jamais';
+  return `<div class="price-run">
+      <span class="muted">${icon('refresh', 'sm')} Cotes mises à jour : <b style="color:var(--text)">${when}</b>${run ? ` · ${run.updated} carte${run.updated > 1 ? 's' : ''}` : ''}</span>
+      <button class="btn sm" data-refresh ${refreshing ? 'disabled' : ''}>${refreshing ? '<span class="spinner" style="width:14px;height:14px"></span>En cours…' : 'Mettre à jour'}</button>
+    </div>
+    ${pend.length ? `<div class="section" style="margin-top:14px"><div class="section-head"><h2>Cotes à valider</h2><span class="pill gold">${pend.length}</span></div>
+      <div class="list">${pend.slice(0, 8).map((c) => `<button class="row" data-open="card:${c.id}">
+        ${imageOf(c, { thumb: true }) ? `<img class="thumb" src="${esc(imageOf(c, { thumb: true }))}" alt="" loading="lazy">` : '<span class="thumb"></span>'}
+        <span class="main"><b>${esc(c.name)}</b><small>${money(c.value)} → ${money(c.pendingValue.v)} · ${esc(c.pendingValue.src)}</small></span>
+        <span class="end">${pill(c.pendingValue.v - c.value, pct(((c.pendingValue.v - c.value) / c.value) * 100))}</span></button>`).join('')}</div></div>` : ''}`;
 }

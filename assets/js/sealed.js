@@ -4,7 +4,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 let cache = null;
 export function loadSealed() {
   if (!cache) {
-    cache = fetch('assets/data/sealed.json?v=2.1.2')
+    cache = fetch('assets/data/sealed.json?v=2.2.0')
       .then((r) => { if (!r.ok) throw new Error('Catalogue indisponible'); return r.json(); })
       .then((d) => d.products.map((p) => ({ ...p, key: fold(`${p.n} ${p.c}`) })))
       .catch((e) => { cache = null; throw e; });
@@ -21,4 +21,4 @@ export async function searchSealed(query = '', category = '') {
   return list.filter((p) => (!category || p.c === category) && words.every((w) => p.key.includes(w)));
 }
 
-export const sealedPrefill = (p) => ({ name: p.n, category: p.c, set: p.s, image: sealedImage(p.id, 400), tcgplayerId: p.id });
+export const sealedPrefill = (p) => ({ name: p.n, category: p.c, set: p.s, image: sealedImage(p.id, 400), tcgplayerId: p.id, tcgplayerGroup: p.g || null });

@@ -83,6 +83,14 @@ function summary(list, unit) {
     <span class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}${t.pct != null ? ' · ' + pct(t.pct) : ''}</span></div>`;
 }
 
+// Unit market prices shown under each tile: day / 30-day average (or last sale for GCC).
+function marketLine(a) {
+  const m = a.market;
+  if (!m || (m.d1 == null && m.d30 == null)) return '';
+  const f = (v) => (v == null ? '—' : money(v));
+  return `<div class="mkt num"><span>${m.src === 'GCC' ? 'Dern.' : 'Jour'} ${f(m.d1)}</span><span>30 j ${f(m.d30)}</span></div>`;
+}
+
 function gainBadge(a) {
   const g = gainOf(a);
   if (!costOf(a)) return '';
@@ -110,7 +118,7 @@ export function cardTile(a) {
       ${qtyOf(a) > 1 ? `<span class="br"><span class="chip qty">×${qtyOf(a)}</span></span>` : ''}
     </div>
     <div class="meta"><b>${esc(a.name)}</b><small>${esc([a.set, a.num].filter(Boolean).join(' · ') || '—')}</small>
-      <div class="foot"><span class="val num">${money(worthOf(a))}</span>${gainBadge(a)}</div></div>
+      <div class="foot"><span class="val num">${money(worthOf(a))}</span>${gainBadge(a)}</div>${marketLine(a)}</div>
   </button>`;
 }
 
@@ -196,7 +204,7 @@ function itemTile(a) {
       ${a.status === 'opened' ? '<span class="br"><span class="chip">Ouvert</span></span>' : ''}
     </div>
     <div class="meta"><b>${esc(a.name)}</b><small>${esc(a.set || a.category)}</small>
-      <div class="foot"><span class="val num">${money(worthOf(a))}</span>${gainBadge(a)}</div></div>
+      <div class="foot"><span class="val num">${money(worthOf(a))}</span>${gainBadge(a)}</div>${marketLine(a)}</div>
   </button>`;
 }
 

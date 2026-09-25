@@ -256,6 +256,31 @@ export function deleteSale(id) {
   commit();
 }
 
+/* ---------- Automatic prices ---------- */
+// Same rule as the server: graded → GCC, recent French cards → Cardmarket trend, the rest stays manual.
+const MODERN = /^(me\d|me0|mep|30th|sv|swsh|sm\d|sm1|smp|xy|bw|svp)/i;
+export function priceModeOf(kind, a) {
+  if (kind !== 'card') return 'manual';
+  if (a.priceMode) return a.priceMode;
+  if (a.grader && a.grader !== 'raw') return 'auto';
+  return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && MODERN.test(a.tcgdexId) ? 'auto' : 'manual';
+}
+export const pendingPrices = () => state.cards.filter((c) => c.pendingValue);
+
+export async function refreshPrices() {
+  const before = state.priceRun && state.priceRun.at;
+  await server.refreshPrices();
+  // The server needs about a minute; poll until its run is recorded.
+  for (let i = 0; i < 24; i++) {
+    await new Promise((r) => setTimeout(r, 10000));
+    try {
+      const fresh = await server.load();
+      if (fresh.priceRun && fresh.priceRun.at !== before) { state = { ...EMPTY(), ...fresh }; writeCache(); emit(); return fresh.priceRun; }
+    } catch { /* retry */ }
+  }
+  throw new Error('La mise à jour prend plus de temps que prévu');
+}
+
 /* ---------- Tracked sets (master sets, collections) ---------- */
 export function setProgress(set) {
   const owned = new Map();

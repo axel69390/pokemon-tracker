@@ -488,3 +488,11 @@ a.row { color: inherit; }
 .serie-body { padding: 6px 12px 4px; animation: fade .2s ease; }
 .serie-body .group:last-child { margin-bottom: 10px; }
 @media (max-width: 380px) { .serie-logo { width: 60px; } .serie-logo img { max-width: 60px; } }
+
+.tile .meta .mkt { display: flex; justify-content: space-between; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 10.5px; color: var(--text-2); font-weight: 600; white-space: nowrap; }
+.tile .meta .mkt span { overflow: hidden; text-overflow: ellipsis; }
+.grid.dense .tile .meta .mkt { display: none; }
+.market .m small + small { color: var(--text-3); }
+
+.price-run { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 12.5px; }
+.price-run .muted { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
