@@ -24,11 +24,18 @@ export const settings = {
   isServer: () => current.mode === 'server' && !!current.server && !!current.key,
 };
 
-// One-tap setup link: …/#connect=<server>|<key>
+// Setup link: …/#connect=<server>|<key>  (also accepted when pasted in the app)
+export function parseConnect(text) {
+  const raw = String(text || '').trim();
+  const m = raw.match(/connect=([^&\s]+)/);
+  const payload = m ? decodeURIComponent(m[1]) : raw;
+  const [server, key] = payload.split('|').map((x) => (x || '').trim());
+  return /^https?:\/\//.test(server) && key ? { server: server.replace(/\/+$/, ''), key } : null;
+}
+
 (function readConnectLink() {
-  const m = location.hash.match(/connect=([^&]+)/);
-  if (!m) return;
-  const [server, key] = decodeURIComponent(m[1]).split('|');
-  if (server && key) settings.set({ mode: 'server', server, key });
-  history.replaceState(null, '', location.pathname + location.search);
+  if (!/connect=/.test(location.hash + location.search)) return;
+  const c = parseConnect(location.hash + location.search);
+  if (c) settings.set({ mode: 'server', ...c });
+  history.replaceState(null, '', location.pathname);
 })();

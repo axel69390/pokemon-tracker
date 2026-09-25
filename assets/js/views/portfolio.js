@@ -1,4 +1,5 @@
 import { store, portfolio, monthPerformers, salesSummary, series, imageOf } from '../store.js';
+import { settings } from '../settings.js';
 import { money, signed, pct, pill, icon, esc, trend } from '../ui.js';
 import { renderChart, filterPeriod, PERIODS } from '../chart.js';
 import { openDetail, openSales } from '../sheets.js';
@@ -26,6 +27,7 @@ export function render(main) {
         <div class="periods">${PERIODS.map((x) => `<button data-period="${x.id}" class="${x.id === period ? 'on' : ''}">${x.label}</button>`).join('')}</div>
       </section>
       ${s.error && !s.local ? `<div class="banner">${icon('info')}<div class="main">Hors ligne — affichage des dernières données connues.<br><small class="muted">${esc(s.error)}</small></div></div>` : ''}
+      ${empty && !settings.isServer() ? `<div class="banner">${icon('server')}<div class="main"><b>Votre collection est sur votre serveur ?</b><br><small class="muted">Collez votre lien de connexion dans les réglages.</small></div><a class="btn sm primary" href="#/settings">Connecter</a></div>` : ''}
       ${empty ? `<div class="section empty"><div class="ico">${icon('sparkle', 'lg')}</div><h3>Bienvenue dans Pokédex Invest</h3>
         <p>Ajoutez votre première carte ou votre premier produit scellé pour suivre la valeur de votre collection.</p>
         <div class="btn-row" style="max-width:360px;margin:0 auto"><a class="btn" href="#/scan">${icon('scan')}Scanner</a><a class="btn primary" href="#/collection/cards?add=1">${icon('plus')}Ajouter</a></div></div>` : ''}

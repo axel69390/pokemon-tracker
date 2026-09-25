@@ -1,9 +1,9 @@
-import { settings } from '../settings.js';
+import { settings, parseConnect } from '../settings.js';
 import { server } from '../api.js';
 import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js';
 import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js';
 
-export const VERSION = '2.1.0';
+export const VERSION = '2.1.1';
 
 export function render(main) {
   const s = settings.get();
@@ -19,6 +19,10 @@ export function render(main) {
         <button data-mode="local" class="${s.mode !== 'server' ? 'on' : ''}">${icon('phone', 'sm')} Cet appareil</button>
         <button data-mode="server" class="${s.mode === 'server' ? 'on' : ''}">${icon('server', 'sm')} Serveur personnel</button>
       </div>
+      <form class="panel form" data-link style="margin-bottom:12px">
+        <label class="field"><span>Lien de connexion</span><input name="link" autocomplete="off" placeholder="Collez ici le lien de connexion reçu"></label>
+        <button class="btn primary" type="submit">${icon('link')}Connecter</button>
+      </form>
       ${s.mode === 'server' ? `<form class="panel form" data-server>
         <label class="field"><span>Adresse du serveur</span><input name="server" type="url" inputmode="url" placeholder="https://mondomaine.fr/pokemon" value="${esc(s.server)}"></label>
         <label class="field"><span>Clé d’accès</span><input name="key" type="password" autocomplete="off" placeholder="Clé fournie par votre serveur" value="${esc(s.key)}"></label>
@@ -63,7 +67,11 @@ export function render(main) {
   main.onsubmit = async (e) => {
     e.preventDefault();
     const f = e.target;
-    settings.set({ mode: 'server', server: f.server.value.trim().replace(/\/+$/, ''), key: f.key.value.trim() });
+    if ('link' in f.dataset) {
+      const c = parseConnect(f.link.value);
+      if (!c) { toast('Lien de connexion invalide', { error: true }); return; }
+      settings.set({ mode: 'server', ...c });
+    } else settings.set({ mode: 'server', server: f.server.value.trim().replace(/\/+$/, ''), key: f.key.value.trim() });
     try { await server.ping(); toast('Serveur connecté'); }
     catch (err) { toast(err.status === 401 ? 'Clé d’accès refusée' : err.message, { error: true }); }
     render(main);
