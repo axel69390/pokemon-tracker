@@ -2,6 +2,7 @@ import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setPro
 import { settings } from '../settings.js';
 import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js';
 import { openDetail, openForm, openSetSheet } from '../sheets.js';
+import { getSets, setLogo } from '../api.js';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },
@@ -13,7 +14,7 @@ const SORTS = {
 };
 
 const filters = {
-  card: { q: '', sort: 'value', langs: [], grade: 'all', set: '' },
+  card: { q: '', sort: 'value', langs: [], grade: 'all', set: '', group: true },
   item: { q: '', sort: 'value', langs: [], status: 'all', set: '' },
 };
 
@@ -43,6 +44,7 @@ export function render(main, { tab = 'cards', query }) {
 
   const draw = () => { main.querySelector('#results').innerHTML = kind === 'card' ? cardsHtml(cols) : itemsHtml(cols); };
   draw();
+  if (kind === 'card') ensureSetMeta(() => { if (main.isConnected) draw(); });
 
   const q = main.querySelector('#q');
   q.addEventListener('input', () => { f.q = q.value; draw(); });
@@ -111,11 +113,47 @@ export function cardTile(a) {
   </button>`;
 }
 
+// Set metadata (release order, serie, logo) from the French catalogue, loaded once.
+let setMeta = null;
+let setMetaLoading = null;
+function ensureSetMeta(onReady) {
+  if (setMeta || setMetaLoading) return;
+  setMetaLoading = getSets('fr')
+    .then((sets) => { setMeta = new Map(sets.map((x) => [x.id, x])); onReady(); })
+    .catch(() => { setMeta = new Map(); });
+}
+const setIdOf = (c) => (c.tcgdexId && (!c.tcgLang || c.tcgLang === 'fr') ? c.tcgdexId.slice(0, c.tcgdexId.lastIndexOf('-')) : null);
+const numKey = (c) => parseInt(String(c.num || '').replace(/^\D+/, ''), 10) || 0;
+
 function cardsHtml(cols) {
   const all = store.get().cards;
   const list = applyFilters('card', all);
   if (!list.length) return emptyState('card');
-  return summary(list, 'carte') + `<div class="grid ${cols >= 4 ? 'dense' : ''}" style="--cols:${cols}">${list.map(cardTile).join('')}</div>`;
+  const grid = (arr) => `<div class="grid ${cols >= 4 ? 'dense' : ''}" style="--cols:${cols}">${arr.map(cardTile).join('')}</div>`;
+  if (!filters.card.group) return summary(list, 'carte') + grid(list);
+
+  // Group by extension, newest extension first, cards by number inside.
+  const groups = new Map();
+  list.forEach((c) => {
+    const sid = setIdOf(c);
+    const meta = sid && setMeta ? setMeta.get(sid) : null;
+    const key = meta ? 'id:' + sid : 'name:' + (c.set || 'Sans extension');
+    if (!groups.has(key)) groups.set(key, { meta, name: meta ? meta.name : c.set || 'Sans extension', cards: [] });
+    groups.get(key).cards.push(c);
+  });
+  const ordered = [...groups.values()].sort((a, b) =>
+    (b.meta ? b.meta.serieOrder * 1000 + b.meta.idx : -1) - (a.meta ? a.meta.serieOrder * 1000 + a.meta.idx : -1) || a.name.localeCompare(b.name, 'fr'));
+  return summary(list, 'carte') + ordered.map((g) => {
+    const t = totals(g.cards);
+    g.cards.sort((a, b) => numKey(a) - numKey(b) || a.name.localeCompare(b.name, 'fr'));
+    const logo = g.meta && g.meta.logo ? `<img src="${esc(setLogo(g.meta.logo))}" alt="" style="width:34px;height:34px;object-fit:contain">` : icon('layers');
+    return `<section class="group">
+      <div class="group-head"><span class="gi" ${g.meta && g.meta.logo ? 'style="background:none"' : ''}>${logo}</span>
+        <span class="gt"><b>${esc(g.name)}</b><small>${g.meta ? esc(g.meta.serieName) + ' · ' : ''}${t.count} carte${t.count > 1 ? 's' : ''}</small></span>
+        <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span></div>
+      ${grid(g.cards)}
+    </section>`;
+  }).join('');
 }
 
 function itemTile(a) {
@@ -160,6 +198,7 @@ function openFilters(kind, onApply) {
   const draft = { ...f, langs: [...f.langs] };
   const s = openSheet({ title: 'Trier et filtrer' });
   const draw = () => s.render(`<div class="form">
+    ${kind === 'card' ? `<div class="field"><span>Affichage</span><div class="chips"><button data-group="1" class="${draft.group ? 'on' : ''}">Par extension</button><button data-group="0" class="${!draft.group ? 'on' : ''}">Liste unique</button></div></div>` : ''}
     <div class="field"><span>Trier par</span><div class="chips">${Object.entries(SORTS).map(([k, v]) => `<button data-sort="${k}" class="${draft.sort === k ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>
     ${langs.length > 1 ? `<div class="field"><span>Langue</span><div class="chips">${langs.map((l) => `<button data-lang="${l}" class="${draft.langs.includes(l) ? 'on' : ''}">${LANGS[l]?.flag || ''} ${esc(LANGS[l]?.label || l)}</button>`).join('')}</div></div>` : ''}
     ${kind === 'card'
@@ -172,6 +211,7 @@ function openFilters(kind, onApply) {
   s.body.onclick = (e) => {
     const t = e.target.closest('button');
     if (!t) return;
+    if (t.dataset.group) draft.group = t.dataset.group === '1';
     if (t.dataset.sort) draft.sort = t.dataset.sort;
     if (t.dataset.lang) draft.langs = draft.langs.includes(t.dataset.lang) ? draft.langs.filter((x) => x !== t.dataset.lang) : [...draft.langs, t.dataset.lang];
     if (t.dataset.grade) draft.grade = t.dataset.grade;
