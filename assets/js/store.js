@@ -1,7 +1,7 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.3.0';
-import { server, ServerError } from './api.js?v=2.3.0';
-import { today, uid, toast, debounce } from './ui.js?v=2.3.0';
+import { settings } from './settings.js?v=2.3.1';
+import { server, ServerError } from './api.js?v=2.3.1';
+import { today, uid, toast, debounce } from './ui.js?v=2.3.1';
 
 const CACHE_KEY = 'pdx.cache';
 const LOCAL_KEY = 'pdx.local';
@@ -260,7 +260,7 @@ export function deleteSale(id) {
 // Same rule as the server: graded → GCC, recent French cards → Cardmarket trend, the rest stays manual.
 const MODERN = /^(me\d|me0|mep|30th|sv|swsh|sm\d|sm1|smp|xy|bw|svp)/i;
 export function priceModeOf(kind, a) {
-  if (kind !== 'card') return 'manual';
+  if (kind !== 'card') return a.priceMode || 'manual';
   if (a.priceMode) return a.priceMode;
   if (a.grader && a.grader !== 'raw') return 'auto';
   return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && MODERN.test(a.tcgdexId) ? 'auto' : 'manual';
