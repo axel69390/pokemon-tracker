@@ -7,6 +7,7 @@ import * as collection from './views/collection.js';
 import * as scanner from './views/scanner.js';
 import * as catalogue from './views/catalogue.js';
 import * as settingsView from './views/settings.js';
+import { VERSION } from './views/settings.js';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
@@ -91,3 +92,18 @@ load();
 
 // Refresh when the app comes back to the foreground (another device may have edited the collection).
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load(); });
+
+// Always run the latest published version: the service worker revalidates every file,
+// and a newer version.json triggers one reload (guarded against loops).
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+async function checkVersion() {
+  try {
+    const { version } = await (await fetch('version.json', { cache: 'no-store' })).json();
+    if (version && version !== VERSION && sessionStorage.getItem('pdx.reloadedFor') !== version) {
+      sessionStorage.setItem('pdx.reloadedFor', version);
+      location.reload();
+    }
+  } catch { /* offline */ }
+}
+checkVersion();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });

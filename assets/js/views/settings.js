@@ -3,7 +3,7 @@ import { server } from '../api.js';
 import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js';
 import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js';
 
-export const VERSION = '2.1.4';
+export const VERSION = '2.1.5';
 
 export function render(main) {
   const s = settings.get();
