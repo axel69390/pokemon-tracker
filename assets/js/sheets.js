@@ -2,15 +2,15 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-} from './store.js?v=2.2.2';
+} from './store.js?v=2.3.0';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.2.2';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.2.2';
-import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.2.2';
-import { settings } from './settings.js?v=2.2.2';
-import { renderChart } from './chart.js?v=2.2.2';
+} from './ui.js?v=2.3.0';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.3.0';
+import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.3.0';
+import { settings } from './settings.js?v=2.3.0';
+import { renderChart } from './chart.js?v=2.3.0';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -136,7 +136,7 @@ export function openDetail(kind, id) {
     if (!m) return '';
     const gcc = m.src === 'GCC';
     const box = (label, v, sub) => `<div class="m"><span><small>${label}</small><b class="num">${v != null ? money(v) : '—'}</b>${sub ? `<small style="font-weight:600">${sub}</small>` : ''}</span>${v != null ? `<button class="use" data-use="${v}">Utiliser</button>` : ''}</div>`;
-    return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span class="pill gold">${esc(m.src)}</span></div>
+    return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">${esc(m.src)}</span><button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button></span></div>
       <div class="market">
         ${box(gcc ? 'Dernière vente' : 'Moyenne du jour', m.d1, gcc ? dateFr(m.d1At) : '')}
         ${box('Moyenne 30 jours', m.d30, gcc ? `${m.n30 || 0} vente${m.n30 > 1 ? 's' : ''}` : m.src.startsWith('TCG') && m.n30 < 30 ? `${m.n30} jour${m.n30 > 1 ? 's' : ''} relevé${m.n30 > 1 ? 's' : ''}` : '')}
@@ -234,7 +234,7 @@ export function openDetail(kind, id) {
   }
 
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed],[data-mode],[data-pending]');
+    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed],[data-mode],[data-pending],[data-invest]');
     if (!t) return;
     const a = find(kind, id);
     if ('zoom' in t.dataset) lightbox(t.src.replace('/low.webp', '/high.webp'));
@@ -258,6 +258,7 @@ export function openDetail(kind, id) {
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
     if (t.dataset.mode) { updateAsset(kind, id, { priceMode: t.dataset.mode }); toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle'); }
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.3.0').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });

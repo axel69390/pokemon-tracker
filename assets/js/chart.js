@@ -1,5 +1,5 @@
 // Lightweight SVG line chart with touch/mouse scrubbing (no dependency).
-import { money, dateFr, esc } from './ui.js?v=2.2.2';
+import { money, dateFr, esc } from './ui.js?v=2.3.0';
 
 const DAY = 86400e3;
 const ts = (d) => new Date(d + 'T12:00:00').getTime();
@@ -11,6 +11,17 @@ export const PERIODS = [
   { id: '1a', label: '1A', days: 366 },
   { id: 'max', label: 'Max', days: Infinity },
 ];
+
+// Tiny inline trend line for lists.
+export function sparkline(values, { w = 92, h = 30, color = '#e9b949' } = {}) {
+  const v = values.filter((x) => x != null && isFinite(x));
+  if (v.length < 2) return `<svg class="spark" width="${w}" height="${h}"><line x1="0" y1="${h / 2}" x2="${w}" y2="${h / 2}" stroke="rgba(255,255,255,.12)" stroke-dasharray="3 4"/></svg>`;
+  const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+  const pts = v.map((x, i) => [(i / (v.length - 1)) * w, h - 3 - ((x - lo) / span) * (h - 6)]);
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}L${w},${h}L0,${h}Z" fill="${color}" opacity=".12"/><path d="${d}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="${color}"/></svg>`;
+}
 
 export function filterPeriod(points, periodId) {
   const p = PERIODS.find((x) => x.id === periodId) || PERIODS[PERIODS.length - 1];

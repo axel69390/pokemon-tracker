@@ -1,8 +1,8 @@
-import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, pendingPrices } from '../store.js?v=2.2.2';
-import { settings } from '../settings.js?v=2.2.2';
-import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.2.2';
-import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.2.2';
-import { openDetail, openSales } from '../sheets.js?v=2.2.2';
+import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, pendingPrices } from '../store.js?v=2.3.0';
+import { settings } from '../settings.js?v=2.3.0';
+import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.3.0';
+import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.3.0';
+import { openDetail, openSales } from '../sheets.js?v=2.3.0';
 
 let period = 'max';
 let perfMode = 'eur';

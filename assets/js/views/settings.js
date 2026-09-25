@@ -1,9 +1,9 @@
-import { settings, parseConnect } from '../settings.js?v=2.2.2';
-import { server } from '../api.js?v=2.2.2';
-import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.2.2';
-import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.2.2';
+import { settings, parseConnect } from '../settings.js?v=2.3.0';
+import { server } from '../api.js?v=2.3.0';
+import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.3.0';
+import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.3.0';
 
-export const VERSION = '2.2.2';
+export const VERSION = '2.3.0';
 
 export function render(main) {
   const s = settings.get();

@@ -1,19 +1,21 @@
 // Pokédex Invest — entry point & router.
-import { store, load } from './store.js?v=2.2.2';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.2.2';
-import { openForm } from './sheets.js?v=2.2.2';
-import * as portfolio from './views/portfolio.js?v=2.2.2';
-import * as collection from './views/collection.js?v=2.2.2';
-import * as scanner from './views/scanner.js?v=2.2.2';
-import * as catalogue from './views/catalogue.js?v=2.2.2';
-import * as settingsView from './views/settings.js?v=2.2.2';
-import { VERSION } from './views/settings.js?v=2.2.2';
+import { store, load } from './store.js?v=2.3.0';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.3.0';
+import { openForm } from './sheets.js?v=2.3.0';
+import * as portfolio from './views/portfolio.js?v=2.3.0';
+import * as collection from './views/collection.js?v=2.3.0';
+import * as scanner from './views/scanner.js?v=2.3.0';
+import * as catalogue from './views/catalogue.js?v=2.3.0';
+import * as settingsView from './views/settings.js?v=2.3.0';
+import * as invest from './views/invest.js?v=2.3.0';
+import { VERSION } from './views/settings.js?v=2.3.0';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
   collection: { view: collection, title: 'Collection', nav: 'collection', live: true },
   scan: { view: scanner, title: 'Scanner', nav: 'scan' },
   catalogue: { view: catalogue, title: 'Catalogue', nav: 'catalogue' },
+  invest: { view: invest, title: 'Invest', nav: 'invest', live: true },
   settings: { view: settingsView, title: 'Réglages', nav: 'settings' },
 };
 
@@ -22,7 +24,7 @@ const NAV = [
   { id: 'collection', href: '#/collection/cards', label: 'Collection', icon: 'cards' },
   { id: 'scan', href: '#/scan', label: 'Scanner', icon: 'scan', center: true },
   { id: 'home', href: '#/', label: 'Portefeuille', icon: 'wallet' },
-  { id: 'settings', href: '#/settings', label: 'Réglages', icon: 'settings' },
+  { id: 'invest', href: '#/invest', label: 'Invest', icon: 'up' },
 ];
 
 const app = document.getElementById('app');
@@ -44,6 +46,7 @@ function topbar(route, r) {
     actions = `<a class="icon-btn" href="#/scan" title="Scanner">${icon('scan')}</a>
       <button class="icon-btn gold" data-add="${r.tab === 'items' ? 'item' : 'card'}" title="Ajouter">${icon('plus')}</button>`;
   }
+  if (r.name !== 'settings') actions += `<a class="icon-btn" href="#/settings" title="Réglages">${icon('settings')}</a>`;
   const brand = r.name === '' ? `<div class="brand"><img src="icon.svg" alt=""><h1>${esc(route.title)}</h1></div>` : `<h1>${esc(route.title)}</h1>`;
   return `<header class="topbar">${brand}<div class="actions">${actions}</div></header>`;
 }
@@ -61,6 +64,7 @@ function route() {
   current = { r, def, main: app.querySelector('main') };
   def.view.render(current.main, r);
   window.scrollTo(0, 0);
+  refreshBadge();
   document.title = `${def.title} · Pokédex Invest`;
 }
 
@@ -85,6 +89,20 @@ app.addEventListener('click', (e) => {
   if (t.dataset.add) openForm(t.dataset.add);
   if ('export' in t.dataset) download(`pokedex-invest-${today()}.json`, JSON.stringify({ app: 'pokedex-invest', exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
 });
+
+// Badge on the Invest tab (and on the installed app icon) for unseen rises of 10 % or more.
+function refreshBadge() {
+  const n = invest.unseenRises().length;
+  const link = app.querySelector('.nav a[href="#/invest"]');
+  if (link) {
+    let b = link.querySelector('.nav-badge');
+    if (n && !b) { b = document.createElement('span'); b.className = 'nav-badge'; link.appendChild(b); }
+    if (b) { if (n) b.textContent = n > 9 ? '9+' : String(n); else b.remove(); }
+  }
+  try { if (n && navigator.setAppBadge) navigator.setAppBadge(n); else if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch { /* unsupported */ }
+}
+store.on(() => refreshBadge());
+window.addEventListener('pdx:badge', refreshBadge);
 
 window.addEventListener('hashchange', route);
 route();

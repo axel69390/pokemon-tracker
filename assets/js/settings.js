@@ -27,9 +27,9 @@ export const settings = {
 // Setup link: …/#connect=<server>|<key>  (also accepted when pasted in the app)
 export function parseConnect(text) {
   const raw = String(text || '').trim();
-  const m = raw.match(/connect=([^&\s]+)/);
+  const m = raw.match(/connect=([^&\s?#]+)/);
   const payload = m ? decodeURIComponent(m[1]) : raw;
-  const [server, key] = payload.split('|').map((x) => (x || '').trim());
+  const [server, key] = payload.split('|').map((x) => (x || '').trim().replace(/[?#].*$/, ''));
   return /^https?:\/\//.test(server) && key ? { server: server.replace(/\/+$/, ''), key } : null;
 }
 

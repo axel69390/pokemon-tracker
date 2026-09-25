@@ -1,7 +1,7 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.2.2';
-import { server, ServerError } from './api.js?v=2.2.2';
-import { today, uid, toast, debounce } from './ui.js?v=2.2.2';
+import { settings } from './settings.js?v=2.3.0';
+import { server, ServerError } from './api.js?v=2.3.0';
+import { today, uid, toast, debounce } from './ui.js?v=2.3.0';
 
 const CACHE_KEY = 'pdx.cache';
 const LOCAL_KEY = 'pdx.local';
@@ -279,6 +279,15 @@ export async function refreshPrices() {
     } catch { /* retry */ }
   }
   throw new Error('La mise à jour prend plus de temps que prévu');
+}
+
+/* ---------- Invest watchlist ---------- */
+export const watched = () => [...state.cards.map((a) => ['card', a]), ...state.items.map((a) => ['item', a])].filter(([, a]) => a.watch && a.watch.on);
+export function setWatch(kind, id, patch) {
+  const a = find(kind, id);
+  if (!a) return;
+  a.watch = { on: true, since: today(), target: null, ...(a.watch || {}), ...patch };
+  commit();
 }
 
 /* ---------- Tracked sets (master sets, collections) ---------- */
