@@ -1,0 +1,17 @@
+POKÉDEX INVEST — APPLICATION PC
+================================
+
+Option 1 — Créer l'application (recommandé)
+  Double-clique sur build_exe.bat.
+  Au bout de 1 à 2 minutes, un raccourci « Pokedex Invest » apparaît sur le bureau.
+
+Option 2 — Lancer sans créer d'application
+  Double-clique sur lancer.bat.
+
+Premier lancement
+  Va dans Réglages, colle ton lien de connexion dans « Lien de connexion »,
+  puis clique sur Connecter. C'est retenu pour les lancements suivants.
+
+Prérequis
+  Python 3.9 ou plus récent, installé avec « Add Python to PATH ».
+  Windows 10/11 (le moteur Edge WebView2 est déjà présent).
