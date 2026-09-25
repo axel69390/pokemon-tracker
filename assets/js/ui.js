@@ -33,11 +33,11 @@ export const LANGS = {
 };
 export const flag = (l) => `<span class="flag" title="${esc(LANGS[l]?.label || l || '')}">${LANGS[l]?.flag || '🏳️'}</span>`;
 
-export const GRADERS = { raw: 'Raw', psa: 'PSA', pca: 'PCA', cgc: 'CGC', bgs: 'BGS', akat: 'Akatsuki', 'collect aura': 'Collect Aura', sfg: 'SFG', ace: 'ACE', other: 'Autre' };
+export const GRADERS = { raw: 'Raw', psa: 'PSA', pca: 'PCA', cgc: 'CGC', bgs: 'BGS', ccc: 'CCC', pg: 'PG', akat: 'Akatsuki', 'collect aura': 'Collect Aura', sfg: 'SFG', ace: 'ACE', other: 'Autre' };
 export const gradeLabel = (c) => (!c.grader || c.grader === 'raw' ? '' : `${GRADERS[c.grader] || c.grader.toUpperCase()}${c.grade ? ' ' + c.grade : ''}`);
 export const CONDITIONS = { mint: 'Mint', nm: 'Near Mint', ex: 'Excellent', gd: 'Good', lp: 'Light Played', pl: 'Played', po: 'Poor' };
 
-export const CATEGORIES = ['Booster', 'Blister', 'Tripack', 'Display', 'ETB', 'Coffret', 'Bundle', 'Tin', 'Deck', 'Pokébox', 'Accessoire', 'Autre'];
+export const CATEGORIES = ['Display', 'ETB', 'Bundle', 'UPC', 'Coffret', 'Tripack', 'Blister', 'Booster', 'Pokébox', 'Valisette', 'Deck', 'Accessoire', 'Autre'];
 
 /* ---------- Icons (Lucide-style, inline) ---------- */
 const P = {
@@ -81,8 +81,8 @@ const P = {
 export const icon = (name, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[name] || ''}</svg>`;
 
 export const CATEGORY_ICON = {
-  Booster: 'layers', Blister: 'layers', Tripack: 'layers', Display: 'box', ETB: 'box', Coffret: 'box',
-  Bundle: 'box', Tin: 'box', Deck: 'cards', Pokébox: 'box', Accessoire: 'star', Autre: 'box',
+  Booster: 'layers', Blister: 'layers', Tripack: 'layers', Display: 'box', ETB: 'box', Coffret: 'box', UPC: 'star',
+  Bundle: 'box', Tin: 'box', Valisette: 'box', Deck: 'cards', Pokébox: 'box', Accessoire: 'star', Autre: 'box',
 };
 
 /* ---------- Toast ---------- */
@@ -201,3 +201,45 @@ export function download(filename, content, type = 'application/json') {
 
 export const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 export const uid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ---------- Type-ahead suggestions ---------- */
+// Shows a dropdown under `input` while typing. search(q) → items, render(item) → inner HTML, onPick(item).
+export function attachSuggest(input, { search, render, onPick, min = 2, max = 8 }) {
+  const host = input.closest('.field') || input.parentElement;
+  host.style.position = 'relative';
+  const box = document.createElement('div');
+  box.className = 'suggest hidden';
+  host.appendChild(box);
+  let seq = 0;
+  let items = [];
+  const hide = () => box.classList.add('hidden');
+  const run = debounce(async () => {
+    const q = input.value.trim();
+    const my = ++seq;
+    if (q.length < min) { hide(); return; }
+    box.innerHTML = '<div class="suggest-empty"><span class="spinner" style="width:16px;height:16px"></span></div>';
+    box.classList.remove('hidden');
+    try {
+      const res = await search(q);
+      if (my !== seq) return;
+      items = res.slice(0, max);
+      box.innerHTML = items.length
+        ? items.map((it, i) => `<button type="button" data-i="${i}">${render(it)}</button>`).join('')
+        : '<div class="suggest-empty">Aucune suggestion</div>';
+    } catch {
+      if (my === seq) box.innerHTML = '<div class="suggest-empty">Suggestions indisponibles</div>';
+    }
+  }, 250);
+  input.setAttribute('autocomplete', 'off');
+  input.addEventListener('input', run);
+  input.addEventListener('focus', () => { if (items.length && input.value.trim().length >= min) box.classList.remove('hidden'); });
+  input.addEventListener('blur', () => setTimeout(hide, 180));
+  // pointerdown fires before blur, so the pick is not lost when the keyboard closes.
+  box.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-i]');
+    if (!b) return;
+    e.preventDefault();
+    hide();
+    onPick(items[+b.dataset.i]);
+  });
+}

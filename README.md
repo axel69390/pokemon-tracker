@@ -9,6 +9,10 @@ Application web (PWA) pour suivre la valeur d'une collection Pokémon TCG : cart
 - **Fiche** : photo personnelle ou visuel officiel, gradation, prix d'achat, historique de valeur, **cote Cardmarket par version exacte** (1ère édition, sans ombre, illimitée…), liens vers les ventes réussies eBay, Cardmarket et Vinted.
 - **Scanner** : photo → identification automatique (IA) → choix de la version dans le catalogue → ajout.
 - **Catalogue** : toutes les extensions et cartes (FR / EN / JP) via TCGdex.
+- **Ventes GCC** : prix moyen, médiane et dernières ventes réelles sur Graded Card Center, filtrés par numéro, langue, gradation et édition (via le serveur personnel).
+- **Sets suivis** : progression carte par carte d’une extension ou d’un master set (possédées / manquantes).
+- **Catalogue scellé FR** : ~1 300 produits (Display, ETB, Bundle, UPC, Tripack, Pokébox, Valisette…) avec visuels, généré par `tools/build_sealed.py`.
+- **Saisie assistée** : suggestions pendant la frappe du nom (cartes FR via TCGdex, produits scellés FR).
 - **Ventes** : enregistrement des ventes (prix, frais, plateforme) et calcul du résultat.
 - **Données** : export JSON / CSV (Excel), restauration.
 

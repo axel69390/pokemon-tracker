@@ -1,13 +1,14 @@
 // Modal sheets: asset detail, add/edit form, sell, sales history, catalogue card & picker.
 import {
-  store, find, addAsset, updateAsset, removeAsset, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage,
+  store, find, addAsset, updateAsset, removeAsset, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
 } from './store.js';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
-  LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend,
+  LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
 } from './ui.js';
-import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage } from './api.js';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js';
+import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js';
 import { settings } from './settings.js';
 import { renderChart } from './chart.js';
 
@@ -21,6 +22,7 @@ const appLang = (l) => (l === 'ja' ? 'jp' : l);
 export function openDetail(kind, id) {
   let showOfficial = false;
   let market = null;             // { loading, error, variants, selected }
+  let gcc = null;                // { loading, error, sales, scope, edition }
   const sheet = openSheet({ title: kind === 'card' ? 'Carte' : 'Item', full: true, onClose: () => off() });
   const off = store.on(() => draw());
 
@@ -37,7 +39,7 @@ export function openDetail(kind, id) {
 
     sheet.render(`
       <div class="detail-hero">
-        <div class="art ${sq ? 'sq' : ''}">
+        <div class="art ${sq ? 'sq' : ''} ${sq && img && img === official ? 'cat' : ''}">
           ${img ? `<img src="${esc(img)}" alt="" data-zoom>` : `<span class="ph" style="position:absolute;inset:0;display:grid;place-items:center;color:var(--text-3)">${icon(sq ? CATEGORY_ICON[a.category] || 'box' : 'image', 'lg')}</span>`}
           ${photo && official ? `<button class="icon-btn swap" data-swap title="${showOfficial ? 'Voir ma photo' : 'Voir le visuel officiel'}" style="width:32px;height:32px">${icon('swap', 'sm')}</button>` : ''}
         </div>
@@ -83,6 +85,8 @@ export function openDetail(kind, id) {
         <div class="section-head"><h2>Évolution de la valeur</h2><span class="faint" style="font-size:12px">${a.priceLog.length} relevé${a.priceLog.length > 1 ? 's' : ''}</span></div>
         <div class="panel" style="padding:10px 12px"><div class="chart" id="asset-chart" style="height:150px"></div></div></div>` : ''}
 
+      ${kind === 'card' ? gccHtml(a) : ''}
+
       ${kind === 'card' ? marketHtml(a) : ''}
 
       <div class="section">
@@ -91,6 +95,7 @@ export function openDetail(kind, id) {
           <a class="link-card" href="${esc(links.ebaySold(a))}" target="_blank" rel="noopener"><span class="lg" style="background:#fff;color:#e53238">eB</span><span>Ventes eBay<small>Dernières ventes réussies</small></span></a>
           <a class="link-card" href="${esc(links.ebayLive(a))}" target="_blank" rel="noopener"><span class="lg" style="background:#fff;color:#0064d2">eB</span><span>Annonces eBay<small>En cours</small></span></a>
           <a class="link-card" href="${esc(links.cardmarket(a))}" target="_blank" rel="noopener"><span class="lg" style="background:#012169;color:#fff">CM</span><span>Cardmarket<small>Offres en Europe</small></span></a>
+          <a class="link-card" href="${esc(links.gcc(a))}" target="_blank" rel="noopener"><span class="lg" style="background:#111;color:#fff;border:1px solid #333">GCC</span><span>Graded Card Center<small>Ventes de cartes gradées</small></span></a>
           <a class="link-card" href="${esc(links.vinted(a))}" target="_blank" rel="noopener"><span class="lg" style="background:#09b1ba;color:#fff">V</span><span>Vinted<small>Annonces</small></span></a>
         </div>
       </div>
@@ -112,6 +117,7 @@ export function openDetail(kind, id) {
       ], { height: 150 });
     }
     if (kind === 'card' && a.tcgdexId && !market) loadMarket(a);
+    if (kind === 'card' && !gcc && settings.isServer()) loadGcc(a);
   }
 
   function marketHtml(a) {
@@ -136,6 +142,60 @@ export function openDetail(kind, id) {
     return `<div class="section"><div class="section-head"><h2>Cote du marché</h2><button class="link" data-link>Changer de fiche ${icon('chev', 'sm')}</button></div>${inner}</div>`;
   }
 
+  function gccHtml(a) {
+    if (!settings.isServer()) return '';
+    let inner;
+    if (!gcc || gcc.loading) inner = '<div class="loading"><div class="spinner"></div></div>';
+    else if (gcc.error) inner = `<div class="empty" style="padding:18px"><p style="margin:0">${esc(gcc.error)}</p></div>`;
+    else {
+      const base = gccMatches(a, gcc.sales);
+      const graded = a.grader && a.grader !== 'raw';
+      const editions = [...new Set(base.map((x) => x.edition).filter(Boolean))];
+      const list = base.filter((x) => (gcc.scope !== 'grade' || sameGrade(a, x)) && (gcc.edition === 'all' || x.edition === gcc.edition));
+      const st = gccStats(list);
+      const chips = `<div class="chips" style="margin-bottom:10px">
+          ${graded ? `<button data-gcc-scope="grade" class="${gcc.scope === 'grade' ? 'on' : ''}">${esc(gradeLabel(a))}</button><button data-gcc-scope="all" class="${gcc.scope === 'all' ? 'on' : ''}">Toutes notes</button>` : ''}
+          ${editions.length > 1 ? `<button data-gcc-ed="all" class="${gcc.edition === 'all' ? 'on' : ''}">Toutes éditions</button>${editions.map((e) => `<button data-gcc-ed="${esc(e)}" class="${gcc.edition === e ? 'on' : ''}">${esc(editionFr(e))}</button>`).join('')}` : ''}
+        </div>`;
+      if (!base.length) inner = `<div class="empty" style="padding:18px"><p style="margin:0">Aucune vente de cette carte sur GCC${a.num ? ' (n° ' + esc(a.num) + ')' : ''}.</p></div>`;
+      else if (!list.length) inner = chips + '<div class="empty" style="padding:18px"><p style="margin:0">Aucune vente pour cette sélection.</p></div>';
+      else {
+        inner = `${chips}
+          <div class="market">
+            <div class="m"><span><small>Prix moyen${st.recent ? ' · 12 mois' : ''}</small><b class="num">${money(st.avg)}</b></span><button class="use" data-use="${st.avg.toFixed(2)}">Utiliser</button></div>
+            <div class="m"><span><small>Médiane</small><b class="num">${money(st.median)}</b></span><button class="use" data-use="${st.median.toFixed(2)}">Utiliser</button></div>
+            <div class="m"><span><small>Ventes</small><b class="num">${st.count}</b></span></div>
+            <div class="m"><span><small>Fourchette</small><b class="num" style="font-size:13px">${money(st.min)} – ${money(st.max)}</b></span></div>
+          </div>
+          <div class="list" style="margin-top:10px">${list.slice(0, 8).map((x) => `<a class="row" href="https://gradedcardcenter.com/item/${esc(x.id)}" target="_blank" rel="noopener">
+            ${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="" loading="lazy">` : '<span class="thumb"></span>'}
+            <span class="main"><b>${esc(x.title)}</b><small>${esc([x.set, editionFr(x.edition), dateFr(x.soldAt)].filter(Boolean).join(' · '))}</small></span>
+            <span class="end"><b class="num">${money(x.price)}</b></span></a>`).join('')}</div>
+          <div class="note">Ventes réalisées sur Graded Card Center (${list.length} correspondance${list.length > 1 ? 's' : ''}, même numéro et même langue).</div>`;
+      }
+    }
+    return `<div class="section"><div class="section-head"><h2>Ventes GCC</h2><span class="pill gold">Cartes gradées</span></div>${inner}</div>`;
+  }
+
+  async function loadGcc(a) {
+    gcc = { loading: true };
+    try {
+      const num = a.num ? String(a.num).split('/').map((x) => x.replace(/^0+(?=\d)/, '')).join('/') : '';
+      const sales = await server.gccSales([a.name, kind === 'card' ? num : ''].filter(Boolean).join(' '));
+      const graded = a.grader && a.grader !== 'raw';
+      const first = /1(re|ère|st)?\s*[ée]d/i.test(a.variant || '');
+      const base = gccMatches(a, sales);
+      gcc = {
+        sales,
+        scope: graded && base.some((x) => sameGrade(a, x)) ? 'grade' : 'all',
+        edition: first && base.some((x) => x.edition === 'Edition 1') ? 'Edition 1' : 'all',
+      };
+    } catch (e) {
+      gcc = { error: e.message };
+    }
+    draw();
+  }
+
   async function loadMarket(a) {
     market = { loading: true };
     try {
@@ -149,7 +209,7 @@ export function openDetail(kind, id) {
   }
 
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant]');
+    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed]');
     if (!t) return;
     const a = find(kind, id);
     if ('zoom' in t.dataset) lightbox(t.src.replace('/low.webp', '/high.webp'));
@@ -168,6 +228,8 @@ export function openDetail(kind, id) {
         market = null; draw();
       } });
     }
+    if (t.dataset.gccScope) { gcc.scope = t.dataset.gccScope; draw(); }
+    if (t.dataset.gccEd) { gcc.edition = t.dataset.gccEd; draw(); }
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2) }); toast('Valeur mise à jour'); }
   });
@@ -180,6 +242,48 @@ export function openDetail(kind, id) {
   });
 
   draw();
+}
+
+/* ---------- GCC matching ---------- */
+const GCC_LANG = { fr: 'French', en: 'English', jp: 'Japanese', de: 'German', it: 'Italian', es: 'Spanish', kr: 'Korean', cn: 'Chinese' };
+const GCC_GRADER = { 'collect aura': 'ca', akat: 'akatsuki' };
+const normRef = (r) => String(r || '').replace(/^#/, '').split('/').map((x) => x.trim().replace(/^0+(?=\d)/, '').toLowerCase()).join('/');
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const editionFr = (e) => (e === 'Edition 1' ? '1ère édition' : e === 'Unlimited' ? 'Illimitée' : e || '');
+
+function gccMatches(a, sales) {
+  const ref = a.num ? normRef(a.num) : '';
+  const refHasTotal = ref.includes('/');
+  const lang = GCC_LANG[a.lang];
+  const name = fold(a.name).split(/\s+/)[0];
+  const setWords = fold(a.set).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !['pokemon', 'edition', 'promo', 'promos'].includes(w));
+  return sales.filter((x) => {
+    if (lang && x.lang && x.lang !== lang) return false;
+    if (ref) {
+      const r = normRef(x.ref);
+      if (refHasTotal ? r !== ref : r.split('/')[0] !== ref) return false;
+      // Without the set total, a bare number is ambiguous: require a shared word with the set name.
+      if (!refHasTotal && setWords.length && !setWords.some((w) => fold(x.set).includes(w))) return false;
+    } else if (!fold(x.title).includes(name)) return false;
+    return true;
+  }).sort((p, q) => String(q.soldAt).localeCompare(String(p.soldAt)));
+}
+function sameGrade(a, x) {
+  const g = GCC_GRADER[a.grader] || a.grader;
+  return fold(x.grader) === fold(g) && parseFloat(x.grade) === parseFloat(a.grade);
+}
+function gccStats(list) {
+  const yearAgo = new Date(Date.now() - 365 * 864e5).toISOString();
+  const recent = list.filter((x) => x.soldAt >= yearAgo);
+  const use = recent.length ? recent : list;
+  const prices = use.map((x) => +x.price).filter(isFinite).sort((p, q) => p - q);
+  const mid = Math.floor(prices.length / 2);
+  return {
+    recent: recent.length > 0, count: prices.length,
+    avg: prices.reduce((s, v) => s + v, 0) / prices.length,
+    median: prices.length % 2 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2,
+    min: prices[0], max: prices[prices.length - 1],
+  };
 }
 
 /* ======================================================================
@@ -215,11 +319,14 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
 
       ${isCard ? (a.tcgdexId
         ? `<div class="linked">${a.image ? `<img src="${esc(a.image.replace('/high.webp', '/low.webp'))}" alt="">` : ''}<div class="main"><b>Fiche catalogue associée</b><br><small class="muted">${esc(a.tcgdexId)}</small></div><button type="button" class="btn sm" data-catalogue>Changer</button></div>`
-        : `<button type="button" class="btn block" data-catalogue>${icon('search')}Remplir depuis le catalogue</button>`) : ''}
+        : `<button type="button" class="btn block" data-catalogue>${icon('search')}Remplir depuis le catalogue</button>`)
+        : (a.tcgplayerId
+          ? `<div class="linked"><img src="${esc(sealedImage(a.tcgplayerId, 200))}" alt="" style="background:#fff;object-fit:contain;height:32px"><div class="main"><b>Produit du catalogue</b><br><small class="muted">${esc(a.set || '')}</small></div><button type="button" class="btn sm" data-sealed>Changer</button></div>`
+          : `<button type="button" class="btn block" data-sealed>${icon('search')}Choisir dans le catalogue</button>`)}
 
       <div class="form-section">${isCard ? 'La carte' : 'Le produit'}</div>
       <div class="form-grid">
-        <label class="field span"><span>Nom *</span><input name="name" required value="${val(a.name)}" placeholder="${isCard ? 'Dracaufeu' : 'Display Évolutions Prismatiques'}"></label>
+        <label class="field span"><span>Nom *</span><input name="name" required value="${val(a.name)}" placeholder="${isCard ? 'Tapez un nom : Dracaufeu…' : 'Tapez un nom : Display 151…'}"></label>
         ${isCard ? '' : `<div class="field span"><span>Catégorie</span><div class="chips">${CATEGORIES.map((c) => `<button type="button" data-cat="${c}" class="${a.category === c ? 'on' : ''}">${c}</button>`).join('')}</div></div>`}
         <label class="field ${isCard ? '' : 'span'}"><span>Extension</span><input name="set" value="${val(a.set)}" placeholder="Set de Base"></label>
         ${isCard ? `<label class="field"><span>Numéro</span><input name="num" value="${val(a.num)}" placeholder="4/102"></label>` : ''}
@@ -250,6 +357,24 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
 
       <div class="sticky-actions"><button class="btn primary block" type="submit">${icon('check')}${existing ? 'Enregistrer' : 'Ajouter à ma collection'}</button></div>
     </form>`);
+    const nameInput = sheet.body.querySelector('input[name=name]');
+    if (isCard) {
+      attachSuggest(nameInput, {
+        search: (q) => searchCards(q, { lang: 'fr' }),
+        render: (c) => `${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : '<img alt="">'}<span class="main"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.localId)}${c.setTotal ? '/' + c.setTotal : ''}</small></span>`,
+        onPick: async (c) => {
+          readForm();
+          try { Object.assign(a, await prefillFromCatalogue('fr', c.id)); } catch { toast('Carte indisponible', { error: true }); }
+          draw();
+        },
+      });
+    } else {
+      attachSuggest(nameInput, {
+        search: (q) => searchSealed(q),
+        render: (p) => `<img class="sq" src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"><span class="main"><b>${esc(p.n)}</b><small>${esc(p.c)} · ${esc(p.s)}</small></span>`,
+        onPick: (p) => { readForm(); Object.assign(a, sealedPrefill(p)); draw(); },
+      });
+    }
   }
 
   // Keep typed values when the form re-renders (grader switch, chips…)
@@ -259,7 +384,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
   }
 
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-photo],[data-catalogue],[data-cat],[data-status]');
+    const t = e.target.closest('[data-photo],[data-catalogue],[data-sealed],[data-cat],[data-status]');
     if (!t) return;
     readForm();
     if (t.dataset.photo === 'remove') { newPhoto = null; removePhoto = true; draw(); return; }
@@ -275,6 +400,10 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         Object.assign(a, await prefillFromCatalogue(lang, brief.id));
         draw();
       } });
+      return;
+    }
+    if ('sealed' in t.dataset) {
+      openSealedPicker({ onPick: (p) => { Object.assign(a, sealedPrefill(p)); draw(); } });
       return;
     }
     if (t.dataset.cat) a.category = t.dataset.cat;
@@ -305,7 +434,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         condition: a.grader && a.grader !== 'raw' ? null : a.condition, gradingCost: num(a.gradingCost) ?? 0,
         tcgdexId: a.tcgdexId || null, tcgLang: a.tcgLang || null, tcgdexVariant: a.tcgdexVariant || null,
       });
-      else Object.assign(data, { category: a.category || 'Autre', status: a.status || 'sealed' });
+      else Object.assign(data, { category: a.category || 'Autre', status: a.status || 'sealed', tcgplayerId: a.tcgplayerId || null });
 
       if (existing) { updateAsset(kind, existing.id, data); toast('Modifications enregistrées'); sheet.close(); }
       else {
@@ -511,4 +640,120 @@ export function openCataloguePicker({ query = '', number = '', lang = 'fr', onPi
     catch { toast('Impossible de charger cette carte', { error: true }); b.style.opacity = ''; }
   });
   run();
+}
+
+/* ======================================================================
+   Sealed catalogue picker (French products)
+   ====================================================================== */
+export function openSealedPicker({ onPick, category = '' }) {
+  const sheet = openSheet({ title: 'Ajouter un item', full: true });
+  let cat = category;
+  let q = '';
+  let seq = 0;
+  sheet.render(`
+    <label class="search" style="margin-bottom:10px">${icon('search', 'sm')}<input id="sq" type="search" placeholder="Rechercher : Display 151, ETB Évolutions…" autocomplete="off"></label>
+    <div class="chips scroll" id="sc" style="margin-bottom:12px"></div>
+    <div id="sr"></div>`);
+  const chipsEl = sheet.body.querySelector('#sc');
+  const out = sheet.body.querySelector('#sr');
+  const drawChips = () => {
+    chipsEl.innerHTML = `<button data-c="" class="${!cat ? 'on' : ''}">Tous</button>` +
+      CATEGORIES.filter((c) => !['Accessoire', 'Autre'].includes(c)).map((c) => `<button data-c="${c}" class="${cat === c ? 'on' : ''}">${c}</button>`).join('');
+  };
+  const run = async () => {
+    const my = ++seq;
+    out.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    try {
+      const res = await searchSealed(q, cat);
+      if (my !== seq) return;
+      out.innerHTML = res.length
+        ? `<div class="grid" style="--cols:3">${res.slice(0, 150).map((p) => `<button class="tile" data-id="${p.id}">
+            <div class="art item-art cat"><img src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"></div>
+            <div class="meta"><b>${esc(p.s)}</b><small>${esc(p.n.replace(p.c + ' ', '').replace(p.s, '').replace(/^\s*\(|\)\s*$/g, '') || p.c)}</small></div></button>`).join('')}</div>
+          ${res.length > 150 ? '<p class="note" style="text-align:center">Affinez la recherche pour voir plus de produits.</p>' : ''}`
+        : '<div class="empty"><h3>Aucun produit</h3><p>Essayez un autre nom d’extension ou une autre catégorie.</p></div>';
+      out._res = res;
+    } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
+  };
+  drawChips();
+  run();
+  let t;
+  sheet.body.querySelector('#sq').addEventListener('input', (e) => { q = e.target.value; clearTimeout(t); t = setTimeout(run, 200); });
+  chipsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; drawChips(); run(); });
+  out.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-id]');
+    if (!b) return;
+    const p = (out._res || []).find((x) => String(x.id) === b.dataset.id);
+    if (p) { sheet.close(); onPick(p); }
+  });
+}
+
+/* ======================================================================
+   Tracked set (master set) detail
+   ====================================================================== */
+export function openSetSheet(setId, { getSetCards: loadSet = getSetCards } = {}) {
+  let filter = 'all';
+  let briefs = null;
+  const sheet = openSheet({ title: 'Set', full: true, onClose: () => off() });
+  const off = store.on(() => draw());
+  const tracked = () => store.get().sets.find((x) => x.id === setId);
+
+  async function loadBriefs(set) {
+    const ids = [...new Set(set.cards.map((id) => id.slice(0, id.lastIndexOf('-'))))];
+    const map = new Map();
+    await Promise.all(ids.map(async (sid) => {
+      try { (await loadSet(set.lang === 'jp' ? 'ja' : set.lang || 'fr', sid)).cards.forEach((c) => map.set(c.id, c)); } catch { /* keep going */ }
+    }));
+    briefs = map;
+    draw();
+  }
+
+  function draw() {
+    const set = tracked();
+    if (!set) { sheet.close(); return; }
+    sheet.setTitle(set.name);
+    if (!briefs) { sheet.render('<div class="loading"><div class="spinner"></div></div>'); return; }
+    const pr = setProgress(set);
+    const pctDone = pr.total ? Math.round((pr.count / pr.total) * 100) : 0;
+    const ids = set.cards.filter((id) => filter === 'all' || (filter === 'own' ? pr.owned.has(id) : !pr.owned.has(id)));
+    sheet.render(`
+      <div class="panel set-track" style="margin-bottom:14px">
+        ${set.description ? `<span class="muted" style="font-size:13px">${esc(set.description)}</span>` : ''}
+        <div class="top"><span class="count num">${pr.count}<small> / ${pr.total} cartes</small></span><span class="pill gold">${pctDone} %</span></div>
+        <div class="progress"><span style="width:${pctDone}%"></span></div>
+        <div class="top muted" style="font-size:13px"><span>Dépensé <b class="num" style="color:var(--text)">${money(pr.cost)}</b></span><span>Manquantes <b class="num" style="color:var(--text)">${pr.total - pr.count}</b></span></div>
+      </div>
+      <div class="seg" style="margin-bottom:14px">
+        <button data-f="all" class="${filter === 'all' ? 'on' : ''}">Toutes</button>
+        <button data-f="own" class="${filter === 'own' ? 'on' : ''}">Possédées · ${pr.count}</button>
+        <button data-f="miss" class="${filter === 'miss' ? 'on' : ''}">Manquantes · ${pr.total - pr.count}</button>
+      </div>
+      <div class="grid" style="--cols:3">${ids.map((id) => {
+        const b = briefs.get(id) || { name: id, localId: id.split('-').pop() };
+        const own = pr.owned.get(id);
+        const img = own ? imageOf(own[0], { thumb: true }) : b.image ? cardImage(b.image) : null;
+        return `<button class="tile ${own ? '' : 'missing'}" data-card="${esc(id)}">
+          <div class="art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${icon('image')}</span>`}
+            ${own ? `<span class="own">${icon('check')}</span>` : ''}</div>
+          <div class="meta"><b>${esc(b.name)}</b><small>n° ${esc(b.localId)}${own && costOf(own[0]) ? ' · ' + money(costOf(own[0])) : ''}</small></div></button>`;
+      }).join('')}</div>
+      <button class="btn danger block" data-untrack style="margin-top:22px">${icon('trash')}Ne plus suivre ce set</button>`);
+  }
+
+  sheet.body.addEventListener('click', async (e) => {
+    const t = e.target.closest('[data-f],[data-card],[data-untrack]');
+    if (!t) return;
+    const set = tracked();
+    if (t.dataset.f) { filter = t.dataset.f; draw(); }
+    if (t.dataset.card) {
+      const own = setProgress(set).owned.get(t.dataset.card);
+      if (own) openDetail('card', own[0].id);
+      else openCatalogueCard(set.lang === 'jp' ? 'ja' : set.lang || 'fr', t.dataset.card);
+    }
+    if ('untrack' in t.dataset && await confirmSheet(`Ne plus suivre « ${set.name} » ? Vos cartes restent dans la collection.`, { ok: 'Retirer', danger: true })) {
+      removeSet(set.id); toast('Set retiré');
+    }
+  });
+  draw();
+  loadBriefs(tracked());
 }

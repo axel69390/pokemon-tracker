@@ -1,7 +1,7 @@
-import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf } from '../store.js';
+import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js';
 import { settings } from '../settings.js';
 import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js';
-import { openDetail, openForm } from '../sheets.js';
+import { openDetail, openForm, openSetSheet } from '../sheets.js';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },
@@ -20,6 +20,7 @@ const filters = {
 const COLS = [2, 3, 4];
 
 export function render(main, { tab = 'cards', query }) {
+  if (tab === 'sets') return renderSets(main);
   const kind = tab === 'items' ? 'item' : 'card';
   const data = store.get();
   const f = filters[kind];
@@ -31,6 +32,7 @@ export function render(main, { tab = 'cards', query }) {
     <div class="seg" style="margin-top:4px">
       <button data-tab="cards" class="${kind === 'card' ? 'on' : ''}">Cartes · ${totals(data.cards).count}</button>
       <button data-tab="items" class="${kind === 'item' ? 'on' : ''}">Items · ${totals(data.items).count}</button>
+      <button data-tab="sets">Sets · ${data.sets.length}</button>
     </div>
     <div class="toolbar">
       <label class="search">${icon('search', 'sm')}<input id="q" type="search" placeholder="${kind === 'card' ? 'Rechercher une carte…' : 'Rechercher un item…'}" value="${esc(f.q)}" autocomplete="off"></label>
@@ -119,7 +121,7 @@ function cardsHtml(cols) {
 function itemTile(a) {
   const img = imageOf(a, { thumb: true });
   return `<button class="tile" data-open="item:${a.id}">
-    <div class="art item-art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${icon(CATEGORY_ICON[a.category] || 'box')}</span>`}
+    <div class="art item-art ${!a.photo && a.image ? 'cat' : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${icon(CATEGORY_ICON[a.category] || 'box')}</span>`}
       <span class="tl"><span class="chip">${flag(a.lang)}</span></span>
       <span class="tr"><span class="chip qty">×${qtyOf(a)}</span></span>
       ${a.status === 'opened' ? '<span class="br"><span class="chip">Ouvert</span></span>' : ''}
@@ -179,5 +181,36 @@ function openFilters(kind, onApply) {
     if ('reset' in t.dataset) { Object.assign(f, { sort: 'value', langs: [], grade: 'all', status: 'all', set: '' }); s.close(); onApply(); return; }
     if ('apply' in t.dataset) { Object.assign(f, draft); s.close(); onApply(); return; }
     draw();
+  };
+}
+
+function renderSets(main) {
+  const data = store.get();
+  main.innerHTML = `
+    <div class="seg" style="margin-top:4px">
+      <button data-tab="cards">Cartes · ${totals(data.cards).count}</button>
+      <button data-tab="items">Items · ${totals(data.items).count}</button>
+      <button class="on">Sets · ${data.sets.length}</button>
+    </div>
+    <div class="section" style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
+      ${data.sets.map((set) => {
+        const pr = setProgress(set);
+        const p = pr.total ? Math.round((pr.count / pr.total) * 100) : 0;
+        return `<button class="panel set-track" data-set="${set.id}">
+          <div class="top"><b>${esc(set.name)}</b>${icon('chev', 'sm faint')}</div>
+          ${set.description ? `<span class="muted" style="font-size:12px;margin-top:-6px">${esc(set.description)}</span>` : ''}
+          <div class="top"><span class="count num">${pr.count}<small> / ${pr.total}</small></span><span class="pill gold">${p} %</span></div>
+          <div class="progress"><span style="width:${p}%"></span></div>
+          <div class="top muted" style="font-size:12px"><span>Dépensé ${money(pr.cost)}</span><span>${pr.total - pr.count} manquante${pr.total - pr.count > 1 ? 's' : ''}</span></div>
+        </button>`;
+      }).join('') || `<div class="empty"><div class="ico">${icon('layers', 'lg')}</div><h3>Aucun set suivi</h3><p>Suivez une extension complète pour voir votre progression carte par carte.</p></div>`}
+      <a class="btn block" href="#/catalogue">${icon('plus')}Suivre une extension</a>
+      <p class="note" style="text-align:center;margin-top:0">Dans le catalogue, ouvrez une extension puis « Suivre ce set ».</p>
+    </div>`;
+  main.onclick = (e) => {
+    const t = e.target.closest('[data-tab],[data-set]');
+    if (!t) return;
+    if (t.dataset.tab) location.hash = '#/collection/' + t.dataset.tab;
+    if (t.dataset.set) openSetSheet(t.dataset.set);
   };
 }

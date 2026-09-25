@@ -42,6 +42,7 @@ export const server = {
   uploadPhoto: (id, data) => call('photo', { method: 'POST', body: { id, data }, timeout: 45000 }),
   deletePhoto: (id) => call('photo-delete', { method: 'POST', body: { id } }).catch(() => {}),
   scan: (image) => call('scan', { method: 'POST', body: { image }, timeout: 60000 }),
+  gccSales: (q) => call('gcc', { params: { q }, timeout: 30000 }).then((r) => r.sales || []),
   photoUrl: (id) => serverUrl('img', { id }),
 };
 
@@ -147,5 +148,6 @@ export const links = {
   ebaySold: (a) => `https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(searchTerms(a))}&LH_Sold=1&LH_Complete=1&_sop=13`,
   ebayLive: (a) => `https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(searchTerms(a))}&_sop=15`,
   cardmarket: (a) => `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(a.name)}`,
+  gcc: (a) => `https://gradedcardcenter.com/filtres?searchText=${encodeURIComponent(a.name)}`,
   vinted: (a) => `https://www.vinted.fr/catalog?search_text=${encodeURIComponent(searchTerms(a))}`,
 };

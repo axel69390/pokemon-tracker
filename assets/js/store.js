@@ -5,7 +5,7 @@ import { today, uid, toast, debounce } from './ui.js';
 
 const CACHE_KEY = 'pdx.cache';
 const LOCAL_KEY = 'pdx.local';
-const EMPTY = () => ({ rev: 0, cards: [], items: [], sales: [], history: [] });
+const EMPTY = () => ({ rev: 0, cards: [], items: [], sales: [], sets: [], history: [] });
 
 let state = EMPTY();
 let status = { loading: true, online: false, saving: false, error: null };
@@ -148,7 +148,7 @@ async function pushToServer() {
   saving = (async () => {
     status = { ...status, saving: true }; emit();
     try {
-      const res = await server.save({ rev: state.rev, cards: state.cards, items: state.items, sales: state.sales });
+      const res = await server.save({ rev: state.rev, cards: state.cards, items: state.items, sales: state.sales, sets: state.sets });
       state.rev = res.rev;
       state.history = res.history || state.history;
       status = { ...status, online: true, error: null };
@@ -253,6 +253,24 @@ export function sellAsset(kind, id, { qty, sellPrice, fees, date, platform }) {
 
 export function deleteSale(id) {
   state.sales = state.sales.filter((s) => s.id !== id);
+  commit();
+}
+
+/* ---------- Tracked sets (master sets, collections) ---------- */
+export function setProgress(set) {
+  const owned = new Map();
+  state.cards.forEach((c) => { if (c.tcgdexId && set.cards.includes(c.tcgdexId)) owned.set(c.tcgdexId, [...(owned.get(c.tcgdexId) || []), c]); });
+  const list = [...owned.values()].flat();
+  return { owned, count: owned.size, total: set.cards.length, cost: list.reduce((s, c) => s + costOf(c), 0), value: list.reduce((s, c) => s + worthOf(c), 0) };
+}
+export function addSet(data) {
+  const s = { ...data, id: uid('m'), addedAt: today() };
+  state.sets.push(s);
+  commit();
+  return s;
+}
+export function removeSet(id) {
+  state.sets = state.sets.filter((s) => s.id !== id);
   commit();
 }
 
