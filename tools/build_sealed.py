@@ -44,6 +44,7 @@ RULES = [
     (r'booster box|booster display', 'Display', 'Display'),
     (r'booster bundle', 'Bundle', 'Bundle'),
     (r'3 pack blister|three pack|3-pack', 'Tripack', 'Tripack'),
+    (r'2-pack blister|2 pack blister|two pack', 'Duo Pack', 'Duo Pack'),
     (r'blister', 'Blister', 'Blister'),
     (r'collector chest|lunch box', 'Valisette', 'Valisette'),
     (r'\btin\b', 'Pokébox', 'Pokébox'),
@@ -120,6 +121,43 @@ def translate(text, names):
     return ', '.join(parts)
 
 
+# Descriptors that tell apart products of the same set and category (English → French).
+DESCR = [
+    (r'poster collection', 'Poster'), (r'knock ?out collection', 'Knock Out'), (r'tech sticker collection', 'Stickers'),
+    (r'figure collection', 'Figurine'), (r'binder collection', 'Classeur'), (r'pin collection', "Pin's"),
+    (r'super[- ]premium collection', 'Super Premium'), (r'premium collection', 'Premium'), (r'special collection', 'Spéciale'),
+    (r'illustration collection', 'Illustration'), (r'mini tin', 'Mini'), (r'stacking tin', 'Empilable'),
+    (r'surprise box', 'Surprise'), (r'stadium', 'Stade'), (r'portfolio', 'Portfolio'), (r'accessory pouch', 'Pochette'),
+]
+STRIP = [r'ultra[- ]premium collection', r'elite trainer box', r'booster box', r'booster display', r'booster bundle',
+         r'sleeved booster( pack)?', r'booster packs?', r'[23][- ]pack blister', r'blister( pack)?', r'checklane', r'single pack',
+         r'build (&|and) battle', r'collection', r'\bbox(es)?\b', r'\btins?\b', r'theme deck', r'battle deck', r'league battle deck',
+         r'\bdeck\b', r'pokemon center', r'exclusive', r'\bdisplay\b', r'\bbundle\b', r'\bpremium\b', r'\bkit\b', r'\bpack\b']
+
+
+def describe(en_name, set_names, names):
+    n = re.sub(r'\((international|retail|english|us) version\)', ' ', en_name, flags=re.I)
+    brackets = re.findall(r'\[([^\]]+)\]', n)
+    n = re.sub(r'\[[^\]]+\]|\([^)]*\)', ' ', n)
+    for sn in sorted(set_names, key=len, reverse=True):
+        if sn:
+            n = re.sub(re.escape(sn), ' ', n, flags=re.I)
+    low = ' ' + n.lower().replace('pokémon', 'pokemon') + ' '
+    extras = []
+    for pat, fr in DESCR:
+        if re.search(pat, low):
+            extras.append(fr)
+            low = re.sub(pat, ' ', low)
+    for pat in STRIP:
+        low = re.sub(pat, ' ', low)
+    rest = re.sub(r'[^a-z0-9éèà\'.&\- ]', ' ', low)
+    rest = ' '.join(rest.replace(' - ', ' ').split()).strip(' -&')
+    if rest and rest not in ('ex', 'and', 'the', 'of', 'set', 'series'):
+        extras.append(translate(rest, names))
+    extras += [translate(b, names) for b in brackets if not re.match(r'set of \d', b, re.I)]
+    return [e for e in extras if e]
+
+
 def classify(name):
     n = name.lower()
     for pat, cat, label in RULES:
@@ -153,10 +191,8 @@ def main():
             cat, label = classify(p['name'])
             if not cat:
                 continue
-            extra = []
-            m = re.search(r'\[([^\]]+)\]', p['name'])
-            if m:
-                extra.append(translate(m.group(1), names))
+            tail = re.split(r':|\s-\s', g['name'], maxsplit=1)[-1].strip()
+            extra = describe(p['name'], [g['name'], tail, re.sub(r'^(EX|SM|XY|SWSH\d*|SV\d*|ME\d*)\s+', '', tail)], names)
             if 'pokemon center' in p['name'].lower():
                 extra.append('Pokémon Center')
             if cat == 'Booster' and 'sleeved' in p['name'].lower():

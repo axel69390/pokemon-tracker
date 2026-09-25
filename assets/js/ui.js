@@ -37,7 +37,7 @@ export const GRADERS = { raw: 'Raw', psa: 'PSA', pca: 'PCA', cgc: 'CGC', bgs: 'B
 export const gradeLabel = (c) => (!c.grader || c.grader === 'raw' ? '' : `${GRADERS[c.grader] || c.grader.toUpperCase()}${c.grade ? ' ' + c.grade : ''}`);
 export const CONDITIONS = { mint: 'Mint', nm: 'Near Mint', ex: 'Excellent', gd: 'Good', lp: 'Light Played', pl: 'Played', po: 'Poor' };
 
-export const CATEGORIES = ['Display', 'ETB', 'Bundle', 'UPC', 'Coffret', 'Tripack', 'Blister', 'Booster', 'Pokébox', 'Valisette', 'Deck', 'Accessoire', 'Autre'];
+export const CATEGORIES = ['Display', 'ETB', 'Bundle', 'UPC', 'Coffret', 'Duo Pack', 'Tripack', 'Blister', 'Booster', 'Pokébox', 'Valisette', 'Deck', 'Accessoire', 'Autre'];
 
 /* ---------- Icons (Lucide-style, inline) ---------- */
 const P = {
@@ -81,7 +81,7 @@ const P = {
 export const icon = (name, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[name] || ''}</svg>`;
 
 export const CATEGORY_ICON = {
-  Booster: 'layers', Blister: 'layers', Tripack: 'layers', Display: 'box', ETB: 'box', Coffret: 'box', UPC: 'star',
+  Booster: 'layers', Blister: 'layers', Tripack: 'layers', 'Duo Pack': 'layers', Display: 'box', ETB: 'box', Coffret: 'box', UPC: 'star',
   Bundle: 'box', Tin: 'box', Valisette: 'box', Deck: 'cards', Pokébox: 'box', Accessoire: 'star', Autre: 'box',
 };
 
