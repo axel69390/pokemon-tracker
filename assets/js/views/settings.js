@@ -3,7 +3,7 @@ import { server } from '../api.js';
 import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js';
 import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js';
 
-export const VERSION = '2.1.5';
+export const VERSION = '2.1.6';
 
 export function render(main) {
   const s = settings.get();
@@ -16,8 +16,8 @@ export function render(main) {
           <span class="status-dot ${s.mode === 'server' ? (st.online ? 'ok' : 'ko') : ''}"></span>
           ${s.mode === 'server' ? (st.online ? 'Connecté' : 'Hors ligne') : 'Sur cet appareil'}</span></div>
       <div class="seg" style="margin-bottom:12px">
-        <button data-mode="local" class="${s.mode !== 'server' ? 'on' : ''}">${icon('phone', 'sm')} Cet appareil</button>
-        <button data-mode="server" class="${s.mode === 'server' ? 'on' : ''}">${icon('server', 'sm')} Serveur personnel</button>
+        <button data-mode="local" class="${s.mode !== 'server' ? 'on' : ''}">${icon('phone', 'sm')}Appareil</button>
+        <button data-mode="server" class="${s.mode === 'server' ? 'on' : ''}">${icon('server', 'sm')}Serveur</button>
       </div>
       <form class="panel form" data-link style="margin-bottom:12px">
         <label class="field"><span>Lien de connexion</span><input name="link" autocomplete="off" placeholder="Collez ici le lien de connexion reçu"></label>

@@ -31,7 +31,7 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -81,7 +81,7 @@ svg.i.lg { width: 24px; height: 24px; }
 .icon-btn:active { transform: scale(0.94); }
 .icon-btn.gold { color: #1a1305; background: var(--gold-grad); border-color: transparent; }
 
-main.view { padding: 4px 16px calc(var(--nav-h) + var(--safe-b) + 28px); animation: fade .22s ease; }
+main.view { min-width: 0; padding: 4px 16px calc(var(--nav-h) + var(--safe-b) + 28px); animation: fade .22s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 .section { margin-top: 26px; }
@@ -142,7 +142,7 @@ main.view { padding: 4px 16px calc(var(--nav-h) + var(--safe-b) + 28px); animati
   display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--line);
 }
 .seg button {
-  flex: 1; padding: 7px 10px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--text-2);
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--text-2);
   transition: background .15s, color .15s; white-space: nowrap;
 }
 .seg button.on { background: var(--surface-3); color: var(--text); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset; }
