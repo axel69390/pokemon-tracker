@@ -1,14 +1,14 @@
 // Pokédex Invest — entry point & router.
-import { store, load } from './store.js?v=2.3.1';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.3.1';
-import { openForm } from './sheets.js?v=2.3.1';
-import * as portfolio from './views/portfolio.js?v=2.3.1';
-import * as collection from './views/collection.js?v=2.3.1';
-import * as scanner from './views/scanner.js?v=2.3.1';
-import * as catalogue from './views/catalogue.js?v=2.3.1';
-import * as settingsView from './views/settings.js?v=2.3.1';
-import * as invest from './views/invest.js?v=2.3.1';
-import { VERSION } from './views/settings.js?v=2.3.1';
+import { store, load } from './store.js?v=2.3.2';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.3.2';
+import { openForm } from './sheets.js?v=2.3.2';
+import * as portfolio from './views/portfolio.js?v=2.3.2';
+import * as collection from './views/collection.js?v=2.3.2';
+import * as scanner from './views/scanner.js?v=2.3.2';
+import * as catalogue from './views/catalogue.js?v=2.3.2';
+import * as settingsView from './views/settings.js?v=2.3.2';
+import * as invest from './views/invest.js?v=2.3.2';
+import { VERSION } from './views/settings.js?v=2.3.2';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
@@ -46,6 +46,7 @@ function topbar(route, r) {
     actions = `<a class="icon-btn" href="#/scan" title="Scanner">${icon('scan')}</a>
       <button class="icon-btn gold" data-add="${r.tab === 'items' ? 'item' : 'card'}" title="Ajouter">${icon('plus')}</button>`;
   }
+  if (r.name === 'invest') actions += `<button class="icon-btn gold" data-watchadd title="Mettre en veille">${icon('plus')}</button>`;
   if (r.name !== 'settings') actions += `<a class="icon-btn" href="#/settings" title="Réglages">${icon('settings')}</a>`;
   const brand = r.name === '' ? `<div class="brand"><img src="icon.svg" alt=""><h1>${esc(route.title)}</h1></div>` : `<h1>${esc(route.title)}</h1>`;
   return `<header class="topbar">${brand}<div class="actions">${actions}</div></header>`;
@@ -84,8 +85,9 @@ store.on(() => {
 });
 
 app.addEventListener('click', (e) => {
-  const t = e.target.closest('.topbar [data-add], .topbar [data-export]');
+  const t = e.target.closest('.topbar [data-add], .topbar [data-export], .topbar [data-watchadd]');
   if (!t) return;
+  if ('watchadd' in t.dataset) invest.openPicker();
   if (t.dataset.add) openForm(t.dataset.add);
   if ('export' in t.dataset) download(`pokedex-invest-${today()}.json`, JSON.stringify({ app: 'pokedex-invest', exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
 });

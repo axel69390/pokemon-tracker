@@ -1,7 +1,7 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.3.1';
-import { server, ServerError } from './api.js?v=2.3.1';
-import { today, uid, toast, debounce } from './ui.js?v=2.3.1';
+import { settings } from './settings.js?v=2.3.2';
+import { server, ServerError } from './api.js?v=2.3.2';
+import { today, uid, toast, debounce } from './ui.js?v=2.3.2';
 
 const CACHE_KEY = 'pdx.cache';
 const LOCAL_KEY = 'pdx.local';

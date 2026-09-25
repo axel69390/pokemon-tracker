@@ -1,8 +1,8 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.3.1';
-import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.3.1';
-import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.3.1';
-import { openDetail, openSell } from '../sheets.js?v=2.3.1';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.3.2';
+import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.3.2';
+import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.3.2';
+import { openDetail, openSell } from '../sheets.js?v=2.3.2';
 
 const DAY = 864e5;
 const STATUS = {
@@ -122,7 +122,7 @@ export function render(main) {
     </section>` : ''}
 
     <section class="section">
-      <div class="section-head"><h2>Meilleurs moments pour vendre</h2><button class="link" data-add>${icon('plus', 'sm')} Ajouter</button></div>
+      <div class="section-head"><h2>Meilleurs moments pour vendre</h2><button class="btn sm primary" data-add>${icon('plus', 'sm')}Ajouter</button></div>
       ${list.length ? `<div class="list">${list.map(rowHtml).join('')}</div>`
         : `<div class="empty"><div class="ico">${icon('up', 'lg')}</div><h3>Aucune carte en veille</h3>
           <p>Mettez en veille les cartes et items que vous envisagez de revendre : l’appli suit leur prix chaque nuit et vous signale le bon moment.</p>
@@ -257,7 +257,7 @@ export function openInvest(kind, id) {
 }
 
 /* ---------- Picker: choose assets to watch ---------- */
-function openPicker() {
+export function openPicker() {
   const sheet = openSheet({ title: 'Mettre en veille', full: true, onClose: () => off() });
   let q = '';
   const off = store.on(() => draw());
