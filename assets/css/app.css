@@ -469,3 +469,21 @@ a.row { color: inherit; }
 .tile.missing .meta { opacity: .55; }
 .tile .own { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--gold-grad); color: #1a1305; display: grid; place-items: center; }
 .tile .own svg { width: 14px; height: 14px; stroke-width: 3; }
+
+/* Serie accordions (collection) */
+.serie-block { margin-bottom: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.serie-block.open { background: linear-gradient(180deg, var(--surface) 0, var(--bg) 140px); }
+.serie-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; text-align: left; }
+.serie-head:active { background: var(--surface-2); }
+.serie-logo { width: 84px; height: 40px; flex: none; display: grid; place-items: center; color: var(--gold); }
+.serie-logo img { max-width: 84px; max-height: 40px; object-fit: contain; }
+.serie-head .gt { flex: 1; min-width: 0; }
+.serie-head .gt b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.serie-head .gt small { color: var(--text-2); font-size: 12px; }
+.serie-head .gv { text-align: right; }
+.serie-head .gv b { display: block; font-size: 15px; }
+.serie-head .chev { color: var(--text-3); transition: transform .2s; }
+.serie-block.open .serie-head .chev { transform: rotate(90deg); color: var(--gold); }
+.serie-body { padding: 6px 12px 4px; animation: fade .2s ease; }
+.serie-body .group:last-child { margin-bottom: 10px; }
+@media (max-width: 380px) { .serie-logo { width: 60px; } .serie-logo img { max-width: 60px; } }

@@ -78,11 +78,13 @@ export async function getSets(lang = 'fr') {
   // Set → serie mapping from each serie's detail (logos are missing on some sets, e.g. Set de Base).
   const details = await Promise.all(series.map((s) => tcg(`/${lang}/series/${encodeURIComponent(s.id)}`, 168).catch(() => null)));
   const serieOf = new Map();
-  details.forEach((d, i) => (d?.sets || []).forEach((st) => serieOf.set(st.id, { id: series[i].id, name: series[i].name, order: i })));
+  details.forEach((d, i) => (d?.sets || []).forEach((st) => serieOf.set(st.id, { id: series[i].id, name: series[i].name, order: i, logo: series[i].logo })));
   return sets
     .map((s, idx) => {
       const se = serieOf.get(s.id) || { id: 'misc', name: 'Autres', order: -1 };
-      return { ...s, idx, serie: se.id, serieName: se.name, serieOrder: se.order };
+      // TCGdex uses the Jungle logo for the Base serie; the Base Set logo only exists in English.
+      const serieLogo = se.id === 'base' ? 'https://assets.tcgdex.net/en/base/base1/logo' : se.logo || null;
+      return { ...s, idx, serie: se.id, serieName: se.name, serieOrder: se.order, serieLogo };
     })
     .filter((s) => s.serie !== 'tcgp'); // Pokémon TCG Pocket is digital-only
 }

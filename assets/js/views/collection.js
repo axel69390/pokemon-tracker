@@ -50,8 +50,9 @@ export function render(main, { tab = 'cards', query }) {
   q.addEventListener('input', () => { f.q = q.value; draw(); });
 
   main.onclick = (e) => {
-    const t = e.target.closest('[data-tab],[data-cols],[data-filters],[data-open],[data-add]');
+    const t = e.target.closest('[data-tab],[data-cols],[data-filters],[data-open],[data-add],[data-serie]');
     if (!t) return;
+    if (t.dataset.serie) { toggleSerie(t.dataset.serie); draw(); return; }
     if (t.dataset.tab) location.hash = '#/collection/' + t.dataset.tab;
     else if ('cols' in t.dataset) { settings.set({ [colsKey]: COLS[(COLS.indexOf(cols) + 1) % COLS.length] }); render(main, { tab }); }
     else if ('filters' in t.dataset) openFilters(kind, () => render(main, { tab }));
@@ -132,7 +133,7 @@ function cardsHtml(cols) {
   const grid = (arr) => `<div class="grid ${cols >= 4 ? 'dense' : ''}" style="--cols:${cols}">${arr.map(cardTile).join('')}</div>`;
   if (!filters.card.group) return summary(list, 'carte') + grid(list);
 
-  // Group by extension, newest extension first, cards by number inside.
+  // Serie accordions (collapsed unless opened) → extensions (newest first) → cards by number.
   const groups = new Map();
   list.forEach((c) => {
     const sid = setIdOf(c);
@@ -143,17 +144,47 @@ function cardsHtml(cols) {
   });
   const ordered = [...groups.values()].sort((a, b) =>
     (b.meta ? b.meta.serieOrder * 1000 + b.meta.idx : -1) - (a.meta ? a.meta.serieOrder * 1000 + a.meta.idx : -1) || a.name.localeCompare(b.name, 'fr'));
-  return summary(list, 'carte') + ordered.map((g) => {
+  const series = new Map();
+  ordered.forEach((g) => {
+    const key = g.meta ? g.meta.serie : 'other';
+    if (!series.has(key)) series.set(key, { key, name: g.meta ? g.meta.serieName : 'Autres cartes', logo: g.meta ? g.meta.serieLogo : null, groups: [] });
+    series.get(key).groups.push(g);
+  });
+  const searching = !!filters.card.q.trim();
+  return summary(list, 'carte') + [...series.values()].map((se) => {
+    const cards = se.groups.flatMap((g) => g.cards);
+    const t = totals(cards);
+    const open = searching || openSeries.has(se.key);
+    return `<section class="serie-block ${open ? 'open' : ''}">
+      <button class="serie-head" data-serie="${esc(se.key)}" aria-expanded="${open}">
+        <span class="serie-logo">${se.logo ? `<img src="${esc(setLogo(se.logo))}" alt="${esc(se.name)}" loading="lazy">` : icon('layers')}</span>
+        <span class="gt"><b>${esc(se.name)}</b><small>${se.groups.length} extension${se.groups.length > 1 ? 's' : ''} · ${t.count} carte${t.count > 1 ? 's' : ''}</small></span>
+        <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span>
+        <span class="chev">${icon('chev', 'sm')}</span>
+      </button>
+      ${open ? `<div class="serie-body">${se.groups.map(groupHtml).join('')}</div>` : ''}
+    </section>`;
+  }).join('');
+
+  function groupHtml(g) {
     const t = totals(g.cards);
     g.cards.sort((a, b) => numKey(a) - numKey(b) || a.name.localeCompare(b.name, 'fr'));
     const logo = g.meta && g.meta.logo ? `<img src="${esc(setLogo(g.meta.logo))}" alt="" style="width:34px;height:34px;object-fit:contain">` : icon('layers');
     return `<section class="group">
       <div class="group-head"><span class="gi" ${g.meta && g.meta.logo ? 'style="background:none"' : ''}>${logo}</span>
-        <span class="gt"><b>${esc(g.name)}</b><small>${g.meta ? esc(g.meta.serieName) + ' · ' : ''}${t.count} carte${t.count > 1 ? 's' : ''}</small></span>
+        <span class="gt"><b>${esc(g.name)}</b><small>${t.count} carte${t.count > 1 ? 's' : ''}</small></span>
         <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span></div>
       ${grid(g.cards)}
     </section>`;
-  }).join('');
+  }
+}
+
+// Which serie accordions are open, remembered on this device.
+const OPEN_KEY = 'pdx.openSeries';
+const openSeries = new Set((() => { try { return JSON.parse(localStorage.getItem(OPEN_KEY) || '[]'); } catch { return []; } })());
+function toggleSerie(key) {
+  if (openSeries.has(key)) openSeries.delete(key); else openSeries.add(key);
+  try { localStorage.setItem(OPEN_KEY, JSON.stringify([...openSeries])); } catch { /* private mode */ }
 }
 
 function itemTile(a) {
