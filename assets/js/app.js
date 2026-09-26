@@ -1,14 +1,14 @@
 // Pokédex Invest — entry point & router.
-import { store, load } from './store.js?v=2.3.3';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.3.3';
-import { openForm } from './sheets.js?v=2.3.3';
-import * as portfolio from './views/portfolio.js?v=2.3.3';
-import * as collection from './views/collection.js?v=2.3.3';
-import * as scanner from './views/scanner.js?v=2.3.3';
-import * as catalogue from './views/catalogue.js?v=2.3.3';
-import * as settingsView from './views/settings.js?v=2.3.3';
-import * as invest from './views/invest.js?v=2.3.3';
-import { VERSION } from './views/settings.js?v=2.3.3';
+import { store, load } from './store.js?v=2.3.4';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.3.4';
+import { openForm } from './sheets.js?v=2.3.4';
+import * as portfolio from './views/portfolio.js?v=2.3.4';
+import * as collection from './views/collection.js?v=2.3.4';
+import * as scanner from './views/scanner.js?v=2.3.4';
+import * as catalogue from './views/catalogue.js?v=2.3.4';
+import * as settingsView from './views/settings.js?v=2.3.4';
+import * as invest from './views/invest.js?v=2.3.4';
+import { VERSION } from './views/settings.js?v=2.3.4';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
