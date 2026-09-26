@@ -1,8 +1,8 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.3.2';
-import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.3.2';
-import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.3.2';
-import { openDetail, openSell } from '../sheets.js?v=2.3.2';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.3.3';
+import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.3.3';
+import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.3.3';
+import { openDetail, openSell } from '../sheets.js?v=2.3.3';
 
 const DAY = 864e5;
 const STATUS = {
@@ -28,7 +28,9 @@ const valueAgo = (pts, days) => {
   return before.length ? before[before.length - 1].p : pts[0].p;
 };
 // Market signals only make sense where the market price is reliable (auto-priced cards, sealed items).
-const tracked = (kind, a) => kind === 'item' || priceModeOf(kind, a) === 'auto';
+// Only things actually owned and paid for, worth at least 1 € (cent-level cards give meaningless percentages).
+const MIN_PRICE = 1;
+const tracked = (kind, a) => (kind === 'item' || priceModeOf(kind, a) === 'auto') && Number(a.buyPrice) > 0 && unitValue(a) >= MIN_PRICE;
 
 export function analyse(kind, a) {
   const pts = pointsOf(a);
@@ -72,7 +74,7 @@ export function riseAlerts() {
     if (pts.length < 2) return;
     const last = pts[pts.length - 1];
     const ref = valueAgo(pts.slice(0, -1), 7);
-    if (!ref) return;
+    if (!ref || last.p < MIN_PRICE) return;
     const ch = (last.p - ref) / ref;
     if (ch >= RISE) out.push({ kind, a, ch, from: ref, to: last.p, key: `${a.id}:${last.d}` });
   });
@@ -130,11 +132,11 @@ export function render(main) {
     </section>
 
     ${ideas.length ? `<section class="section">
-      <div class="section-head"><h2>Tendances dans ma collection</h2><span class="faint" style="font-size:12px">hors veille</span></div>
+      <div class="section-head"><h2>Tendances dans ma collection</h2><span class="faint" style="font-size:12px">cartes possédées, hors veille</span></div>
       <div class="list">${ideas.map((x) => rowHtml(x, true)).join('')}</div>
     </section>` : ''}
 
-    <p class="note" style="text-align:center;margin-top:18px">Une pastille apparaît sur l’onglet Invest dès qu’une carte ou un item prend au moins 10 % en 7 jours.<br>Signaux calculés chaque nuit à partir du prix du marché (Cardmarket, GCC, TCGplayer) et de votre prix d’achat. Ce ne sont pas des conseils financiers.</p>`;
+    <p class="note" style="text-align:center;margin-top:18px">Une pastille apparaît sur l’onglet Invest dès qu’une carte ou un item de votre collection (acheté, d’une valeur d’au moins 1 €) prend au moins 10 % en 7 jours.<br>Signaux calculés chaque nuit à partir du prix du marché (Cardmarket, GCC, TCGplayer) et de votre prix d’achat. Ce ne sont pas des conseils financiers.</p>`;
 
   // Opening the tab acknowledges the current rises (the badge clears).
   markRisesSeen(rises);
