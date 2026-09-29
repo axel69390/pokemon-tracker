@@ -1,5 +1,5 @@
 // User preferences, persisted per device.
-const KEY = 'pdx.settings';
+const KEY = (typeof window !== 'undefined' && window.APP_EDITION === 'cardvault') ? 'cv.settings' : 'pdx.settings';
 const DEFAULTS = {
   mode: 'local',          // 'local' (this device) | 'server' (personal server)
   server: '',
@@ -8,6 +8,8 @@ const DEFAULTS = {
   cardCols: 2,
   itemCols: 3,
 };
+
+import { IS_STORE } from './edition.js?v=2.4.0';
 
 let current = { ...DEFAULTS };
 try { current = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { /* private mode */ }
@@ -21,7 +23,8 @@ export const settings = {
     listeners.forEach((fn) => fn(current));
   },
   on: (fn) => listeners.add(fn),
-  isServer: () => current.mode === 'server' && !!current.server && !!current.key,
+  // The store edition never uses a personal server: everything stays on the device.
+  isServer: () => !IS_STORE && current.mode === 'server' && !!current.server && !!current.key,
 };
 
 // Setup link: …/#connect=<server>|<key>  (also accepted when pasted in the app)
@@ -34,7 +37,7 @@ export function parseConnect(text) {
 }
 
 (function readConnectLink() {
-  if (!/connect=/.test(location.hash + location.search)) return;
+  if (IS_STORE || !/connect=/.test(location.hash + location.search)) return;
   const c = parseConnect(location.hash + location.search);
   if (c) settings.set({ mode: 'server', ...c });
   history.replaceState(null, '', location.pathname);

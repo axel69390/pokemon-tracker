@@ -1,8 +1,9 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.3.4';
-import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.3.4';
-import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.3.4';
-import { openDetail, openSell } from '../sheets.js?v=2.3.4';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.0';
+import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.0';
+import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.0';
+import { openDetail, openSell } from '../sheets.js?v=2.4.0';
+import { hasAccess, openPaywall } from '../billing.js?v=2.4.0';
 
 const DAY = 864e5;
 const STATUS = {
@@ -92,6 +93,11 @@ function markRisesSeen(alerts) {
 
 /* ---------- View ---------- */
 export function render(main) {
+  if (!hasAccess()) {
+    main.innerHTML = `<div class="section empty"><div class="ico">${icon('tag', 'lg')}</div><h3>Invest</h3><p>Le suivi des prix et les alertes de revente sont inclus dans CardVault Premium.</p><button class="btn primary" data-paywall>CardVault Premium</button></div>`;
+    main.onclick = (e) => { if (e.target.closest('[data-paywall]')) openPaywall(); };
+    return;
+  }
   const list = watched().map(([k, a]) => analyse(k, a)).sort((x, y) => y.score - x.score || y.gain - x.gain);
   const total = list.reduce((s, x) => s + x.price * qtyOf(x.a), 0);
   const gain = list.reduce((s, x) => s + x.gain, 0);

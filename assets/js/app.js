@@ -1,14 +1,17 @@
-// Pokédex Invest — entry point & router.
-import { store, load } from './store.js?v=2.3.4';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.3.4';
-import { openForm } from './sheets.js?v=2.3.4';
-import * as portfolio from './views/portfolio.js?v=2.3.4';
-import * as collection from './views/collection.js?v=2.3.4';
-import * as scanner from './views/scanner.js?v=2.3.4';
-import * as catalogue from './views/catalogue.js?v=2.3.4';
-import * as settingsView from './views/settings.js?v=2.3.4';
-import * as invest from './views/invest.js?v=2.3.4';
-import { VERSION } from './views/settings.js?v=2.3.4';
+// Pokédex Invest / CardVault — entry point & router.
+import { startAutoTranslate } from './i18n.js?v=2.4.0';
+import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.0';
+import { checkPurchases, trialStart } from './billing.js?v=2.4.0';
+import { store, load, refreshLocalPrices } from './store.js?v=2.4.0';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.0';
+import { openForm } from './sheets.js?v=2.4.0';
+import * as portfolio from './views/portfolio.js?v=2.4.0';
+import * as collection from './views/collection.js?v=2.4.0';
+import * as scanner from './views/scanner.js?v=2.4.0';
+import * as catalogue from './views/catalogue.js?v=2.4.0';
+import * as settingsView from './views/settings.js?v=2.4.0';
+import * as invest from './views/invest.js?v=2.4.0';
+import { VERSION } from './views/settings.js?v=2.4.0';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
@@ -22,7 +25,9 @@ const ROUTES = {
 const NAV = [
   { id: 'catalogue', href: '#/catalogue', label: 'Catalogue', icon: 'compass' },
   { id: 'collection', href: '#/collection/cards', label: 'Collection', icon: 'cards' },
-  { id: 'scan', href: '#/scan', label: 'Scanner', icon: 'scan', center: true },
+  IS_STORE
+    ? { id: 'add', href: '#/collection/cards?add=1', label: 'Ajouter', icon: 'plus', center: true }
+    : { id: 'scan', href: '#/scan', label: 'Scanner', icon: 'scan', center: true },
   { id: 'home', href: '#/', label: 'Portefeuille', icon: 'wallet' },
   { id: 'invest', href: '#/invest', label: 'Invest', icon: 'up' },
 ];
@@ -43,12 +48,12 @@ function topbar(route, r) {
     actions = `<a class="icon-btn" href="#/catalogue" title="Catalogue">${icon('search')}</a>
       <button class="icon-btn" data-export title="Exporter">${icon('download')}</button>`;
   } else if (r.name === 'collection') {
-    actions = `<a class="icon-btn" href="#/scan" title="Scanner">${icon('scan')}</a>
+    actions = `${IS_STORE ? '' : `<a class="icon-btn" href="#/scan" title="Scanner">${icon('scan')}</a>`}
       <button class="icon-btn gold" data-add="${r.tab === 'items' ? 'item' : 'card'}" title="Ajouter">${icon('plus')}</button>`;
   }
   if (r.name === 'invest') actions += `<button class="icon-btn gold" data-watchadd title="Mettre en veille">${icon('plus')}</button>`;
   if (r.name !== 'settings') actions += `<a class="icon-btn" href="#/settings" title="Réglages">${icon('settings')}</a>`;
-  const brand = r.name === '' ? `<div class="brand"><img src="icon.svg" alt=""><h1>${esc(route.title)}</h1></div>` : `<h1>${esc(route.title)}</h1>`;
+  const brand = r.name === '' ? `<div class="brand"><img src="${ICON}" alt=""><h1>${esc(route.title)}</h1></div>` : `<h1>${esc(route.title)}</h1>`;
   return `<header class="topbar">${brand}<div class="actions">${actions}</div></header>`;
 }
 
@@ -66,7 +71,7 @@ function route() {
   def.view.render(current.main, r);
   window.scrollTo(0, 0);
   refreshBadge();
-  document.title = `${def.title} · Pokédex Invest`;
+  document.title = `${def.title} · ${APP_NAME}`;
 }
 
 // Re-render data-driven views when the collection changes, keeping focus in search fields.
@@ -89,7 +94,7 @@ app.addEventListener('click', (e) => {
   if (!t) return;
   if ('watchadd' in t.dataset) invest.openPicker();
   if (t.dataset.add) openForm(t.dataset.add);
-  if ('export' in t.dataset) download(`pokedex-invest-${today()}.json`, JSON.stringify({ app: 'pokedex-invest', exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
+  if ('export' in t.dataset) download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
 });
 
 // Badge on the Invest tab (and on the installed app icon) for unseen rises of 10 % or more.
@@ -107,18 +112,20 @@ store.on(() => refreshBadge());
 window.addEventListener('pdx:badge', refreshBadge);
 
 window.addEventListener('hashchange', route);
+startAutoTranslate();
+if (IS_STORE) { trialStart(); checkPurchases().then(() => { if (current && current.def.live) current.def.view.render(current.main, current.r); }); }
 route();
-load();
+load().then(() => refreshLocalPrices()).catch(() => {});
 
 // Refresh when the app comes back to the foreground (another device may have edited the collection).
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load(); });
 
 // Always run the latest published version: the service worker revalidates every file,
 // and a newer version.json triggers one reload (guarded against loops).
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register(asset('sw.js'), { updateViaCache: 'none' }).catch(() => {});
 async function checkVersion() {
   try {
-    const { version } = await (await fetch('version.json', { cache: 'no-store' })).json();
+    const { version } = await (await fetch(asset('version.json'), { cache: 'no-store' })).json();
     // Reload under a new URL (?v=…) so iOS cannot hand back the cached page; every module
     // URL carries the version too (tools/release.py). Only one attempt per version.
     if (version && version !== VERSION && new URLSearchParams(location.search).get('v') !== version) {

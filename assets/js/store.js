@@ -1,10 +1,14 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.3.4';
-import { server, ServerError } from './api.js?v=2.3.4';
-import { today, uid, toast, debounce } from './ui.js?v=2.3.4';
+import { settings } from './settings.js?v=2.4.0';
+import { IS_STORE } from './edition.js?v=2.4.0';
+import { server, ServerError, getCard } from './api.js?v=2.4.0';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.0';
+import { hasAccess } from './billing.js?v=2.4.0';
 
-const CACHE_KEY = 'pdx.cache';
-const LOCAL_KEY = 'pdx.local';
+// Each edition keeps its own data, even in the same browser.
+const NS = IS_STORE ? 'cv' : 'pdx';
+const CACHE_KEY = NS + '.cache';
+const LOCAL_KEY = NS + '.local';
 const EMPTY = () => ({ rev: 0, cards: [], items: [], sales: [], sets: [], history: [] });
 
 let state = EMPTY();
@@ -306,6 +310,60 @@ export function addSet(data) {
 export function removeSet(id) {
   state.sets = state.sets.filter((s) => s.id !== id);
   commit();
+}
+
+/* ---------- On-device price updates (no personal server) ----------
+   Same rules as the server's nightly job, Cardmarket only (GCC and TCGplayer are not reachable from a
+   browser): once a day, every card linked to the catalogue gets its day / 30-day average and trend; cards in
+   automatic mode take the trend as their value (swings > 40 % are proposed for review instead). */
+const LOCAL_RUN_KEY = NS + '.localPriceRun';
+export async function refreshLocalPrices({ force = false } = {}) {
+  if (settings.isServer() || !hasAccess()) return null;
+  const day = today();
+  let last = null;
+  try { last = localStorage.getItem(LOCAL_RUN_KEY); } catch { /* private mode */ }
+  if (!force && last === day) return null;
+  const cards = state.cards.filter((c) => c.tcgdexId);
+  if (!cards.length) return null;
+  const res = {};
+  let errors = 0;
+  for (let i = 0; i < cards.length; i += 4) {
+    await Promise.all(cards.slice(i, i + 4).map(async (c) => {
+      try {
+        const card = await getCard(c.tcgLang || 'fr', c.tcgdexId);
+        const vars = card.variants_detailed || [];
+        let v = c.tcgdexVariant ? vars.find((x) => x.variantId === c.tcgdexVariant) : null;
+        if (!v && /1(re|ère|st)?\s*[ée]d/i.test(c.variant || '')) v = vars.find((x) => (x.stamp || []).some((st) => /1re|1st|1ère/i.test(st)));
+        const cm = (v && v.pricing && v.pricing.cardmarket) || (card.pricing && card.pricing.cardmarket);
+        if (cm) res[c.id] = cm;
+      } catch { errors++; }
+    }));
+  }
+  const r2 = (v) => (v == null || !isFinite(v) ? null : Math.round(v * 100) / 100);
+  const minus = (n) => { const d = new Date(Date.now() - n * 864e5); return d.toISOString().slice(0, 10); };
+  let updated = 0, pending = 0;
+  state.cards.forEach((c) => {
+    const cm = res[c.id];
+    if (!cm) return;
+    const trend = r2(cm.trend || cm.avg), d30 = r2(cm.avg30);
+    c.market = { src: 'Cardmarket', d1: r2(cm.avg1 != null ? cm.avg1 : cm.avg), d1At: day, d30, at: day };
+    if (trend != null) {
+      let h = (c.hist || []).filter((x) => x.d !== day);
+      if (!h.length) h = [d30 != null && { d: minus(15), p: d30, est: true }, cm.avg7 != null && { d: minus(4), p: r2(cm.avg7), est: true }].filter(Boolean);
+      h.push({ d: day, p: trend, a30: d30 });
+      c.hist = h.slice(-400);
+    }
+    if (priceModeOf('card', c) !== 'auto' || trend == null) return;
+    const old = hasValue(c) ? +c.value : null;
+    if (old && c.valueSource && Math.abs(trend - old) / old > 0.4) { c.pendingValue = { v: trend, src: 'Cardmarket · tendance', d: day }; pending++; return; }
+    delete c.pendingValue;
+    c.value = trend; c.valueSource = 'Cardmarket · tendance'; logValue(c, trend);
+    updated++;
+  });
+  state.priceRun = { at: new Date().toISOString(), updated, pending, skipped: 0, errors, local: true };
+  try { localStorage.setItem(LOCAL_RUN_KEY, day); } catch { /* private mode */ }
+  commit();
+  return state.priceRun;
 }
 
 export function replaceAll(data) {

@@ -31,8 +31,8 @@ def main():
         sys.exit('version attendue : X.Y.Z')
     for js in (ROOT / 'assets' / 'js').rglob('*.js'):
         stamp(js, version)
-    index = ROOT / 'index.html'
-    index.write_text(re.sub(r"\?v=[0-9.]+", f"?v={version}", index.read_text()))
+    for page in (ROOT / 'index.html', ROOT / 'cardvault' / 'index.html'):
+        page.write_text(re.sub(r"\?v=[0-9.]+", f"?v={version}", page.read_text()))
     (ROOT / 'version.json').write_text(json.dumps({'version': version}) + '\n')
     print('version', version, 'appliquée')
 

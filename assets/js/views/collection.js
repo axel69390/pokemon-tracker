@@ -1,8 +1,9 @@
-import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.3.4';
-import { settings } from '../settings.js?v=2.3.4';
-import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.3.4';
-import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.3.4';
-import { getSets, setLogo } from '../api.js?v=2.3.4';
+import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.0';
+import { settings } from '../settings.js?v=2.4.0';
+import { IS_STORE } from '../edition.js?v=2.4.0';
+import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.0';
+import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.0';
+import { getSets, setLogo } from '../api.js?v=2.4.0';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },
@@ -102,9 +103,9 @@ function emptyState(kind) {
   if (filtered) return `<div class="empty"><h3>Aucun résultat</h3><p>Modifiez la recherche ou les filtres.</p></div>`;
   return `<div class="empty"><div class="ico">${icon(kind === 'card' ? 'cards' : 'box', 'lg')}</div>
     <h3>${kind === 'card' ? 'Aucune carte' : 'Aucun item scellé'}</h3>
-    <p>${kind === 'card' ? 'Scannez ou ajoutez vos cartes pour suivre leur valeur.' : 'Boosters, displays, ETB, coffrets… suivez vos produits scellés.'}</p>
+    <p>${kind === 'card' ? (IS_STORE ? 'Ajoutez vos cartes pour suivre leur valeur.' : 'Scannez ou ajoutez vos cartes pour suivre leur valeur.') : 'Boosters, displays, ETB, coffrets… suivez vos produits scellés.'}</p>
     <div class="btn-row" style="max-width:340px;margin:0 auto">
-      <a class="btn" href="#/scan">${icon('scan')}Scanner</a>
+      ${IS_STORE ? '' : `<a class="btn" href="#/scan">${icon('scan')}Scanner</a>`}
       <button class="btn primary" data-add="${kind}">${icon('plus')}Ajouter</button></div></div>`;
 }
 

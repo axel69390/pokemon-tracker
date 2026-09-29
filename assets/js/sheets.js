@@ -2,15 +2,16 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-} from './store.js?v=2.3.4';
+} from './store.js?v=2.4.0';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.3.4';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.3.4';
-import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.3.4';
-import { settings } from './settings.js?v=2.3.4';
-import { renderChart } from './chart.js?v=2.3.4';
+} from './ui.js?v=2.4.0';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.0';
+import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.0';
+import { settings } from './settings.js?v=2.4.0';
+import { requireAccess } from './billing.js?v=2.4.0';
+import { renderChart } from './chart.js?v=2.4.0';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -258,7 +259,7 @@ export function openDetail(kind, id) {
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
     if (t.dataset.mode) { updateAsset(kind, id, { priceMode: t.dataset.mode }); toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle'); }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.3.4').then((mod) => mod.openInvest(kind, id));
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.0').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
@@ -322,6 +323,7 @@ function gccStats(list) {
    Add / edit form
    ====================================================================== */
 export function openForm(kind, existing = null, prefill = {}, { photoData = null } = {}) {
+  if (!requireAccess()) return;
   const isCard = kind === 'card';
   const a = { lang: 'fr', qty: 1, grader: 'raw', condition: 'nm', status: 'sealed', category: 'Booster', buyDate: today(), ...(existing || {}), ...prefill };
   let newPhoto = photoData;            // data URL waiting to be uploaded

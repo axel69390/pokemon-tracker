@@ -1,8 +1,10 @@
-import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, pendingPrices } from '../store.js?v=2.3.4';
-import { settings } from '../settings.js?v=2.3.4';
-import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.3.4';
-import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.3.4';
-import { openDetail, openSales } from '../sheets.js?v=2.3.4';
+import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, pendingPrices } from '../store.js?v=2.4.0';
+import { settings } from '../settings.js?v=2.4.0';
+import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.0';
+import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.0';
+import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.4.0';
+import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.4.0';
+import { openDetail, openSales } from '../sheets.js?v=2.4.0';
 
 let period = 'max';
 let perfMode = 'eur';
@@ -27,12 +29,13 @@ export function render(main) {
         <div class="chart-legend"><span>Valeur</span><span class="inv">Investi</span></div>
         <div class="periods">${PERIODS.map((x) => `<button data-period="${x.id}" class="${x.id === period ? 'on' : ''}">${x.label}</button>`).join('')}</div>
       </section>
-      ${settings.isServer() ? priceRunHtml() : ''}
+      ${IS_STORE && !isPremium() && trialDaysLeft() <= 5 ? `<div class="banner">${icon('star')}<div class="main"><b>${esc(statusLabel())}</b><br><small class="muted">CardVault Premium : 2,99 € / mois</small></div><button class="btn sm primary" data-paywall>Premium</button></div>` : ''}
+      ${settings.isServer() || IS_STORE || store.get().priceRun ? priceRunHtml() : ''}
       ${s.error && !s.local ? `<div class="banner">${icon('info')}<div class="main">Hors ligne — affichage des dernières données connues.<br><small class="muted">${esc(s.error)}</small></div></div>` : ''}
-      ${empty && !settings.isServer() ? `<div class="banner">${icon('server')}<div class="main"><b>Votre collection est sur votre serveur ?</b><br><small class="muted">Collez votre lien de connexion dans les réglages.</small></div><a class="btn sm primary" href="#/settings">Connecter</a></div>` : ''}
-      ${empty ? `<div class="section empty"><div class="ico">${icon('sparkle', 'lg')}</div><h3>Bienvenue dans Pokédex Invest</h3>
+      ${empty && !IS_STORE && !settings.isServer() ? `<div class="banner">${icon('server')}<div class="main"><b>Votre collection est sur votre serveur ?</b><br><small class="muted">Collez votre lien de connexion dans les réglages.</small></div><a class="btn sm primary" href="#/settings">Connecter</a></div>` : ''}
+      ${empty ? `<div class="section empty"><div class="ico">${icon('sparkle', 'lg')}</div><h3>Bienvenue dans ${APP_NAME}</h3>
         <p>Ajoutez votre première carte ou votre premier produit scellé pour suivre la valeur de votre collection.</p>
-        <div class="btn-row" style="max-width:360px;margin:0 auto"><a class="btn" href="#/scan">${icon('scan')}Scanner</a><a class="btn primary" href="#/collection/cards?add=1">${icon('plus')}Ajouter</a></div></div>` : ''}
+        <div class="btn-row" style="max-width:360px;margin:0 auto">${IS_STORE ? '' : `<a class="btn" href="#/scan">${icon('scan')}Scanner</a>`}<a class="btn primary" href="#/collection/cards?add=1">${icon('plus')}Ajouter</a></div></div>` : ''}
 
       <section class="section">
         <div class="section-head"><h2>Mes investissements</h2></div>
@@ -67,8 +70,9 @@ export function render(main) {
   drawChart(main);
 
   main.onclick = (e) => {
-    const t = e.target.closest('[data-period],[data-perf],[data-open],[data-sales],[data-go],[data-refresh]');
+    const t = e.target.closest('[data-period],[data-perf],[data-open],[data-sales],[data-go],[data-refresh],[data-paywall]');
     if (!t) return;
+    if ('paywall' in t.dataset) { openPaywall(); return; }
     if (t.dataset.period) { period = t.dataset.period; main.querySelectorAll('[data-period]').forEach((b) => b.classList.toggle('on', b === t)); drawChart(main); }
     if (t.dataset.perf) { perfMode = t.dataset.perf; main.querySelectorAll('[data-perf]').forEach((b) => b.classList.toggle('on', b === t)); main.querySelector('#perf').innerHTML = perfList(); }
     if (t.dataset.open) { const [kind, id] = t.dataset.open.split(':'); openDetail(kind, id); }
@@ -77,9 +81,9 @@ export function render(main) {
     if ('refresh' in t.dataset && !refreshing) {
       refreshing = true;
       render(main);
-      toast('Mise à jour des cotes lancée (environ 1 minute)');
-      refreshPrices()
-        .then((r) => toast(`Cotes à jour : ${r.updated} carte${r.updated > 1 ? 's' : ''}${r.pending ? `, ${r.pending} à valider` : ''}`))
+      toast(settings.isServer() ? 'Mise à jour des cotes lancée (environ 1 minute)' : 'Mise à jour des cotes…');
+      (settings.isServer() ? refreshPrices() : refreshLocalPrices({ force: true }))
+        .then((r) => r && toast(`Cotes à jour : ${r.updated} carte${r.updated > 1 ? 's' : ''}${r.pending ? `, ${r.pending} à valider` : ''}`))
         .catch((err) => toast(err.message, { error: true }))
         .finally(() => { refreshing = false; const m = document.querySelector('main.view'); if (m && location.hash.replace('#', '').replace('/', '') === '') render(m); });
     }

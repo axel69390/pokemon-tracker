@@ -2,34 +2,40 @@
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const eur0 = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+import { lang } from './i18n.js?v=2.4.0';
+
+const LOCALE = lang() === 'en' ? 'en-IE' : 'fr-FR';
+const eur = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const eur0 = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 export const money = (v, compact = false) => (v == null || !isFinite(v) ? '—' : (compact && Math.abs(v) >= 10000 ? eur0 : eur).format(v));
 export const signed = (v) => (v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + eur.format(Math.abs(v)));
-export const pct = (v) => (v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' %');
+export const pct = (v) => (v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toLocaleString(LOCALE, { maximumFractionDigits: 1 }) + ' %');
 export const trend = (v) => (v > 0.004 ? 'up' : v < -0.004 ? 'down' : 'flat');
 export const pill = (v, label) => `<span class="pill ${trend(v)} num">${label ?? signed(v)}</span>`;
 
-const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const MONTHS = lang() === 'en'
+  ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  : ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 export function dateFr(d, withYear = true) {
   if (!d) return '—';
   const [y, m, dd] = String(d).slice(0, 10).split('-').map(Number);
-  return `${dd} ${MONTHS[m - 1]}${withYear ? ' ' + y : ''}`;
+  return lang() === 'en' ? `${MONTHS[m - 1]} ${dd}${withYear ? ', ' + y : ''}` : `${dd} ${MONTHS[m - 1]}${withYear ? ' ' + y : ''}`;
 }
 export const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const EN_UI = lang() === 'en';
 export const LANGS = {
-  fr: { flag: '🇫🇷', label: 'Français' },
-  en: { flag: '🇬🇧', label: 'Anglais' },
-  jp: { flag: '🇯🇵', label: 'Japonais' },
-  de: { flag: '🇩🇪', label: 'Allemand' },
-  it: { flag: '🇮🇹', label: 'Italien' },
-  es: { flag: '🇪🇸', label: 'Espagnol' },
-  kr: { flag: '🇰🇷', label: 'Coréen' },
-  cn: { flag: '🇨🇳', label: 'Chinois' },
+  fr: { flag: '🇫🇷', label: EN_UI ? 'French' : 'Français' },
+  en: { flag: '🇬🇧', label: EN_UI ? 'English' : 'Anglais' },
+  jp: { flag: '🇯🇵', label: EN_UI ? 'Japanese' : 'Japonais' },
+  de: { flag: '🇩🇪', label: EN_UI ? 'German' : 'Allemand' },
+  it: { flag: '🇮🇹', label: EN_UI ? 'Italian' : 'Italien' },
+  es: { flag: '🇪🇸', label: EN_UI ? 'Spanish' : 'Espagnol' },
+  kr: { flag: '🇰🇷', label: EN_UI ? 'Korean' : 'Coréen' },
+  cn: { flag: '🇨🇳', label: EN_UI ? 'Chinese' : 'Chinois' },
 };
 export const flag = (l) => `<span class="flag" title="${esc(LANGS[l]?.label || l || '')}">${LANGS[l]?.flag || '🏳️'}</span>`;
 

@@ -1,16 +1,31 @@
-import { settings, parseConnect } from '../settings.js?v=2.3.4';
-import { server } from '../api.js?v=2.3.4';
-import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.3.4';
-import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.3.4';
+import { settings, parseConnect } from '../settings.js?v=2.4.0';
+import { server } from '../api.js?v=2.4.0';
+import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.0';
+import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.0';
+import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.0';
+import { langSetting, setLang } from '../i18n.js?v=2.4.0';
+import { statusLabel, openPaywall, isPremium } from '../billing.js?v=2.4.0';
 
-export const VERSION = '2.3.4';
+export const VERSION = '2.4.0';
 
 export function render(main) {
   const s = settings.get();
   const st = store.status();
   const d = store.get();
+  const ls = langSetting();
   main.innerHTML = `
     <section class="section" style="margin-top:6px">
+      <div class="section-head"><h2>Langue</h2></div>
+      <div class="seg" data-no-tr>
+        <button data-lang="auto" class="${ls === 'auto' ? 'on' : ''}">Auto</button>
+        <button data-lang="fr" class="${ls === 'fr' ? 'on' : ''}">Français</button>
+        <button data-lang="en" class="${ls === 'en' ? 'on' : ''}">English</button>
+      </div>
+    </section>
+    ${IS_STORE ? `<section class="section"><div class="section-head"><h2>CardVault Premium</h2></div>
+      <button class="panel set-track" data-paywall style="width:100%"><div class="top"><b>${esc(statusLabel())}</b>${icon('chev', 'sm faint')}</div>
+      <span class="muted" style="font-size:13px">${isPremium() ? 'Gérer dans Google Play › Abonnements' : '2,99 € / mois ou 24,99 € / an'}</span></button></section>` : ''}
+    ${IS_STORE ? '' : `<section class="section">
       <div class="section-head"><h2>Stockage des données</h2>
         <span style="display:flex;align-items:center;gap:8px;font-size:12px" class="muted">
           <span class="status-dot ${s.mode === 'server' ? (st.online ? 'ok' : 'ko') : ''}"></span>
@@ -29,7 +44,7 @@ export function render(main) {
         <button class="btn primary" type="submit">${icon('check')}Enregistrer et tester</button>
         <p class="note" style="margin:0">Le serveur synchronise la collection entre vos appareils, conserve l’historique quotidien de la valeur et active le scanner.</p>
       </form>` : `<div class="panel muted" style="font-size:13px">Les données sont enregistrées dans ce navigateur uniquement. Exportez-les régulièrement ou connectez un serveur personnel pour les synchroniser.</div>`}
-    </section>
+    </section>`}
 
     <section class="section">
       <div class="section-head"><h2>Mes données</h2></div>
@@ -44,24 +59,29 @@ export function render(main) {
     <section class="section">
       <div class="section-head"><h2>À propos</h2></div>
       <div class="panel" style="display:flex;gap:14px;align-items:center">
-        <img src="icon.svg" alt="" width="48" height="48" style="border-radius:14px">
-        <div><b>Pokédex Invest</b> <span class="pill gold">v${VERSION}</span><br>
-        <small class="muted">Cotes : Cardmarket &amp; TCGplayer via TCGdex. Pokémon est une marque de Nintendo / Creatures / GAME FREAK — application non affiliée.</small></div>
+        <img src="${ICON}" alt="" width="48" height="48" style="border-radius:14px">
+        <div><b>${APP_NAME}</b> <span class="pill gold">v${VERSION}</span><br>
+        <small class="muted" data-no-tr>${IS_STORE
+          ? (document.documentElement.lang === 'en' ? 'Market prices: Cardmarket via TCGdex. Pokémon and card images are trademarks of Nintendo / Creatures / GAME FREAK / The Pokémon Company — CardVault is not affiliated with or endorsed by them.' : 'Cotes : Cardmarket via TCGdex. Pokémon et les visuels des cartes sont des marques de Nintendo / Creatures / GAME FREAK / The Pokémon Company — CardVault n’est ni affilié ni approuvé par eux.')
+          : 'Cotes : Cardmarket &amp; TCGplayer via TCGdex. Pokémon est une marque de Nintendo / Creatures / GAME FREAK — application non affiliée.'}</small>
+        ${IS_STORE ? `<br><a href="privacy.html" target="_blank" rel="noopener" style="font-size:12px">${document.documentElement.lang === 'en' ? 'Privacy policy' : 'Politique de confidentialité'}</a>` : ''}</div>
       </div>
     </section>`;
 
   main.onclick = async (e) => {
-    const t = e.target.closest('[data-mode],[data-export],[data-import]');
+    const t = e.target.closest('[data-mode],[data-export],[data-import],[data-lang],[data-paywall]');
     if (!t) return;
+    if ('paywall' in t.dataset) { openPaywall(); return; }
+    if (t.dataset.lang) { setLang(t.dataset.lang); location.reload(); return; }
     if (t.dataset.mode) {
       if (t.dataset.mode === s.mode) return;
       settings.set({ mode: t.dataset.mode });
       render(main);
     }
     if (t.dataset.export === 'json') {
-      download(`pokedex-invest-${today()}.json`, JSON.stringify({ app: 'pokedex-invest', version: VERSION, exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
+      download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', version: VERSION, exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
     }
-    if (t.dataset.export === 'csv') download(`pokedex-invest-${today()}.csv`, toCsv(), 'text/csv;charset=utf-8');
+    if (t.dataset.export === 'csv') download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.csv`, toCsv(), 'text/csv;charset=utf-8');
     if ('import' in t.dataset) importBackup();
   };
   main.onsubmit = async (e) => {
@@ -98,7 +118,7 @@ function importBackup() {
     if (!file) return;
     try {
       const data = JSON.parse(await file.text());
-      if (!Array.isArray(data.cards) || !Array.isArray(data.items)) throw new Error('Ce fichier n’est pas une sauvegarde Pokédex Invest');
+      if (!Array.isArray(data.cards) || !Array.isArray(data.items)) throw new Error('Ce fichier n’est pas une sauvegarde valide');
       if (!(await confirmSheet(`Remplacer la collection actuelle par cette sauvegarde (${data.cards.length} cartes, ${data.items.length} items) ?`, { ok: 'Restaurer', danger: true }))) return;
       replaceAll({ cards: data.cards, items: data.items, sales: data.sales || [], sets: data.sets || [], history: data.history || [] });
       toast('Sauvegarde restaurée');
