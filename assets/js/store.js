@@ -317,13 +317,13 @@ export function removeSet(id) {
    browser): once a day, every card linked to the catalogue gets its day / 30-day average and trend; cards in
    automatic mode take the trend as their value (swings > 40 % are proposed for review instead). */
 const LOCAL_RUN_KEY = NS + '.localPriceRun';
-export async function refreshLocalPrices({ force = false } = {}) {
+export async function refreshLocalPrices({ force = false, only = null } = {}) {
   if (settings.isServer() || !hasAccess()) return null;
   const day = today();
   let last = null;
   try { last = localStorage.getItem(LOCAL_RUN_KEY); } catch { /* private mode */ }
-  if (!force && last === day) return null;
-  const cards = state.cards.filter((c) => c.tcgdexId);
+  if (!only && !force && last === day) return null;
+  const cards = state.cards.filter((c) => c.tcgdexId && (!only || only.includes(c.id)));
   if (!cards.length) return null;
   const res = {};
   let errors = 0;
@@ -344,7 +344,7 @@ export async function refreshLocalPrices({ force = false } = {}) {
   let updated = 0, pending = 0;
   state.cards.forEach((c) => {
     const cm = res[c.id];
-    if (!cm) return;
+    if (!cm || (only && !only.includes(c.id))) return;
     const trend = r2(cm.trend || cm.avg), d30 = r2(cm.avg30);
     c.market = { src: 'Cardmarket', d1: r2(cm.avg1 != null ? cm.avg1 : cm.avg), d1At: day, d30, at: day };
     if (trend != null) {
@@ -353,13 +353,15 @@ export async function refreshLocalPrices({ force = false } = {}) {
       h.push({ d: day, p: trend, a30: d30 });
       c.hist = h.slice(-400);
     }
-    if (priceModeOf('card', c) !== 'auto' || trend == null) return;
+    // Manual cards are never touched, except when no value was ever entered (nothing of the user's to overwrite).
+    if (trend == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
     const old = hasValue(c) ? +c.value : null;
     if (old && c.valueSource && Math.abs(trend - old) / old > 0.4) { c.pendingValue = { v: trend, src: 'Cardmarket · tendance', d: day }; pending++; return; }
     delete c.pendingValue;
     c.value = trend; c.valueSource = 'Cardmarket · tendance'; logValue(c, trend);
     updated++;
   });
+  if (only) { commit(); return { updated, pending, errors }; }   // single-card refresh: keep the daily run untouched
   state.priceRun = { at: new Date().toISOString(), updated, pending, skipped: 0, errors, local: true };
   try { localStorage.setItem(LOCAL_RUN_KEY, day); } catch { /* private mode */ }
   commit();
