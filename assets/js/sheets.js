@@ -4,6 +4,7 @@ import {
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
   refreshLocalPrices, refreshPrices,
 } from './store.js?v=2.4.0';
+import { EBAY_API } from './edition.js?v=2.4.0';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
@@ -25,6 +26,7 @@ export function openDetail(kind, id) {
   let showOfficial = false;
   let market = null;             // { loading, error, variants, selected }
   let gcc = null;                // { loading, error, sales, scope, edition }
+  let ebay = null;               // { loading } | { error } | { items } — active eBay listings (only when EBAY_API is set)
   const sheet = openSheet({ title: kind === 'card' ? 'Carte' : 'Item', full: true, onClose: () => off() });
   const off = store.on(() => draw());
 
@@ -106,6 +108,8 @@ export function openDetail(kind, id) {
 
       ${kind === 'card' ? marketHtml(a) : ''}
 
+      ${ebayHtml(a)}
+
       <div class="section">
         <div class="section-head"><h2>Ventes et annonces</h2></div>
         <div class="links">
@@ -135,6 +139,7 @@ export function openDetail(kind, id) {
     }
     if (kind === 'card' && a.tcgdexId && !market) loadMarket(a);
     if (kind === 'card' && !gcc && settings.isServer()) loadGcc(a);
+    if (EBAY_API && !ebay) loadEbay(a);
   }
 
   function marketBlock(a) {
@@ -206,6 +211,49 @@ export function openDetail(kind, id) {
       }
     }
     return `<div class="section"><div class="section-head"><h2>Ventes GCC</h2><span class="pill gold">Cartes gradées</span></div>${inner}</div>`;
+  }
+
+  function ebayHtml(a) {
+    if (!EBAY_API) return '';
+    let inner;
+    if (!ebay || ebay.loading) inner = '<div class="loading"><div class="spinner"></div></div>';
+    else if (ebay.error) inner = '<div class="empty" style="padding:18px"><p style="margin:0">Annonces eBay indisponibles pour le moment.</p></div>';
+    else if (!ebay.items.length) inner = '<div class="empty" style="padding:18px"><p style="margin:0">Aucune annonce eBay correspondante en ce moment.</p></div>';
+    else {
+      const v = ebay.items.map((x) => x.price).sort((p, q) => p - q);
+      const m = Math.floor(v.length / 2);
+      const med = v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+      inner = `<div class="market">
+          <div class="m"><span><small>Médiane</small><b class="num">${money(med)}</b></span></div>
+          <div class="m"><span><small>Annonces</small><b class="num">${v.length}</b></span></div>
+          <div class="m"><span><small>Fourchette</small><b class="num" style="font-size:13px">${money(v[0])} – ${money(v[v.length - 1])}</b></span></div>
+        </div>
+        <div class="list" style="margin-top:10px">${ebay.items.slice(0, 6).map((x) => `<a class="row" href="${esc(x.url)}" target="_blank" rel="noopener">
+          ${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="" loading="lazy">` : '<span class="thumb"></span>'}
+          <span class="main"><b>${esc(x.title)}</b><small>${esc([x.buying === 'auction' ? 'Enchère' : 'Prix fixe', x.condition].filter(Boolean).join(' · '))}</small></span>
+          <span class="end"><b class="num">${money(x.price)}</b></span></a>`).join('')}</div>
+        <div class="note">Prix demandés par les vendeurs eBay (annonces en cours), pas des ventes réalisées : un repère, à croiser avec les ventes réussies.</div>`;
+    }
+    return `<div class="section"><div class="section-head"><h2>Annonces eBay</h2><span class="pill">En cours</span></div>${inner}</div>`;
+  }
+
+  async function loadEbay(a) {
+    ebay = { loading: true };
+    try {
+      const fold2 = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const base = String(a.name || '').replace(/\([^)]*\)/g, ' ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+      const words = fold2(base).split(/[^a-z0-9]+/).filter((w) => w.length >= 3).map((w) => (w.length > 5 ? w.slice(0, 5) : w));
+      const res = await fetch(`${EBAY_API}?q=${encodeURIComponent(base + ' pokemon' + (kind === 'card' && a.num ? ' ' + String(a.num).split('/')[0] : ''))}`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const j = await res.json();
+      // Keep only real matches: every word of the name, EUR prices, no empty boxes / proxies / lots.
+      const bad = /\b(vide|empty|proxy|custom|reproduction|replica|fake|lot de|boite seule|carte seule)\b/i;
+      const items = (j.items || []).filter((x) => x.currency === 'EUR' && x.price > 0 && words.every((w) => fold2(x.title).includes(w)) && !bad.test(fold2(x.title)));
+      ebay = { items };
+    } catch (e) {
+      ebay = { error: e.message };
+    }
+    draw();
   }
 
   async function loadGcc(a) {
