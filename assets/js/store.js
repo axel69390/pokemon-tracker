@@ -1,6 +1,6 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
 import { settings } from './settings.js?v=2.4.0';
-import { IS_STORE } from './edition.js?v=2.4.0';
+import { IS_STORE, asset } from './edition.js?v=2.4.0';
 import { server, ServerError, getCard } from './api.js?v=2.4.0';
 import { today, uid, toast, debounce } from './ui.js?v=2.4.0';
 import { hasAccess } from './billing.js?v=2.4.0';
@@ -366,6 +366,52 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
   try { localStorage.setItem(LOCAL_RUN_KEY, day); } catch { /* private mode */ }
   commit();
   return state.priceRun;
+}
+
+/* ---------- Sealed products: TCGplayer market price (no server needed) ----------
+   assets/data/sealed-prices.json is rebuilt daily by a GitHub Action (TCGplayer, USD). A sealed item linked to
+   the catalogue gets its value from it the moment it is added, then once a day. Items whose value was typed by
+   hand are never overwritten; items left in automatic mode follow the market. */
+const SEALED_RUN_KEY = NS + '.sealedPriceRun';
+let sealedPrices = null;
+async function loadSealedPrices() {
+  if (!sealedPrices) {
+    sealedPrices = fetch(asset('assets/data/sealed-prices.json?t=' + today()))
+      .then((r) => { if (!r.ok) throw new Error('prix indisponibles'); return r.json(); })
+      .catch((e) => { sealedPrices = null; throw e; });
+  }
+  return sealedPrices;
+}
+async function usdToEur() {
+  try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c && c.d === today()) return c.r; } catch { /* ignore */ }
+  let r = null;
+  try { r = (await (await fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR')).json()).rates.EUR; } catch { /* ignore */ }
+  if (!r) { try { r = (await (await fetch('https://open.er-api.com/v6/latest/USD')).json()).rates.EUR; } catch { /* ignore */ } }
+  if (r) { try { localStorage.setItem(NS + '.fx', JSON.stringify({ d: today(), r })); } catch { /* ignore */ } return r; }
+  try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c) return c.r; } catch { /* ignore */ }
+  return 0.88;
+}
+export async function refreshSealedPrices({ only = null, force = false } = {}) {
+  if (settings.isServer() || !hasAccess()) return null;
+  const day = today();
+  if (!only && !force) { try { if (localStorage.getItem(SEALED_RUN_KEY) === day) return null; } catch { /* ignore */ } }
+  const items = state.items.filter((i) => i.tcgplayerId && (!only || only.includes(i.id)));
+  if (!items.length) return null;
+  let data, fx;
+  try { [data, fx] = await Promise.all([loadSealedPrices(), usdToEur()]); } catch { return { updated: 0, error: true }; }
+  let updated = 0;
+  items.forEach((i) => {
+    const row = data.p && data.p[i.tcgplayerId];
+    if (!row || !row[0]) return;
+    const eur = Math.round(row[0] * fx * 100) / 100;
+    i.market = { src: 'TCGplayer', d1: eur, d1At: data.built || day, d30: null, at: day, low: row[1] ? Math.round(row[1] * fx * 100) / 100 : null };
+    if (hasValue(i) && (i.priceMode || 'manual') !== 'auto' && i.valueSource !== 'TCGplayer') return;   // typed by hand: keep
+    i.value = eur; i.valueSource = 'TCGplayer'; i.priceMode = 'auto'; logValue(i, eur);
+    updated++;
+  });
+  if (!only) { try { localStorage.setItem(SEALED_RUN_KEY, day); } catch { /* ignore */ } }
+  commit();
+  return { updated };
 }
 
 export function replaceAll(data) {
