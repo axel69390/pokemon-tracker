@@ -309,9 +309,25 @@ async function quickGccLookup(id) {
   const words = fold(base).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
   if (!words.length) return 'none';
   const lang = GCC_LANG[a.lang];
-  let sales = (await server.gccSales(base))
-    .filter((x) => (!lang || !x.lang || x.lang === lang) && words.every((w) => fold(x.title).includes(w)) && isFinite(+x.price) && +x.price > 0)
+  // Singular/plural and accents must not matter ("Évolutions" vs "Evolution"): compare on a 5-letter stem.
+  const stem = (w) => (w.length > 5 ? w.slice(0, 5) : w);
+  const keep = (list) => list
+    .filter((x) => (!lang || !x.lang || x.lang === lang) && words.every((w) => fold(x.title).includes(stem(w))) && isFinite(+x.price) && +x.price > 0)
     .sort((p, q) => String(q.soldAt).localeCompare(String(p.soldAt)));
+  // Try several spellings of the search: GCC's search is picky, so a failure or an empty answer moves on to the next one.
+  const queries = [...new Set([base, fold(base), words.join(' '), words.slice(0, 3).join(' ')].map((t) => t.trim()).filter(Boolean))];
+  let sales = [];
+  let lastError = null;
+  let answered = false;
+  for (const q of queries) {
+    try {
+      sales = keep(await server.gccSales(q));
+      answered = true;
+      lastError = null;
+      if (sales.length) break;
+    } catch (e) { lastError = new Error((e.message || 'erreur') + ' (recherche « ' + q + ' »)'); }
+  }
+  if (!answered && lastError) throw lastError;
   const close = extra.length ? sales.filter((x) => extra.every((w) => fold(x.title).includes(w))) : [];
   if (close.length) sales = close;
   if (!sales.length) return 'none';
