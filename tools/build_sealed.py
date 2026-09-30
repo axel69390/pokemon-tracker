@@ -210,7 +210,7 @@ def main():
 
     names = load_pokemon_names()
     groups = get('https://tcgcsv.com/tcgplayer/3/groups')['results']
-    out, seen, unmatched = [], set(), []
+    out, seen, unmatched = [], {}, []
     for g in sorted(groups, key=lambda x: x['publishedOn'], reverse=True):
         set_id = next((by_en[c] for c in candidates(g['name']) if c in by_en), None)
         if not set_id:
@@ -233,9 +233,18 @@ def main():
                 extra.append('sous blister')
             name = f"{label} {fr_set}" + (f" ({', '.join(extra)})" if extra else '')
             key = fold(name)
+            en_key = fold(re.sub(r'\((international|retail|english|us) version\)', ' ', p['name'], flags=re.I))
             if key in seen:
-                continue
-            seen.add(key)
+                # Same French name: a true duplicate listing is dropped, but another illustration of the
+                # same product (different English name) must stay findable, so tell it apart.
+                if en_key in seen[key]:
+                    continue
+                tag = (re.findall(r'\[([^\]]+)\]', p['name']) or [str(p['productId'])])[0]
+                name = f"{name} ({tag})" if not name.endswith(')') else f"{name[:-1]}, {tag})"
+                key = fold(name)
+                if key in seen:
+                    continue
+            seen.setdefault(key, set()).add(en_key)
             out.append({'id': p['productId'], 'g': g['groupId'], 'n': name, 'c': cat, 's': fr_set, 'd': (g.get('publishedOn') or '')[:7]})
     out = finalize(out, names)
     OUT.parent.mkdir(parents=True, exist_ok=True)
