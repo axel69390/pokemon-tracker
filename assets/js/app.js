@@ -2,7 +2,7 @@
 import { startAutoTranslate } from './i18n.js?v=2.4.0';
 import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.0';
 import { checkPurchases, trialStart } from './billing.js?v=2.4.0';
-import { store, load, refreshLocalPrices } from './store.js?v=2.4.0';
+import { store, load, refreshLocalPrices, refreshSealedPrices } from './store.js?v=2.4.0';
 import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.0';
 import { openForm } from './sheets.js?v=2.4.0';
 import * as portfolio from './views/portfolio.js?v=2.4.0';
@@ -115,7 +115,7 @@ window.addEventListener('hashchange', route);
 startAutoTranslate();
 if (IS_STORE) { trialStart(); checkPurchases().then(() => { if (current && current.def.live) current.def.view.render(current.main, current.r); }); }
 route();
-load().then(() => refreshLocalPrices()).catch(() => {});
+load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).catch(() => {});
 
 // Refresh when the app comes back to the foreground (another device may have edited the collection).
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load(); });
