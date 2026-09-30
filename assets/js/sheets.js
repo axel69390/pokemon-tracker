@@ -2,7 +2,7 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-  refreshLocalPrices, refreshPrices,
+  refreshLocalPrices, refreshSealedPrices, refreshPrices,
 } from './store.js?v=2.4.0';
 import { EBAY_API } from './edition.js?v=2.4.0';
 import {
@@ -108,6 +108,8 @@ export function openDetail(kind, id) {
 
       ${kind === 'card' ? marketHtml(a) : ''}
 
+      ${kind === 'item' ? compareHtml(a) : ''}
+
       ${ebayHtml(a)}
 
       <div class="section">
@@ -211,6 +213,21 @@ export function openDetail(kind, id) {
       }
     }
     return `<div class="section"><div class="section-head"><h2>Ventes GCC</h2><span class="pill gold">Cartes gradées</span></div>${inner}</div>`;
+  }
+
+  // Estimate source + one-tap searches on the marketplaces (no scraping: the user sees the live listings).
+  function compareHtml(a) {
+    const q = encodeURIComponent(String(a.name || '').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim() + ' pokemon');
+    const m = a.market && a.market.src === 'TCGplayer' ? a.market : null;
+    const links = [
+      ['eBay', 'Annonces et ventes', `https://www.ebay.fr/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1`],
+      ['Cardmarket', 'Annonces en cours', `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${q}`],
+      ['Vinted', 'Annonces en cours', `https://www.vinted.fr/catalog?search_text=${q}`],
+    ];
+    return `<div class="section"><div class="section-head"><h2>Comparer les prix</h2>${m ? '<span class="pill gold">TCGplayer</span>' : ''}</div>
+      ${m ? `<div class="market"><div class="m"><span><small>Cote marché</small><b class="num">${money(m.d1)}</b></span></div>${m.low ? `<div class="m"><span><small>Prix bas</small><b class="num">${money(m.low)}</b></span></div>` : ''}</div>
+      <div class="note" style="margin:6px 0 10px">Estimation indicative issue du marché TCGplayer (produit scellé, converti en €), mise à jour chaque jour.</div>` : ''}
+      <div class="list">${links.map(([n, s, u]) => `<a class="row" href="${u}" target="_blank" rel="noopener"><span class="main"><b>${n}</b><small>${s}</small></span><span class="end">${icon('ext')}</span></a>`).join('')}</div></div>`;
   }
 
   function ebayHtml(a) {
@@ -618,6 +635,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
           else quickGccValue(created.id, { notify: true });
         }
         else if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
+        else if (!isCard && created.tcgplayerId && !hasValue(created)) refreshSealedPrices({ only: [created.id] }).then((r) => { if (r && r.updated) toast('Cote TCGplayer ajoutée'); }).catch(() => {});
         toast(isCard ? 'Carte ajoutée' : 'Item ajouté');
         sheet.close();
         if (!location.hash.startsWith('#/collection')) location.hash = '#/collection/' + (isCard ? 'cards' : 'items');
