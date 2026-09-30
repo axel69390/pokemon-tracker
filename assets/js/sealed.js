@@ -8,7 +8,7 @@ export function loadSealed() {
   if (!cache) {
     cache = fetch(asset('assets/data/sealed.json?v=2.4.0'))
       .then((r) => { if (!r.ok) throw new Error('Catalogue indisponible'); return r.json(); })
-      .then((d) => d.products.map((p) => ({ ...p, key: fold(`${p.n} ${p.c}`) })))
+      .then((d) => d.products.filter((p) => !/Pokémon Center/i.test(p.n)).map((p) => ({ ...p, key: fold(`${p.n} ${p.c}`) })))
       .catch((e) => { cache = null; throw e; });
   }
   return cache;
