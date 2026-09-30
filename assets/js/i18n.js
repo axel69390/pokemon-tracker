@@ -152,7 +152,7 @@ const EN = {
   'La mise à jour prend plus de temps que prévu': 'The update is taking longer than expected',
   'Mise à jour des cotes lancée (environ 1 minute)': 'Price update started (about 1 minute)', 'Ce fichier n’est pas une sauvegarde Pokédex Invest': 'This file is not a valid backup',
   'Le suivi des prix et les alertes de revente sont inclus dans CardVault Premium.': 'Price tracking and resale alerts are included in CardVault Premium.',
-  'Gérer dans Google Play › Abonnements': 'Manage in Google Play › Subscriptions', '2,99 € / mois ou 24,99 € / an': '€2.99 / month or €24.99 / year',
+  'Gérer dans Google Play › Abonnements': 'Manage in Google Play › Subscriptions', '2,99 € / mois ou 24,90 € / an': '€2.99 / month or €24.90 / year',
   'CardVault Premium : 2,99 € / mois': 'CardVault Premium: €2.99 / month', 'Ce fichier n’est pas une sauvegarde valide': 'This file is not a valid backup',
   'Mise à jour des cotes…': 'Updating prices…', 'jamais': 'never', '1A': '1Y',
   'Une pastille apparaît sur l’onglet Invest dès qu’une carte ou un item de votre collection (achetée, hors communes et peu communes, d’une valeur d’au moins 1 €) prend au moins 10 % en 7 jours.':
