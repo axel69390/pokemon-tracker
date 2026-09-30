@@ -24,7 +24,7 @@ export function render(main) {
     </section>
     ${IS_STORE ? `<section class="section"><div class="section-head"><h2>CardVault Premium</h2></div>
       <button class="panel set-track" data-paywall style="width:100%"><div class="top"><b>${esc(statusLabel())}</b>${icon('chev', 'sm faint')}</div>
-      <span class="muted" style="font-size:13px">${isPremium() ? 'Gérer dans Google Play › Abonnements' : '2,99 € / mois ou 24,99 € / an'}</span></button></section>` : ''}
+      <span class="muted" style="font-size:13px">${isPremium() ? 'Gérer dans Google Play › Abonnements' : '2,99 € / mois ou 24,90 € / an'}</span></button></section>` : ''}
     ${IS_STORE ? '' : `<section class="section">
       <div class="section-head"><h2>Stockage des données</h2>
         <span style="display:flex;align-items:center;gap:8px;font-size:12px" class="muted">
