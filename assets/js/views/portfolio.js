@@ -1,4 +1,4 @@
-import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, pendingPrices } from '../store.js?v=2.4.0';
+import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.0';
 import { settings } from '../settings.js?v=2.4.0';
 import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.0';
 import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.0';
@@ -82,7 +82,7 @@ export function render(main) {
       refreshing = true;
       render(main);
       toast(settings.isServer() ? 'Mise à jour des cotes lancée (environ 1 minute)' : 'Mise à jour des cotes…');
-      (settings.isServer() ? refreshPrices() : refreshLocalPrices({ force: true }))
+      (settings.isServer() ? refreshPrices() : Promise.all([refreshSealedPrices({ force: true }), refreshLocalPrices({ force: true })]).then((x) => x[1]))
         .then((r) => r && toast(`Cotes à jour : ${r.updated} carte${r.updated > 1 ? 's' : ''}${r.pending ? `, ${r.pending} à valider` : ''}`))
         .catch((err) => toast(err.message, { error: true }))
         .finally(() => { refreshing = false; const m = document.querySelector('main.view'); if (m && location.hash.replace('#', '').replace('/', '') === '') render(m); });
