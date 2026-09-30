@@ -2,6 +2,7 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
+  refreshLocalPrices,
 } from './store.js?v=2.4.0';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
@@ -473,6 +474,8 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
       if (existing) { updateAsset(kind, existing.id, data); toast('Modifications enregistrées'); sheet.close(); }
       else {
         const created = addAsset(kind, data);
+        // Fetch the market price right away so the value shows up instead of waiting for the daily refresh.
+        if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
         toast(isCard ? 'Carte ajoutée' : 'Item ajouté');
         sheet.close();
         if (!location.hash.startsWith('#/collection')) location.hash = '#/collection/' + (isCard ? 'cards' : 'items');
