@@ -2,7 +2,7 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-  refreshLocalPrices,
+  refreshLocalPrices, refreshPrices,
 } from './store.js?v=2.4.0';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
@@ -140,7 +140,7 @@ export function openDetail(kind, id) {
     const box = (label, v, sub) => `<div class="m"><span><small>${label}</small><b class="num">${v != null ? money(v) : '—'}</b>${sub ? `<small style="font-weight:600">${sub}</small>` : ''}</span>${v != null ? `<button class="use" data-use="${v}">Utiliser</button>` : ''}</div>`;
     return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">${esc(m.src)}</span><button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button></span></div>
       <div class="market">
-        ${box(gcc ? 'Dernière vente' : 'Moyenne du jour', m.d1, gcc ? dateFr(m.d1At) : '')}
+        ${box(gcc ? 'Dernière vente' : 'Moyenne du jour', m.d1, gcc ? saleDate(m.d1At) : '')}
         ${box('Moyenne 30 jours', m.d30, gcc ? `${m.n30 || 0} vente${m.n30 > 1 ? 's' : ''}` : m.src.startsWith('TCG') && m.n30 < 30 ? `${m.n30} jour${m.n30 > 1 ? 's' : ''} relevé${m.n30 > 1 ? 's' : ''}` : '')}
       </div>
       <div class="note">${m.src === 'Cardmarket' ? 'Cardmarket, version exacte' + (a.variant ? ' (' + esc(a.variant) + ')' : '') + ', non gradée.' : gcc ? (a.market.title ? `Ventes réalisées sur Graded Card Center : « ${esc(a.market.title)} ».` : 'Ventes réalisées sur Graded Card Center, même note.') : 'Prix du marché américain converti en euros ; la moyenne 30 jours se construit chaque nuit.'} Relevé du ${dateFr(m.at)}.</div>
@@ -279,6 +279,17 @@ export function openDetail(kind, id) {
 }
 
 /* ---------- GCC matching ---------- */
+// The server may send the last-sale date as ISO, dd/mm/yyyy or a timestamp: show it when readable, nothing otherwise.
+function saleDate(v) {
+  if (v == null || v === '') return '';
+  let d = null;
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = s.slice(0, 10);
+  else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) { const [dd, mm, yy] = s.split('/'); d = `${yy.slice(0, 4)}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`; }
+  else if (/^\d{9,13}$/.test(s)) { const t = new Date(+s < 1e11 ? +s * 1000 : +s); if (!isNaN(t)) d = t.toISOString().slice(0, 10); }
+  return d ? dateFr(d) : '';
+}
+
 const GCC_LANG = { fr: 'French', en: 'English', jp: 'Japanese', de: 'German', it: 'Italian', es: 'Spanish', kr: 'Korean', cn: 'Chinese' };
 const GCC_GRADER = { 'collect aura': 'ca', akat: 'akatsuki' };
 const normRef = (r) => String(r || '').replace(/^#/, '').split('/').map((x) => x.trim().replace(/^0+(?=\d)/, '').toLowerCase()).join('/');
@@ -475,7 +486,9 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
       else {
         const created = addAsset(kind, data);
         // Fetch the market price right away so the value shows up instead of waiting for the daily refresh.
-        if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
+        // Personal-server edition: ask the server for GCC / market prices now instead of waiting for the night run.
+        if (settings.isServer()) { toast('Cote en cours de récupération…'); refreshPrices().catch(() => {}); }
+        else if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
         toast(isCard ? 'Carte ajoutée' : 'Item ajouté');
         sheet.close();
         if (!location.hash.startsWith('#/collection')) location.hash = '#/collection/' + (isCard ? 'cards' : 'items');
