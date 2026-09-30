@@ -239,9 +239,16 @@ export function attachSuggest(input, { search, render, onPick, min = 2, max = 8 
   input.setAttribute('autocomplete', 'off');
   input.addEventListener('input', run);
   input.addEventListener('focus', () => { if (items.length && input.value.trim().length >= min) box.classList.remove('hidden'); });
-  input.addEventListener('blur', () => setTimeout(hide, 180));
-  // pointerdown fires before blur, so the pick is not lost when the keyboard closes.
-  box.addEventListener('pointerdown', (e) => {
+  let pressing = false;
+  input.addEventListener('blur', () => setTimeout(() => { if (!pressing) hide(); }, 180));
+  // Track touches inside the list so scrolling it never hides it or picks an item.
+  box.addEventListener('pointerdown', () => { pressing = true; });
+  const release = () => setTimeout(() => { pressing = false; }, 400);
+  box.addEventListener('pointerup', release);
+  box.addEventListener('pointercancel', release);
+  // Keep the input focused (keyboard open) on tap; selection happens on click, which only fires for taps, not scroll gestures.
+  box.addEventListener('mousedown', (e) => { if (e.target.closest('[data-i]')) e.preventDefault(); });
+  box.addEventListener('click', (e) => {
     const b = e.target.closest('[data-i]');
     if (!b) return;
     e.preventDefault();
@@ -249,4 +256,3 @@ export function attachSuggest(input, { search, render, onPick, min = 2, max = 8 
     onPick(items[+b.dataset.i]);
   });
 }
-
