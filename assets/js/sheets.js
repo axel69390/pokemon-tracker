@@ -328,8 +328,13 @@ async function quickGccLookup(id) {
     } catch (e) { lastError = new Error((e.message || 'erreur') + ' (recherche « ' + q + ' »)'); }
   }
   if (!answered && lastError) throw lastError;
-  const close = extra.length ? sales.filter((x) => extra.every((w) => fold(x.title).includes(w))) : [];
-  if (close.length) sales = close;
+  // Illustrations of the same product do not share a price: when the name carries a detail (Pokémon, version),
+  // only sales of that very variant count. Better no cote than the price of another illustration.
+  if (extra.length) {
+    const hits = (x) => extra.filter((w) => fold(x.title).includes(stem(w))).length;
+    const need = Math.ceil(extra.length * 0.66);
+    sales = sales.filter((x) => hits(x) >= need);
+  }
   if (!sales.length) return 'none';
   const since = (n) => new Date(Date.now() - n * 864e5).toISOString();
   const med = (list) => { const v = list.map((x) => +x.price).sort((p, q) => p - q); const m = Math.floor(v.length / 2); return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
@@ -489,6 +494,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
     } else {
       attachSuggest(nameInput, {
         search: (q) => searchSealed(q),
+        max: 40,      // every illustration of a product must be reachable (a blister can have 4+)
         render: (p) => `<img class="sq" src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"><span class="main"><b>${esc(p.n)}</b><small>${esc(p.c)} · ${esc(p.s)}</small></span>`,
         onPick: (p) => { readForm(); Object.assign(a, sealedPrefill(p)); draw(); },
       });
