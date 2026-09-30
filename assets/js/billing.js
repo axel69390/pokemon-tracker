@@ -9,7 +9,7 @@ export const TRIAL_DAYS = 14;
 const PLAY = 'https://play.google.com/billing';
 export const PLANS = [
   { sku: 'cardvault_monthly', fallback: isEn() ? '€2.99 / month' : '2,99 € / mois' },
-  { sku: 'cardvault_yearly', fallback: isEn() ? '€24.99 / year' : '24,99 € / an', badge: isEn() ? '−30 %' : '−30 %' },
+  { sku: 'cardvault_yearly', fallback: isEn() ? '€24.90 / year' : '24,90 € / an', badge: isEn() ? '−30 %' : '−30 %' },
 ];
 // Play Store listing (used from a regular browser once the app is published).
 export const STORE_URL = 'https://play.google.com/store/apps/details?id=io.github.axel69390.cardvault';
