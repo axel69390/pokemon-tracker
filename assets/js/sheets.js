@@ -858,16 +858,20 @@ export function openSealedPicker({ onPick, onManual = null, category = '', lang 
   let chosen = null;
   let itemLang = lang;
   const catOptions = CATEGORIES.filter((c) => !['Accessoire', 'Autre'].includes(c));
+  // Fixed layout (no sticky inside a scrolling sheet, which swallows taps on some Android browsers):
+  // controls on top, the grid scrolls on its own, the buttons stay pinned below.
+  Object.assign(sheet.el.style, { display: 'flex', flexDirection: 'column', overflow: 'hidden' });
+  Object.assign(sheet.body.style, { display: 'flex', flexDirection: 'column', flex: '1', minHeight: '0' });
   sheet.render(`
-    <div style="display:grid;grid-template-columns:96px 1fr;gap:10px;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:96px 1fr;gap:10px;margin-bottom:10px;flex:none">
       <label class="field" style="margin:0"><span>Langue</span><select id="sl">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === itemLang ? 'selected' : ''}>${v.flag} ${k.toUpperCase()}</option>`).join('')}</select></label>
       <label class="field" style="margin:0"><span>Catégorie</span><select id="sc"><option value="">Toutes</option>${catOptions.map((c) => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}</select></label>
     </div>
-    <label class="search" style="margin-bottom:12px">${icon('search', 'sm')}<input id="sq" type="search" placeholder="Rechercher : Display 151, ETB Évolutions…" autocomplete="off"></label>
-    <div id="sr"></div>
-    <div class="sticky-actions">
+    <label class="search" style="margin-bottom:12px;flex:none;height:48px">${icon('search', 'sm')}<input id="sq" type="search" placeholder="Rechercher : Display 151, ETB Évolutions…" autocomplete="off"></label>
+    <div id="sr" style="flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch"></div>
+    <div style="flex:none;padding-top:10px">
       <button type="button" class="btn primary block" id="sv" disabled>${icon('check')}Valider l’ajout</button>
-      ${onManual ? '<button type="button" class="btn block ghost" id="sm" style="margin-top:8px">Mon produit n’est pas dans la liste : saisir à la main</button>' : ''}
+      ${onManual ? '<button type="button" class="btn block ghost" id="sm" style="margin-top:8px;white-space:normal;font-size:13px;line-height:1.25">Mon produit n’est pas dans la liste : saisir à la main</button>' : ''}
     </div>`);
   const out = sheet.body.querySelector('#sr');
   const validate = sheet.body.querySelector('#sv');
