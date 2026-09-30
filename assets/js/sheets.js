@@ -294,19 +294,26 @@ async function quickGccValue(id, { notify = false } = {}) {
     if (notify) toast(status === 'ok' ? 'Cote GCC récupérée' : status === 'none' ? 'Aucune vente GCC trouvée pour ce produit : saisissez la cote à la main' : 'Cote déjà renseignée');
     return status;
   } catch (e) {
-    if (notify) toast('GCC indisponible : ' + (e.message || 'erreur'), { error: true, ms: 4500 });
+    if (notify) toast(/^GCC/.test(e.message || '') ? e.message : 'GCC indisponible : ' + (e.message || 'erreur'), { error: true, ms: 4500 });
     return 'error';
   }
 }
 async function quickGccLookup(id) {
   const a = find('item', id);
   if (!a || hasValue(a)) return 'skip';
-  const words = fold(a.name).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+  // Search with the plain product name: GCC rejects punctuation (HTTP 422 on "Blister X (Xy, Y)").
+  // The bracketed details (version / Pokémon) are only used to prefer the closest sales.
+  const clean = (t) => String(t || '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const base = clean(String(a.name || '').replace(/\([^)]*\)/g, ' '));
+  const extra = fold(clean((String(a.name || '').match(/\(([^)]*)\)/) || [])[1])).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+  const words = fold(base).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
   if (!words.length) return 'none';
   const lang = GCC_LANG[a.lang];
-  const sales = (await server.gccSales(a.name))
+  let sales = (await server.gccSales(base))
     .filter((x) => (!lang || !x.lang || x.lang === lang) && words.every((w) => fold(x.title).includes(w)) && isFinite(+x.price) && +x.price > 0)
     .sort((p, q) => String(q.soldAt).localeCompare(String(p.soldAt)));
+  const close = extra.length ? sales.filter((x) => extra.every((w) => fold(x.title).includes(w))) : [];
+  if (close.length) sales = close;
   if (!sales.length) return 'none';
   const since = (n) => new Date(Date.now() - n * 864e5).toISOString();
   const med = (list) => { const v = list.map((x) => +x.price).sort((p, q) => p - q); const m = Math.floor(v.length / 2); return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
