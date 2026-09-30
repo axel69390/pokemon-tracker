@@ -288,7 +288,9 @@ export function openDetail(kind, id) {
 // 30-day average show up at once instead of after the night run. Never overwrites a value the user typed.
 async function quickGccValue(id, { notify = false } = {}) {
   try {
-    const status = await quickGccLookup(id);
+    let status = await quickGccLookup(id);
+    // GCC sometimes answers empty on the first call (cold lookup): retry twice before giving up.
+    for (let i = 0; i < 2 && status === 'none'; i++) { await new Promise((r) => setTimeout(r, 3500)); status = await quickGccLookup(id); }
     if (notify) toast(status === 'ok' ? 'Cote GCC récupérée' : status === 'none' ? 'Aucune vente GCC trouvée pour ce produit : saisissez la cote à la main' : 'Cote déjà renseignée');
     return status;
   } catch (e) {
