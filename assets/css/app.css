@@ -445,6 +445,7 @@ a.row { color: inherit; }
   position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; z-index: 6;
   background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 14px; box-shadow: var(--shadow);
   max-height: 340px; overflow-y: auto; padding: 4px;
+  touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
 }
 .suggest button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border-radius: 10px; text-align: left; }
 .suggest button:hover, .suggest button:focus { background: var(--surface-3); }
