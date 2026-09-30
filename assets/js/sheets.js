@@ -478,6 +478,14 @@ function gccStats(list) {
    ====================================================================== */
 export function openForm(kind, existing = null, prefill = {}, { photoData = null } = {}) {
   if (!requireAccess()) return;
+  // New sealed item without a scan: start from the visual catalogue (faster and more precise than typing a name).
+  if (kind === 'item' && !existing && !photoData && !prefill.tcgplayerId && !prefill.manual && !prefill.name) {
+    openSealedPicker({
+      onPick: (p) => openForm('item', null, { ...sealedPrefill(p), lang: p.lang || 'fr' }),
+      onManual: (lang) => openForm('item', null, { manual: true, lang }),
+    });
+    return;
+  }
   const isCard = kind === 'card';
   const a = { lang: 'fr', qty: 1, grader: 'raw', condition: 'nm', status: 'sealed', category: 'Booster', buyDate: today(), ...(existing || {}), ...prefill };
   let newPhoto = photoData;            // data URL waiting to be uploaded
@@ -592,7 +600,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
       return;
     }
     if ('sealed' in t.dataset) {
-      openSealedPicker({ onPick: (p) => { Object.assign(a, sealedPrefill(p)); draw(); } });
+      openSealedPicker({ lang: a.lang || 'fr', onPick: (p) => { Object.assign(a, sealedPrefill(p), { lang: p.lang || a.lang }); draw(); } });
       return;
     }
     if (t.dataset.cat) a.category = t.dataset.cat;
@@ -842,20 +850,34 @@ export function openCataloguePicker({ query = '', number = '', lang = 'fr', onPi
 /* ======================================================================
    Sealed catalogue picker (French products)
    ====================================================================== */
-export function openSealedPicker({ onPick, category = '' }) {
+export function openSealedPicker({ onPick, onManual = null, category = '', lang = 'fr' }) {
   const sheet = openSheet({ title: 'Ajouter un item', full: true });
   let cat = category;
   let q = '';
   let seq = 0;
+  let chosen = null;
+  let itemLang = lang;
+  const catOptions = CATEGORIES.filter((c) => !['Accessoire', 'Autre'].includes(c));
   sheet.render(`
-    <label class="search" style="margin-bottom:10px">${icon('search', 'sm')}<input id="sq" type="search" placeholder="Rechercher : Display 151, ETB Évolutions…" autocomplete="off"></label>
-    <div class="chips scroll" id="sc" style="margin-bottom:12px"></div>
-    <div id="sr"></div>`);
-  const chipsEl = sheet.body.querySelector('#sc');
+    <div style="display:grid;grid-template-columns:96px 1fr;gap:10px;margin-bottom:10px">
+      <label class="field" style="margin:0"><span>Langue</span><select id="sl">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === itemLang ? 'selected' : ''}>${v.flag} ${k.toUpperCase()}</option>`).join('')}</select></label>
+      <label class="field" style="margin:0"><span>Catégorie</span><select id="sc"><option value="">Toutes</option>${catOptions.map((c) => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}</select></label>
+    </div>
+    <label class="search" style="margin-bottom:12px">${icon('search', 'sm')}<input id="sq" type="search" placeholder="Rechercher : Display 151, ETB Évolutions…" autocomplete="off"></label>
+    <div id="sr"></div>
+    <div class="sticky-actions">
+      <button type="button" class="btn primary block" id="sv" disabled>${icon('check')}Valider l’ajout</button>
+      ${onManual ? '<button type="button" class="btn block ghost" id="sm" style="margin-top:8px">Mon produit n’est pas dans la liste : saisir à la main</button>' : ''}
+    </div>`);
   const out = sheet.body.querySelector('#sr');
-  const drawChips = () => {
-    chipsEl.innerHTML = `<button data-c="" class="${!cat ? 'on' : ''}">Tous</button>` +
-      CATEGORIES.filter((c) => !['Accessoire', 'Autre'].includes(c)).map((c) => `<button data-c="${c}" class="${cat === c ? 'on' : ''}">${c}</button>`).join('');
+  const validate = sheet.body.querySelector('#sv');
+  const mark = () => {
+    out.querySelectorAll('[data-id]').forEach((b) => {
+      const on = chosen && String(chosen.id) === b.dataset.id;
+      b.style.outline = on ? '2px solid var(--gold)' : '';
+      b.style.outlineOffset = on ? '-2px' : '';
+    });
+    validate.disabled = !chosen;
   };
   const run = async () => {
     const my = ++seq;
@@ -864,25 +886,32 @@ export function openSealedPicker({ onPick, category = '' }) {
       const res = await searchSealed(q, cat);
       if (my !== seq) return;
       out.innerHTML = res.length
-        ? `<div class="grid" style="--cols:3">${res.slice(0, 150).map((p) => `<button class="tile" data-id="${p.id}">
+        ? `<div class="grid" style="--cols:3">${res.slice(0, 150).map((p) => {
+          const variant = p.n.replace(p.c + ' ', '').replace(p.s, '').replace(/^\s*\(|\)\s*$/g, '').trim();
+          return `<button type="button" class="tile" data-id="${p.id}">
             <div class="art item-art cat"><img src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"></div>
-            <div class="meta"><b>${esc(p.s)}</b><small>${esc(p.n.replace(p.c + ' ', '').replace(p.s, '').replace(/^\s*\(|\)\s*$/g, '') || p.c)}</small></div></button>`).join('')}</div>
+            <div class="meta"><b>${esc(p.s)}</b><small>${esc(variant || p.c)}</small></div></button>`;
+        }).join('')}</div>
           ${res.length > 150 ? '<p class="note" style="text-align:center">Affinez la recherche pour voir plus de produits.</p>' : ''}`
         : '<div class="empty"><h3>Aucun produit</h3><p>Essayez un autre nom d’extension ou une autre catégorie.</p></div>';
       out._res = res;
+      mark();
     } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
   };
-  drawChips();
   run();
   let t;
   sheet.body.querySelector('#sq').addEventListener('input', (e) => { q = e.target.value; clearTimeout(t); t = setTimeout(run, 200); });
-  chipsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; drawChips(); run(); });
+  sheet.body.querySelector('#sc').addEventListener('change', (e) => { cat = e.target.value; run(); });
+  sheet.body.querySelector('#sl').addEventListener('change', (e) => { itemLang = e.target.value; });
   out.addEventListener('click', (e) => {
     const b = e.target.closest('[data-id]');
     if (!b) return;
-    const p = (out._res || []).find((x) => String(x.id) === b.dataset.id);
-    if (p) { sheet.close(); onPick(p); }
+    chosen = (out._res || []).find((x) => String(x.id) === b.dataset.id) || null;
+    mark();
   });
+  validate.addEventListener('click', () => { if (chosen) { sheet.close(); onPick({ ...chosen, lang: itemLang }); } });
+  const manual = sheet.body.querySelector('#sm');
+  if (manual) manual.addEventListener('click', () => { sheet.close(); onManual(itemLang); });
 }
 
 /* ======================================================================
