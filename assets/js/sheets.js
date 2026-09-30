@@ -278,6 +278,37 @@ export function openDetail(kind, id) {
   draw();
 }
 
+/* ---------- Instant GCC price for a new item (personal server) ---------- */
+// Looks up the item's sales on Graded Card Center right after it is added, so the value, last sale and
+// 30-day average show up at once instead of after the night run. Never overwrites a value the user typed.
+async function quickGccValue(id) {
+  const a = find('item', id);
+  if (!a || hasValue(a)) return;
+  const words = fold(a.name).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+  if (!words.length) return;
+  const lang = GCC_LANG[a.lang];
+  const sales = (await server.gccSales(a.name))
+    .filter((x) => (!lang || !x.lang || x.lang === lang) && words.every((w) => fold(x.title).includes(w)) && isFinite(+x.price) && +x.price > 0)
+    .sort((p, q) => String(q.soldAt).localeCompare(String(p.soldAt)));
+  if (!sales.length) return;
+  const since = (n) => new Date(Date.now() - n * 864e5).toISOString();
+  const med = (list) => { const v = list.map((x) => +x.price).sort((p, q) => p - q); const m = Math.floor(v.length / 2); return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const d90 = sales.filter((x) => x.soldAt >= since(90));
+  const basis = d90.length ? d90 : sales.slice(0, 5);
+  const d30 = sales.filter((x) => x.soldAt >= since(30));
+  const cur = find('item', id);
+  if (!cur || hasValue(cur)) return;      // the user typed a value meanwhile
+  updateAsset('item', id, {
+    value: r2(med(basis)), priceMode: 'auto', valueSource: `GCC · médiane ${basis.length} vente${basis.length > 1 ? 's' : ''}${d90.length ? ' (90 j)' : ''}`,
+    market: {
+      src: 'GCC', d1: r2(+sales[0].price), d1At: String(sales[0].soldAt || '').slice(0, 10) || null,
+      d30: d30.length ? r2(d30.reduce((t, x) => t + +x.price, 0) / d30.length) : null, n30: d30.length,
+      at: today(), title: sales[0].title || null,
+    },
+  });
+}
+
 /* ---------- GCC matching ---------- */
 // The server may send the last-sale date as ISO, dd/mm/yyyy or a timestamp: show it when readable, nothing otherwise.
 function saleDate(v) {
@@ -487,7 +518,10 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         const created = addAsset(kind, data);
         // Fetch the market price right away so the value shows up instead of waiting for the daily refresh.
         // Personal-server edition: ask the server for GCC / market prices now instead of waiting for the night run.
-        if (settings.isServer()) { toast('Cote en cours de récupération…'); refreshPrices().catch(() => {}); }
+        if (settings.isServer()) {
+          if (isCard) { toast('Cote en cours de récupération…'); refreshPrices().catch(() => {}); }
+          else quickGccValue(created.id).catch(() => {});
+        }
         else if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
         toast(isCard ? 'Carte ajoutée' : 'Item ajouté');
         sheet.close();
