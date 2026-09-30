@@ -98,6 +98,10 @@ export function openDetail(kind, id) {
         <div class="section-head"><h2>Évolution de la valeur</h2><span class="faint" style="font-size:12px">${a.priceLog.length} relevé${a.priceLog.length > 1 ? 's' : ''}</span></div>
         <div class="panel" style="padding:10px 12px"><div class="chart" id="asset-chart" style="height:150px"></div></div></div>` : ''}
 
+      ${kind === 'item' && settings.isServer() && !a.market && !hasValue(a) ? `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span class="pill gold">GCC</span></div>
+        <div class="banner" style="margin-top:0">${icon('search')}<div class="main">Aucune cote pour l’instant. Cherchez les dernières ventes de ce produit sur Graded Card Center.</div>
+        <button class="btn sm primary" data-gcc-fetch>Chercher</button></div></div>` : ''}
+
       ${kind === 'card' ? gccHtml(a) : ''}
 
       ${kind === 'card' ? marketHtml(a) : ''}
@@ -236,7 +240,7 @@ export function openDetail(kind, id) {
   }
 
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed],[data-mode],[data-pending],[data-invest]');
+    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed],[data-mode],[data-pending],[data-invest],[data-gcc-fetch]');
     if (!t) return;
     const a = find(kind, id);
     if ('zoom' in t.dataset) lightbox(t.src.replace('/low.webp', '/high.webp'));
@@ -255,6 +259,7 @@ export function openDetail(kind, id) {
         market = null; draw();
       } });
     }
+    if ('gccFetch' in t.dataset) { t.disabled = true; await quickGccValue(id, { notify: true }); draw(); }
     if (t.dataset.gccScope) { gcc.scope = t.dataset.gccScope; draw(); }
     if (t.dataset.gccEd) { gcc.edition = t.dataset.gccEd; draw(); }
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
@@ -281,16 +286,26 @@ export function openDetail(kind, id) {
 /* ---------- Instant GCC price for a new item (personal server) ---------- */
 // Looks up the item's sales on Graded Card Center right after it is added, so the value, last sale and
 // 30-day average show up at once instead of after the night run. Never overwrites a value the user typed.
-async function quickGccValue(id) {
+async function quickGccValue(id, { notify = false } = {}) {
+  try {
+    const status = await quickGccLookup(id);
+    if (notify) toast(status === 'ok' ? 'Cote GCC récupérée' : status === 'none' ? 'Aucune vente GCC trouvée pour ce produit : saisissez la cote à la main' : 'Cote déjà renseignée');
+    return status;
+  } catch (e) {
+    if (notify) toast('GCC indisponible : ' + (e.message || 'erreur'), { error: true, ms: 4500 });
+    return 'error';
+  }
+}
+async function quickGccLookup(id) {
   const a = find('item', id);
-  if (!a || hasValue(a)) return;
+  if (!a || hasValue(a)) return 'skip';
   const words = fold(a.name).split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
-  if (!words.length) return;
+  if (!words.length) return 'none';
   const lang = GCC_LANG[a.lang];
   const sales = (await server.gccSales(a.name))
     .filter((x) => (!lang || !x.lang || x.lang === lang) && words.every((w) => fold(x.title).includes(w)) && isFinite(+x.price) && +x.price > 0)
     .sort((p, q) => String(q.soldAt).localeCompare(String(p.soldAt)));
-  if (!sales.length) return;
+  if (!sales.length) return 'none';
   const since = (n) => new Date(Date.now() - n * 864e5).toISOString();
   const med = (list) => { const v = list.map((x) => +x.price).sort((p, q) => p - q); const m = Math.floor(v.length / 2); return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
   const r2 = (v) => Math.round(v * 100) / 100;
@@ -298,7 +313,7 @@ async function quickGccValue(id) {
   const basis = d90.length ? d90 : sales.slice(0, 5);
   const d30 = sales.filter((x) => x.soldAt >= since(30));
   const cur = find('item', id);
-  if (!cur || hasValue(cur)) return;      // the user typed a value meanwhile
+  if (!cur || hasValue(cur)) return 'skip';      // the user typed a value meanwhile
   updateAsset('item', id, {
     value: r2(med(basis)), priceMode: 'auto', valueSource: `GCC · médiane ${basis.length} vente${basis.length > 1 ? 's' : ''}${d90.length ? ' (90 j)' : ''}`,
     market: {
@@ -307,6 +322,7 @@ async function quickGccValue(id) {
       at: today(), title: sales[0].title || null,
     },
   });
+  return 'ok';
 }
 
 /* ---------- GCC matching ---------- */
@@ -520,7 +536,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         // Personal-server edition: ask the server for GCC / market prices now instead of waiting for the night run.
         if (settings.isServer()) {
           if (isCard) { toast('Cote en cours de récupération…'); refreshPrices().catch(() => {}); }
-          else quickGccValue(created.id).catch(() => {});
+          else quickGccValue(created.id, { notify: true });
         }
         else if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
         toast(isCard ? 'Carte ajoutée' : 'Item ajouté');
