@@ -19,7 +19,7 @@ export function render(main) {
   <div class="home-grid">
     <div>
       <section class="section panel hero">
-        <div class="label">Valeur globale</div>
+        <div class="label">Collection totale</div>
         <div class="big num">${money(p.value)}</div>
         <div class="kpis">
           <span class="kpi"><span class="k">Gain</span><b class="num ${trend(p.gain)}">${signed(p.gain)}</b>${p.pct != null ? pill(p.gain, pct(p.pct)) : ''}</span>
@@ -39,6 +39,7 @@ export function render(main) {
 
       <section class="section">
         <div class="section-head"><h2>Mes investissements</h2></div>
+        ${splitBar(p)}
         <div class="duo">
           ${statTile('items', 'Items', icon('box'), p.items, 'item')}
           ${statTile('cards', 'Cartes', icon('cards'), p.cards, 'carte')}
@@ -97,6 +98,15 @@ function drawChart(main) {
     { key: 'invested', label: 'Investi', color: '#6e6d7a', dashed: true, step: true, width: 1.6, tipColor: '#a9a8b3' },
     { key: 'value', label: 'Valeur', color: '#e9b949', area: true, dot: true },
   ], { height: el.clientHeight || 190 });
+}
+
+// Share of the total value held in sealed items vs cards.
+function splitBar(p) {
+  const tot = p.items.value + p.cards.value;
+  if (!(tot > 0)) return '';
+  const pi = Math.round((p.items.value / tot) * 100);
+  return `<div class="split"><span class="s1" style="width:${pi}%"></span><span class="s2"></span></div>
+    <div class="split-leg"><span><i class="d1"></i>Scellés ${pi} %</span><span><i class="d2"></i>Cartes ${100 - pi} %</span></div>`;
 }
 
 function statTile(route, title, ico, t, unit) {
