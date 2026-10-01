@@ -382,14 +382,15 @@ async function loadSealedPrices() {
   }
   return sealedPrices;
 }
-let sealedGcc = null;
-async function loadSealedGcc() {
-  if (!sealedGcc) {
-    sealedGcc = fetch(asset('assets/data/sealed-gcc.json?t=' + today()))
-      .then((r) => { if (!r.ok) throw new Error('GCC indisponible'); return r.json(); })
-      .catch((e) => { sealedGcc = null; throw e; });
+// Price index (GCC French sales + Cardmarket + TCGplayer, see tools/build_market.py), rebuilt every night.
+let sealedMarket = null;
+async function loadSealedMarket() {
+  if (!sealedMarket) {
+    sealedMarket = fetch(asset('assets/data/sealed-market.json?t=' + today()))
+      .then((r) => { if (!r.ok) throw new Error('cotes indisponibles'); return r.json(); })
+      .catch((e) => { sealedMarket = null; throw e; });
   }
-  return sealedGcc;
+  return sealedMarket;
 }
 async function usdToEur() {
   try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c && c.d === today()) return c.r; } catch { /* ignore */ }
@@ -406,25 +407,26 @@ export async function refreshSealedPrices({ only = null, force = false } = {}) {
   if (!only && !force) { try { if (localStorage.getItem(SEALED_RUN_KEY) === day) return null; } catch { /* ignore */ } }
   const items = state.items.filter((i) => i.tcgplayerId && (!only || only.includes(i.id)));
   if (!items.length) return null;
-  let data, fx, gcc = null;
-  try { [data, fx] = await Promise.all([loadSealedPrices(), usdToEur()]); } catch { return { updated: 0, error: true }; }
-  try { gcc = await loadSealedGcc(); } catch { /* GCC file not built yet: TCGplayer only */ }
+  let data = null, fx = 1, mk = null;
+  try { mk = await loadSealedMarket(); } catch { /* index not built yet: TCGplayer only */ }
+  if (!mk) { try { [data, fx] = await Promise.all([loadSealedPrices(), usdToEur()]); } catch { return { updated: 0, error: true }; } }
   let updated = 0;
   items.forEach((i) => {
-    const g = gcc && gcc.p && gcc.p[i.tcgplayerId];
-    const gv = g ? (g[0] != null ? g[0] : g[1]) : null;
+    const r = mk && mk.p && mk.p[i.tcgplayerId];
     let eur, src;
-    if (gv) {
-      // French market (real sales on Graded Card Center): same cote as the personal edition.
-      eur = gv; src = 'GCC';
-      i.market = { src: 'GCC', d1: g[1], d1At: g[2], d30: g[3], n30: g[4], title: g[6], at: day };
-    } else {
+    if (r) {
+      // Price index: French sales (GCC) + Cardmarket + TCGplayer, outliers dropped, smoothed, with a confidence level.
+      eur = r.v; src = 'Index';
+      i.market = { src: 'Index', conf: r.c, srcs: r.s || {}, drop: r.x || [], n30: r.n || 0, d1: r.v, d1At: day, last: r.l || null,
+        t30: r.t != null ? r.t : null, h: r.h || [], at: day };
+      if ((r.h || []).length > 1) i.hist = r.h.map(([d, p]) => ({ d, p }));
+    } else if (data) {
       const row = data.p && data.p[i.tcgplayerId];
       if (!row || !row[0] || i.category === 'Blister') return;
       eur = Math.round(row[0] * fx * 100) / 100; src = 'TCGplayer';
       i.market = { src: 'TCGplayer (US)', d1: eur, d1At: data.built || day, d30: null, at: day, low: row[1] ? Math.round(row[1] * fx * 100) / 100 : null };
-    }
-    if (hasValue(i) && (i.priceMode || 'manual') !== 'auto' && i.valueSource !== 'TCGplayer' && i.valueSource !== 'GCC') return;   // typed by hand: keep
+    } else return;
+    if (hasValue(i) && (i.priceMode || 'manual') !== 'auto' && !['TCGplayer', 'GCC', 'Index'].includes(i.valueSource)) return;   // typed by hand: keep
     i.value = eur; i.valueSource = src; i.priceMode = 'auto'; logValue(i, eur);
     updated++;
   });
