@@ -18,6 +18,8 @@ const TREND = {
   down: { label: 'Baisse', arrow: '↘', cls: 'down' },
   flat: { label: 'Stable', arrow: '→', cls: 'flat' },
 };
+const TREND_RANK = { up: 0, flat: 1, down: 2 };
+let trendFilter = 'all';   // 'all' | 'up' | 'flat' | 'down'
 const trendOf = (ch7, ch30) => {
   const c = ch7 != null ? ch7 : ch30;
   return c == null ? 'flat' : c >= 0.03 ? 'up' : c <= -0.03 ? 'down' : 'flat';
@@ -139,12 +141,17 @@ export function render(main) {
     main.onclick = (e) => { if (e.target.closest('[data-paywall]')) openPaywall(); };
     return;
   }
-  const list = watched().map(([k, a]) => analyse(k, a)).sort((x, y) => STATUS_RANK[x.status] - STATUS_RANK[y.status] || y.score - x.score || y.gain - x.gain);
-  const total = list.reduce((s, x) => s + x.price * qtyOf(x.a), 0);
-  const gain = list.reduce((s, x) => s + x.gain, 0);
+  // Rising first, stable in the middle, falling last (biggest move first inside each group).
+  const chg = (x) => (x.ch7 != null ? x.ch7 : x.ch30 != null ? x.ch30 : 0);
+  const all = watched().map(([k, a]) => analyse(k, a)).sort((x, y) => TREND_RANK[x.dir] - TREND_RANK[y.dir] || chg(y) - chg(x) || y.gain - x.gain);
+  const tcount = { up: 0, flat: 0, down: 0 };
+  all.forEach((x) => { tcount[x.dir]++; });
+  const list = trendFilter === 'all' ? all : all.filter((x) => x.dir === trendFilter);
+  const total = all.reduce((s, x) => s + x.price * qtyOf(x.a), 0);
+  const gain = all.reduce((s, x) => s + x.gain, 0);
   const counts = { sell: 0, buy: 0, hold: 0 };
-  list.forEach((x) => { counts[x.status]++; });
-  const ideas = suggestions(list);
+  all.forEach((x) => { counts[x.status]++; });
+  const ideas = suggestions(all);
   const rises = riseAlerts();
   const fresh = new Set(unseenRises().map((x) => x.key));
 
@@ -154,7 +161,7 @@ export function render(main) {
       <div class="big num">${money(total)}</div>
       <div class="kpis">
         <span class="kpi"><span class="k">Plus-value potentielle</span><b class="num ${trend(gain)}">${signed(gain)}</b></span>
-        <span class="kpi"><span class="k">En veille</span><b class="num">${list.length}</b></span>
+        <span class="kpi"><span class="k">En veille</span><b class="num">${all.length}</b></span>
       </div>
       <div class="status-row">
         ${Object.entries(STATUS).map(([k, s]) => `<div class="status-tile ${s.cls}"><b class="num">${counts[k]}</b><span><i class="st-ic">${s.icon}</i>${s.label}</span></div>`).join('')}
@@ -174,7 +181,10 @@ export function render(main) {
 
     <section class="section">
       <div class="section-head"><h2>Mes cartes en veille</h2><button class="btn sm primary" data-add>${icon('plus', 'sm')}Ajouter</button></div>
+      ${all.length ? `<div class="chips scroll" style="margin-bottom:12px">${[['all', 'Toutes', all.length], ['up', '↗ Monte', tcount.up], ['flat', '→ Stable', tcount.flat], ['down', '↘ Baisse', tcount.down]]
+        .map(([k, l, n]) => `<button data-tf="${k}" class="${trendFilter === k ? 'on' : ''}">${l} · ${n}</button>`).join('')}</div>` : ''}
       ${list.length ? `<div class="list">${list.map(rowHtml).join('')}</div>`
+        : all.length ? '<div class="empty"><p>Aucune carte dans cette catégorie.</p></div>'
         : `<div class="empty"><div class="ico">${icon('up', 'lg')}</div><h3>Aucune carte en veille</h3>
           <p>Mettez en veille les cartes et items que vous envisagez de revendre : l’appli suit leur prix chaque nuit et vous signale le bon moment.</p>
           <button class="btn primary" data-add>${icon('plus')}Choisir dans ma collection</button></div>`}
@@ -192,8 +202,9 @@ export function render(main) {
   window.dispatchEvent(new Event('pdx:badge'));
 
   main.onclick = (e) => {
-    const t = e.target.closest('[data-add],[data-inv],[data-quickwatch]');
+    const t = e.target.closest('[data-add],[data-inv],[data-quickwatch],[data-tf]');
     if (!t) return;
+    if (t.dataset.tf) { trendFilter = t.dataset.tf; render(main); return; }
     if ('add' in t.dataset) openPicker();
     if (t.dataset.quickwatch) { const [k, id] = t.dataset.quickwatch.split(':'); setWatch(k, id, { on: true }); toast('Mis en veille'); }
     else if (t.dataset.inv) { const [k, id] = t.dataset.inv.split(':'); openInvest(k, id); }
