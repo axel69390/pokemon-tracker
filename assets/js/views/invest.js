@@ -32,13 +32,34 @@ function pointsOf(a) {
   }
   return (a.hist || []).map((h) => ({ d: h.d, p: h.p, a30: h.a30, est: h.est }));
 }
-// Price about `days` ago: last point on/before that day, else the earliest point available.
-const valueAgo = (pts, days) => {
+// Price about `days` ago: last point on/before that day, else the earliest point available
+// (strict: no point old enough → null, so a short history never passes for a 7- or 30-day move).
+const valueAgo = (pts, days, strict = false) => {
   if (!pts.length) return null;
   const limit = new Date(Date.now() - days * DAY).toISOString().slice(0, 10);
   const before = pts.filter((x) => x.d <= limit);
-  return before.length ? before[before.length - 1].p : pts[0].p;
+  return before.length ? before[before.length - 1].p : strict ? null : pts[0].p;
 };
+const median = (a) => {
+  if (!a.length) return null;
+  const s = [...a].sort((x, y) => x - y), m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+const isoAgo = (days) => new Date(Date.now() - days * DAY).toISOString().slice(0, 10);
+const hasGccSales = (a) => !!(a.market && a.market.src === 'GCC' && (a.market.sales || []).length);
+// GCC prices are individual sales: one 85 € and one 140 € sale of the same product are both real, so
+// comparing "last sale vs an older sale" invents huge moves. Prices and moves use medians instead.
+function gccSmooth(a) {
+  const sales = a.market.sales;
+  const inWin = (from, to) => sales.filter((x) => x.d >= isoAgo(from) && (to == null || x.d < isoAgo(to))).map((x) => x.v);
+  const w90 = inWin(90), w30 = inWin(30), before = inWin(90, 30);
+  return {
+    price: w90.length >= 3 ? median(w90) : null,
+    ch30: w30.length >= 2 && before.length >= 2 ? median(w30) / median(before) - 1 : null,
+  };
+}
+// Real daily readings of the market price (median for GCC), without estimated seed points.
+const dailyPts = (a) => (a.hist || []).filter((x) => !x.est && x.p > 0).map((x) => ({ d: x.d, p: x.p }));
 // Market signals only make sense where the market price is reliable (auto-priced cards, sealed items).
 // Only things actually owned and paid for, worth at least 1 € (cent-level cards give meaningless percentages).
 const MIN_PRICE = 1;
@@ -49,7 +70,10 @@ const tracked = (kind, a) => !isCommon(kind, a) && (kind === 'item' || priceMode
 export function analyse(kind, a) {
   const pts = pointsOf(a);
   const m = a.market || {};
-  const price = pts.length ? pts[pts.length - 1].p : unitValue(a);
+  const gcc = hasGccSales(a);
+  const sm = gcc ? gccSmooth(a) : null;
+  const daily = gcc ? dailyPts(a) : null;
+  const price = gcc ? (sm.price != null ? sm.price : unitValue(a) || pts[pts.length - 1].p) : pts.length ? pts[pts.length - 1].p : unitValue(a);
   const a30 = m.d30 != null ? m.d30 : null;
   const buy = unitCost(a);
   const target = a.watch && a.watch.target ? +a.watch.target : null;
@@ -58,9 +82,10 @@ export function analyse(kind, a) {
   const hi30 = last30.length ? Math.max(...last30) : null;
   const lo30 = last30.length ? Math.min(...last30) : null;
   const prev = pts.slice(0, -1);
-  const p7 = valueAgo(prev, 7), p30 = valueAgo(prev, 30);
+  const p7 = gcc ? valueAgo(daily, 7, true) : valueAgo(prev, 7);
+  const p30 = gcc ? valueAgo(daily, 30, true) : valueAgo(prev, 30);
   const ch7 = p7 ? (price - p7) / p7 : null;
-  const ch30 = p30 ? (price - p30) / p30 : null;
+  const ch30 = gcc && sm.ch30 != null ? sm.ch30 : p30 ? (price - p30) / p30 : null;
   const reasons = [];
   let score = 0;
   if (target && price >= target) { score += 3; reasons.push(['up', `Objectif atteint (${money(target)})`]); }
@@ -88,10 +113,11 @@ export function riseAlerts() {
   const out = [];
   allAssets().forEach(([kind, a]) => {
     if (!tracked(kind, a)) return;
-    const pts = pointsOf(a).filter((p) => !p.est && p.p > 0);
+    const gcc = hasGccSales(a);
+    const pts = (gcc ? dailyPts(a) : pointsOf(a).filter((p) => !p.est && p.p > 0));
     if (pts.length < 2) return;
     const last = pts[pts.length - 1];
-    const ref = valueAgo(pts.slice(0, -1), 7);
+    const ref = gcc ? valueAgo(pts.slice(0, -1), 7, true) : valueAgo(pts.slice(0, -1), 7);
     if (!ref || last.p < MIN_PRICE) return;
     const ch = (last.p - ref) / ref;
     if (ch >= RISE) out.push({ kind, a, ch, from: ref, to: last.p, key: `${a.id}:${last.d}` });
@@ -214,7 +240,7 @@ export function openInvest(kind, id) {
     sheet.setTitle(a.name);
     sheet.render(`
       <div class="inv-head">
-        <div><div class="faint" style="font-size:12px;font-weight:800">${gcc ? 'DERNIÈRE VENTE GCC' : 'PRIX DU MARCHÉ'}</div>
+        <div><div class="faint" style="font-size:12px;font-weight:800">${gcc ? 'COTE GCC (MÉDIANE DES VENTES)' : 'PRIX DU MARCHÉ'}</div>
           <div class="v num">${money(x.price)}</div>
           <div class="kpis">${x.ch7 != null ? pill(x.ch7, '7 j ' + pct(x.ch7 * 100)) : ''}${x.ch30 != null ? pill(x.ch30, '30 j ' + pct(x.ch30 * 100)) : ''}</div></div>
         <div class="verdict ${st.cls}"><b><i class="st-ic">${st.icon}</i>${st.label}</b><small>${st.hint}</small><span class="trend-tag ${tr.cls}"><i class="st-ic">${tr.arrow}</i>${tr.label}</span></div>
