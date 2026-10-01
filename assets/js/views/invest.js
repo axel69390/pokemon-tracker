@@ -7,9 +7,20 @@ import { hasAccess, openPaywall } from '../billing.js?v=2.4.0';
 
 const DAY = 864e5;
 const STATUS = {
-  sell: { label: 'Vendre', cls: 'up', hint: 'Bon moment pour vendre' },
-  watch: { label: 'Surveiller', cls: 'gold', hint: 'Signes favorables, à suivre' },
-  wait: { label: 'Attendre', cls: 'flat', hint: 'Pas le bon moment' },
+  sell: { label: 'Vendre', cls: 'up', icon: '💰', hint: 'Bon moment pour vendre' },
+  buy: { label: 'Acheter', cls: 'gold', icon: '🛒', hint: 'Prix bas : bon moment pour acheter' },
+  hold: { label: 'Garder', cls: 'flat', icon: '✋', hint: 'Rien à faire pour l’instant' },
+};
+const STATUS_RANK = { sell: 0, buy: 1, hold: 2 };
+// Simple trend: rising / falling / stable (±3 % over 7 days, else 30 days).
+const TREND = {
+  up: { label: 'Monte', arrow: '↗', cls: 'up' },
+  down: { label: 'Baisse', arrow: '↘', cls: 'down' },
+  flat: { label: 'Stable', arrow: '→', cls: 'flat' },
+};
+const trendOf = (ch7, ch30) => {
+  const c = ch7 != null ? ch7 : ch30;
+  return c == null ? 'flat' : c >= 0.03 ? 'up' : c <= -0.03 ? 'down' : 'flat';
 };
 
 /* ---------- Analysis ---------- */
@@ -59,8 +70,12 @@ export function analyse(kind, a) {
   if (buy > 0 && price >= buy * 1.5) { score += 1; reasons.push(['up', `Plus-value de ${pct(((price - buy) / buy) * 100)} sur l’achat`]); }
   if (ch7 != null && ch7 <= -0.1) { score -= 1; reasons.push(['down', `En baisse sur 7 jours (${pct(ch7 * 100)})`]); }
   if (ch7 != null && ch7 >= 0.1) { score += 1; reasons.push(['up', `En hausse sur 7 jours (${pct(ch7 * 100)})`]); }
-  const status = score >= 3 ? 'sell' : score >= 1 ? 'watch' : 'wait';
-  return { kind, a, pts, price, a30, buy, target, hi30, lo30, ch7, ch30, score, status, reasons,
+  const dir = trendOf(ch7, ch30);
+  // Low price: clearly under its 30-day average, or sitting at its 30-day low after a real range.
+  const low = (a30 && price <= a30 * 0.92) || (last30.length >= 4 && lo30 != null && hi30 > lo30 * 1.1 && price <= lo30 * 1.02);
+  const status = score >= 3 ? 'sell' : low ? 'buy' : 'hold';
+  if (status === 'buy' && !reasons.some((r) => r[0] === 'down' && /moyenne/.test(r[1]))) reasons.push(['up', 'Prix bas sur 30 jours']);
+  return { kind, a, pts, price, a30, buy, target, hi30, lo30, ch7, ch30, score, status, dir, reasons,
     gain: (price - buy) * qtyOf(a), gainPct: buy > 0 ? ((price - buy) / buy) * 100 : null };
 }
 
@@ -98,10 +113,10 @@ export function render(main) {
     main.onclick = (e) => { if (e.target.closest('[data-paywall]')) openPaywall(); };
     return;
   }
-  const list = watched().map(([k, a]) => analyse(k, a)).sort((x, y) => y.score - x.score || y.gain - x.gain);
+  const list = watched().map(([k, a]) => analyse(k, a)).sort((x, y) => STATUS_RANK[x.status] - STATUS_RANK[y.status] || y.score - x.score || y.gain - x.gain);
   const total = list.reduce((s, x) => s + x.price * qtyOf(x.a), 0);
   const gain = list.reduce((s, x) => s + x.gain, 0);
-  const counts = { sell: 0, watch: 0, wait: 0 };
+  const counts = { sell: 0, buy: 0, hold: 0 };
   list.forEach((x) => { counts[x.status]++; });
   const ideas = suggestions(list);
   const rises = riseAlerts();
@@ -116,7 +131,7 @@ export function render(main) {
         <span class="kpi"><span class="k">En veille</span><b class="num">${list.length}</b></span>
       </div>
       <div class="status-row">
-        ${Object.entries(STATUS).map(([k, s]) => `<div class="status-tile ${s.cls}"><b class="num">${counts[k]}</b><span>${s.label}</span></div>`).join('')}
+        ${Object.entries(STATUS).map(([k, s]) => `<div class="status-tile ${s.cls}"><b class="num">${counts[k]}</b><span><i class="st-ic">${s.icon}</i>${s.label}</span></div>`).join('')}
       </div>
     </section>
 
@@ -132,7 +147,7 @@ export function render(main) {
     </section>` : ''}
 
     <section class="section">
-      <div class="section-head"><h2>Meilleurs moments pour vendre</h2><button class="btn sm primary" data-add>${icon('plus', 'sm')}Ajouter</button></div>
+      <div class="section-head"><h2>Mes cartes en veille</h2><button class="btn sm primary" data-add>${icon('plus', 'sm')}Ajouter</button></div>
       ${list.length ? `<div class="list">${list.map(rowHtml).join('')}</div>`
         : `<div class="empty"><div class="ico">${icon('up', 'lg')}</div><h3>Aucune carte en veille</h3>
           <p>Mettez en veille les cartes et items que vous envisagez de revendre : l’appli suit leur prix chaque nuit et vous signale le bon moment.</p>
@@ -171,6 +186,7 @@ function suggestions(list) {
 function rowHtml(x, suggestion = false) {
   const img = imageOf(x.a, { thumb: true });
   const st = STATUS[x.status];
+  const tr = TREND[x.dir];
   const color = x.ch30 == null ? '#e9b949' : x.ch30 >= 0 ? '#34d399' : '#f87171';
   return `<button class="row inv-row" data-inv="${x.kind}:${x.a.id}">
     ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb ${x.kind === 'item' ? 'sq' : ''}"></span>`}
@@ -178,7 +194,7 @@ function rowHtml(x, suggestion = false) {
     <span class="spark-wrap">${sparkline(x.pts.map((p) => p.p), { color })}</span>
     <span class="end"><b class="num">${money(x.price)}</b>${suggestion
       ? `<span class="pill gold" data-quickwatch="${x.kind}:${x.a.id}">+ Veille</span>`
-      : `<span class="pill ${st.cls}">${st.label}</span>`}</span>
+      : `<span class="pill ${st.cls}"><i class="st-ic">${st.icon}</i>${st.label}</span>`}<span class="trend-tag ${tr.cls}"><i class="st-ic">${tr.arrow}</i>${tr.label}</span></span>
   </button>`;
 }
 
@@ -192,6 +208,7 @@ export function openInvest(kind, id) {
     if (!a) { sheet.close(); return; }
     const x = analyse(kind, a);
     const st = STATUS[x.status];
+    const tr = TREND[x.dir];
     const on = a.watch && a.watch.on;
     const gcc = a.market && a.market.src === 'GCC';
     sheet.setTitle(a.name);
@@ -200,7 +217,7 @@ export function openInvest(kind, id) {
         <div><div class="faint" style="font-size:12px;font-weight:800">${gcc ? 'DERNIÈRE VENTE GCC' : 'PRIX DU MARCHÉ'}</div>
           <div class="v num">${money(x.price)}</div>
           <div class="kpis">${x.ch7 != null ? pill(x.ch7, '7 j ' + pct(x.ch7 * 100)) : ''}${x.ch30 != null ? pill(x.ch30, '30 j ' + pct(x.ch30 * 100)) : ''}</div></div>
-        <div class="verdict ${st.cls}"><b>${st.label}</b><small>${st.hint}</small></div>
+        <div class="verdict ${st.cls}"><b><i class="st-ic">${st.icon}</i>${st.label}</b><small>${st.hint}</small><span class="trend-tag ${tr.cls}"><i class="st-ic">${tr.arrow}</i>${tr.label}</span></div>
       </div>
 
       <div class="panel" style="padding:10px 12px;margin-top:14px">
