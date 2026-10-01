@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Builds assets/data/sealed-gcc.json: French-market price of every sealed product, from the real sales on
-Graded Card Center (same logic as the personal server's gccItemInfo, ported from Node-RED).
+"""Builds assets/data/sealed-gcc.json: the real sales (French market) of every sealed product on Graded Card Center
+(same title matching as the personal server's gccItemInfo, ported from Node-RED).
 
-Run daily by .github/workflows/sealed-prices.yml. The store edition reads this static file (GCC has no CORS),
-so it shows the same cote as the personal edition. Row: [median90, lastSale, lastSaleDate, mean30, n30, n90, title].
+Run daily by .github/workflows/sealed-prices.yml. GCC has no CORS, hence this static file. Row:
+[matchedTitle, [[date, price], ...]] (most recent first). tools/build_market.py turns these sales (plus Cardmarket and
+TCGplayer) into the price index the app reads.
 """
 import json
 import re
-import statistics
 import sys
 import time
 import unicodedata
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -78,11 +77,8 @@ def r2(v):
     return None if v is None else round(v * 100) / 100
 
 
-def median(a):
-    return r2(statistics.median(a)) if a else None
-
-
-def product_row(p, sales):
+def product_sales(p, sales):
+    """Sales of the GCC listing that matches the product: (title, [[date, price], ...] most recent first) or None."""
     cw = CAT_WORD.get(p.get('c'), '')
     set_w = [w for w in words(p.get('s')) if len(w) >= 3 and w not in STOP_SET]
     extra = [w for w in words(p.get('n')) if len(w) >= 4 and w not in set_w and w != cw and w not in PACKAGING]
@@ -110,16 +106,7 @@ def product_row(p, sales):
     lst = sorted((s for s in sales if s['title'] == title), key=lambda s: s['soldAt'], reverse=True)
     if not lst:
         return None
-    now = datetime.now(timezone.utc)
-
-    def since(days):
-        return (now - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%S')
-
-    r90 = [s['price'] for s in lst if s['soldAt'] >= since(90)]
-    m30 = [s['price'] for s in lst if s['soldAt'] >= since(30)]
-    med = median(r90) if len(r90) >= 3 else None
-    return [med, r2(lst[0]['price']), lst[0]['soldAt'][:10], r2(sum(m30) / len(m30)) if m30 else None,
-            len(m30), len(r90), title]
+    return title, [[x['soldAt'][:10], r2(x['price'])] for x in lst[:60]]
 
 
 def main():
@@ -134,15 +121,15 @@ def main():
         sales, failed = sales_for(q)
         fails += failed
         queries = len(_cache)
-        row = product_row(p, sales)
-        if row and (row[0] is not None or row[1] is not None):
-            rows[str(p['id'])] = row
+        row = product_sales(p, sales)
+        if row:
+            rows[str(p['id'])] = list(row)
     print(f'{len(rows)} produits cotés / {len(products)}, {queries} requêtes, {fails} en échec')
     if queries and fails > queries // 3:
         raise SystemExit('Trop d\'échecs GCC, on garde le fichier précédent')
     if not rows:
         raise SystemExit('Aucune cote GCC, on garde le fichier précédent')
-    out_file.write_text(json.dumps({'built': time.strftime('%Y-%m-%d'), 'cur': 'EUR', 'p': rows},
+    out_file.write_text(json.dumps({'built': time.strftime('%Y-%m-%d'), 'cur': 'EUR', 'v': 2, 'p': rows},
                                    separators=(',', ':'), ensure_ascii=False))
 
 
