@@ -10,6 +10,7 @@ let q = '';
 let mode = 'cards';   // 'cards' | 'sealed'
 let sealedCat = '';
 let seq = 0;
+const openSeries = new Set();   // series left unfolded (kept when coming back from a set)
 
 export function render(main, { tab, query }) {
   const lang = settings.get().catalogLang;
@@ -84,10 +85,12 @@ async function showSets(out, lang) {
       if (!bySerie.has(s.serieName)) bySerie.set(s.serieName, []);
       bySerie.get(s.serieName).push(s);
     });
-    out.innerHTML = [...bySerie.entries()].map(([serie, list]) => `<div class="serie-title">${esc(serie)}</div>
+    out.innerHTML = [...bySerie.entries()].map(([serie, list]) => `<details class="serie-acc" data-serie="${esc(serie)}"${openSeries.has(serie) ? ' open' : ''}>
+      <summary><span>${esc(serie)}<small>${list.length} extension${list.length > 1 ? 's' : ''}</small></span><span class="chev">${icon('chev')}</span></summary>
       <div class="set-list">${list.map((s) => `<button class="set-card" data-set="${esc(s.id)}">
         <span class="logo">${s.logo ? `<img src="${esc(setLogo(s.logo))}" alt="" loading="lazy">` : `<b>${esc(s.name)}</b>`}</span>
-        <span><b>${esc(s.name)}</b><br><small>${s.cardCount?.official || s.cardCount?.total || '?'} cartes</small></span></button>`).join('')}</div>`).join('');
+        <span><b>${esc(s.name)}</b><br><small>${s.cardCount?.official || s.cardCount?.total || '?'} cartes</small></span></button>`).join('')}</div></details>`).join('');
+    out.querySelectorAll('details.serie-acc').forEach((d) => d.addEventListener('toggle', () => { d.open ? openSeries.add(d.dataset.serie) : openSeries.delete(d.dataset.serie); }));
   } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
 }
 
