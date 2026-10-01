@@ -7,6 +7,8 @@ on:
     paths:
       - tools/build_prices.py
       - tools/build_gcc.py
+      - tools/build_cm.py
+      - tools/build_market.py
 permissions:
   contents: write
 jobs:
@@ -18,10 +20,17 @@ jobs:
       - name: GCC (French market)
         continue-on-error: true
         run: python3 tools/build_gcc.py
+      - name: Cardmarket
+        continue-on-error: true
+        run: python3 tools/build_cm.py
+      - name: Price index
+        run: python3 tools/build_market.py
       - name: Commit
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
           git add assets/data/sealed-prices.json
           git add assets/data/sealed-gcc.json || true
+          git add assets/data/sealed-cm.json || true
+          git add assets/data/sealed-market.json || true
           git diff --cached --quiet || (git commit -m "Update sealed prices" && git push)
