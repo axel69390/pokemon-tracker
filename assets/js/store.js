@@ -382,6 +382,15 @@ async function loadSealedPrices() {
   }
   return sealedPrices;
 }
+let sealedGcc = null;
+async function loadSealedGcc() {
+  if (!sealedGcc) {
+    sealedGcc = fetch(asset('assets/data/sealed-gcc.json?t=' + today()))
+      .then((r) => { if (!r.ok) throw new Error('GCC indisponible'); return r.json(); })
+      .catch((e) => { sealedGcc = null; throw e; });
+  }
+  return sealedGcc;
+}
 async function usdToEur() {
   try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c && c.d === today()) return c.r; } catch { /* ignore */ }
   let r = null;
@@ -397,16 +406,26 @@ export async function refreshSealedPrices({ only = null, force = false } = {}) {
   if (!only && !force) { try { if (localStorage.getItem(SEALED_RUN_KEY) === day) return null; } catch { /* ignore */ } }
   const items = state.items.filter((i) => i.tcgplayerId && (!only || only.includes(i.id)));
   if (!items.length) return null;
-  let data, fx;
+  let data, fx, gcc = null;
   try { [data, fx] = await Promise.all([loadSealedPrices(), usdToEur()]); } catch { return { updated: 0, error: true }; }
+  try { gcc = await loadSealedGcc(); } catch { /* GCC file not built yet: TCGplayer only */ }
   let updated = 0;
   items.forEach((i) => {
-    const row = data.p && data.p[i.tcgplayerId];
-    if (!row || !row[0]) return;
-    const eur = Math.round(row[0] * fx * 100) / 100;
-    i.market = { src: 'TCGplayer', d1: eur, d1At: data.built || day, d30: null, at: day, low: row[1] ? Math.round(row[1] * fx * 100) / 100 : null };
-    if (hasValue(i) && (i.priceMode || 'manual') !== 'auto' && i.valueSource !== 'TCGplayer') return;   // typed by hand: keep
-    i.value = eur; i.valueSource = 'TCGplayer'; i.priceMode = 'auto'; logValue(i, eur);
+    const g = gcc && gcc.p && gcc.p[i.tcgplayerId];
+    const gv = g ? (g[0] != null ? g[0] : g[1]) : null;
+    let eur, src;
+    if (gv) {
+      // French market (real sales on Graded Card Center): same cote as the personal edition.
+      eur = gv; src = 'GCC';
+      i.market = { src: 'GCC', d1: g[1], d1At: g[2], d30: g[3], n30: g[4], title: g[6], at: day };
+    } else {
+      const row = data.p && data.p[i.tcgplayerId];
+      if (!row || !row[0] || i.category === 'Blister') return;
+      eur = Math.round(row[0] * fx * 100) / 100; src = 'TCGplayer';
+      i.market = { src: 'TCGplayer (US)', d1: eur, d1At: data.built || day, d30: null, at: day, low: row[1] ? Math.round(row[1] * fx * 100) / 100 : null };
+    }
+    if (hasValue(i) && (i.priceMode || 'manual') !== 'auto' && i.valueSource !== 'TCGplayer' && i.valueSource !== 'GCC') return;   // typed by hand: keep
+    i.value = eur; i.valueSource = src; i.priceMode = 'auto'; logValue(i, eur);
     updated++;
   });
   if (!only) { try { localStorage.setItem(SEALED_RUN_KEY, day); } catch { /* ignore */ } }
