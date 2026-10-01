@@ -6,6 +6,7 @@ on:
   push:
     paths:
       - tools/build_prices.py
+      - tools/build_gcc.py
 permissions:
   contents: write
 jobs:
@@ -14,9 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 tools/build_prices.py
+      - name: GCC (French market)
+        continue-on-error: true
+        run: python3 tools/build_gcc.py
       - name: Commit
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
           git add assets/data/sealed-prices.json
+          git add assets/data/sealed-gcc.json || true
           git diff --cached --quiet || (git commit -m "Update sealed prices" && git push)
