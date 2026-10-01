@@ -118,6 +118,7 @@ const EN = {
 
   // Invest
   'Valeur en veille': 'Watchlist value', 'Plus-value potentielle': 'Potential gain', 'Attendre': 'Wait', 'Surveiller': 'Watch', 'Acheter': 'Buy', 'Garder': 'Hold', 'Monte': 'Rising', 'Baisse': 'Falling', 'Stable': 'Stable',
+  'Faible': 'Low', 'Moyenne': 'Medium', 'Bonne': 'Good', 'Haute': 'High', 'Indice': 'Index', 'Cote du marché': 'Market price', 'Confiance': 'Confidence', 'sans vente récente': 'no recent sale', 'Graded Card Center (ventes FR)': 'Graded Card Center (French sales)', 'Cardmarket (toutes langues)': 'Cardmarket (all languages)', 'TCGplayer (US, converti)': 'TCGplayer (US, converted)', 'Écartée : trop éloignée des autres': 'Excluded: too far from the others', 'Signaler une erreur de prix': 'Report a price error',
   'Prix bas : bon moment pour acheter': 'Low price: good time to buy', 'Rien à faire pour l’instant': 'Nothing to do for now', 'Prix bas sur 30 jours': 'Low price over 30 days', 'Mes cartes en veille': 'My watchlist', 'Aucune carte dans cette catégorie.': 'No card in this category.',
   'Bon moment pour vendre': 'Good time to sell', 'Signes favorables, à suivre': 'Positive signs, keep watching', 'Pas le bon moment': 'Not the right time',
   'Hausses ≥ 10 %': 'Rises ≥ 10 %', 'Meilleurs moments pour vendre': 'Best times to sell', 'Aucune carte en veille': 'Nothing on your watchlist',
