@@ -161,40 +161,7 @@ export function openDetail(kind, id) {
   }
 
 
-  // Price index (GCC + Cardmarket + TCGplayer): value, confidence, sources, 30-day trend, history chart.
-  function indexBlock(a, m) {
-    const CONF = ['Faible', 'Moyenne', 'Bonne', 'Haute'];
-    const s = m.srcs || {};
-    const dropped = m.drop || [];
-    const srcRow = [['g', 'Graded Card Center (ventes FR)'], ['c', 'Cardmarket (toutes langues)'], ['t', 'TCGplayer (US, converti)']]
-      .filter(([k]) => s[k] != null)
-      .map(([k, l]) => `<div class="row" style="padding:8px 0"><span class="main"><b style="font-weight:600">${l}</b>${dropped.includes(k) ? '<small>Écartée : trop éloignée des autres</small>' : ''}</span><span class="end num">${money(s[k])}</span></div>`).join('');
-    const t = m.t30 != null ? m.t30 : null;
-    const trend = t == null ? '' : `<span class="trend-tag ${t > 0.03 ? 'up' : t < -0.03 ? 'down' : 'flat'}">${t > 0.03 ? '↗' : t < -0.03 ? '↘' : '→'} ${(t * 100 > 0 ? '+' : '') + (t * 100).toFixed(1).replace('.', ',')} % sur 30 j</span>`;
-    const days = { '1S': 7, '1M': 30, '3M': 90, '6M': 180, '1A': 365, MAX: 9999 }[histRange];
-    const cut = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
-    let pts = (m.h || []).filter(([d]) => d >= cut);
-    if (pts.length < 2) pts = (m.h || []).slice(-2);
-    let chart = '';
-    if (pts.length >= 2) {
-      const vs = pts.map((x) => x[1]); const lo = Math.min(...vs), hi = Math.max(...vs), W = 300, H = 90, pad = 6;
-      const X = (i) => pad + (i * (W - 2 * pad)) / (pts.length - 1);
-      const Y = (v) => (hi === lo ? H / 2 : H - pad - ((v - lo) / (hi - lo)) * (H - 2 * pad));
-      const path = pts.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(x[1]).toFixed(1)}`).join(' ');
-      chart = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:90px;margin-top:10px" role="img" aria-label="Historique du prix"><path d="${path}" fill="none" stroke="var(--gold, #f5b94a)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
-        <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.7"><span>${money(lo)}</span><span>${money(hi)}</span></div>
-        <div class="chips" style="margin-top:8px">${['1S', '1M', '3M', '6M', '1A', 'MAX'].map((r) => `<button data-range="${r}" class="${r === histRange ? 'on' : ''}">${r}</button>`).join('')}</div>`;
-    }
-    const subj = encodeURIComponent('Erreur de prix : ' + (a.name || ''));
-    const body = encodeURIComponent(`Produit : ${a.name || ''}\nCote affichée : ${money(m.d1)}\nCe que je constate :`);
-    return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">Indice</span><button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button></span></div>
-      <div class="market"><div class="m"><span><small>Cote du marché</small><b class="num">${money(m.d1)}</b>${trend ? `<small>${trend}</small>` : ''}</span><button class="use" data-use="${m.d1}">Utiliser</button></div>
-      <div class="m"><span><small>Confiance</small><b>${CONF[m.conf] || '—'}</b><small style="font-weight:600">${m.n30 ? m.n30 + ' vente' + (m.n30 > 1 ? 's' : '') + ' FR / 30 j' : 'sans vente récente'}</small></span></div></div>
-      ${chart}
-      <div style="margin-top:10px">${srcRow}</div>
-      <div class="note">Indice calculé chaque nuit : les ventes réalisées pèsent le plus, les plus récentes davantage ; les prix aberrants sont écartés. Relevé du ${dateFr(m.at)}. <a href="mailto:axel.ger@gmail.com?subject=${subj}&body=${body}">Signaler une erreur de prix</a></div>
-    </div>`;
-  }
+  function indexBlock(a, m) { return indexPanel(a, m, histRange); }
 
   function marketHtml(a) {
     if (!a.tcgdexId) {
@@ -808,6 +775,67 @@ export function openSales(initial = 'all') {
 /* ======================================================================
    Catalogue: card preview & picker
    ====================================================================== */
+// Price index panel (GCC + Cardmarket + TCGplayer): value, confidence, sources, 30-day trend, history chart.
+// `withInvest`: show the Invest button (owned items) ; `withUse`: show the « Utiliser » button.
+function indexPanel(a, m, histRange, { withInvest = true, withUse = true } = {}) {
+  const CONF = ['Faible', 'Moyenne', 'Bonne', 'Haute'];
+  const s = m.srcs || {};
+  const dropped = m.drop || [];
+  const srcRow = [['g', 'Graded Card Center (ventes FR)'], ['c', 'Cardmarket (toutes langues)'], ['t', 'TCGplayer (US, converti)']]
+    .filter(([k]) => s[k] != null)
+    .map(([k, l]) => `<div class="row" style="padding:8px 0"><span class="main"><b style="font-weight:600">${l}</b>${dropped.includes(k) ? '<small>Écartée : trop éloignée des autres</small>' : ''}</span><span class="end num">${money(s[k])}</span></div>`).join('');
+  const t = m.t30 != null ? m.t30 : null;
+  const trend = t == null ? '' : `<span class="trend-tag ${t > 0.03 ? 'up' : t < -0.03 ? 'down' : 'flat'}">${t > 0.03 ? '↗' : t < -0.03 ? '↘' : '→'} ${(t * 100 > 0 ? '+' : '') + (t * 100).toFixed(1).replace('.', ',')} % sur 30 j</span>`;
+  const days = { '1S': 7, '1M': 30, '3M': 90, '6M': 180, '1A': 365, MAX: 9999 }[histRange];
+  const cut = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+  let pts = (m.h || []).filter(([d]) => d >= cut);
+  if (pts.length < 2) pts = (m.h || []).slice(-2);
+  let chart = '';
+  if (pts.length >= 2) {
+    const vs = pts.map((x) => x[1]); const lo = Math.min(...vs), hi = Math.max(...vs), W = 300, H = 90, pad = 6;
+    const X = (i) => pad + (i * (W - 2 * pad)) / (pts.length - 1);
+    const Y = (v) => (hi === lo ? H / 2 : H - pad - ((v - lo) / (hi - lo)) * (H - 2 * pad));
+    const path = pts.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(x[1]).toFixed(1)}`).join(' ');
+    chart = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:90px;margin-top:10px" role="img" aria-label="Historique du prix"><path d="${path}" fill="none" stroke="var(--gold, #f5b94a)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.7"><span>${money(lo)}</span><span>${money(hi)}</span></div>
+      <div class="chips" style="margin-top:8px">${['1S', '1M', '3M', '6M', '1A', 'MAX'].map((r) => `<button data-range="${r}" class="${r === histRange ? 'on' : ''}">${r}</button>`).join('')}</div>`;
+  }
+  const subj = encodeURIComponent('Erreur de prix : ' + (a.name || ''));
+  const body = encodeURIComponent(`Produit : ${a.name || ''}\nCote affichée : ${money(m.d1)}\nCe que je constate :`);
+  return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">Indice</span>${withInvest ? `<button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button>` : ''}</span></div>
+    <div class="market"><div class="m"><span><small>Cote du marché</small><b class="num">${money(m.d1)}</b>${trend ? `<small>${trend}</small>` : ''}</span>${withUse ? `<button class="use" data-use="${m.d1}">Utiliser</button>` : ''}</div>
+    <div class="m"><span><small>Confiance</small><b>${CONF[m.conf] || '—'}</b><small style="font-weight:600">${m.n30 ? m.n30 + ' vente' + (m.n30 > 1 ? 's' : '') + ' FR / 30 j' : 'sans vente récente'}</small></span></div></div>
+    ${chart}
+    <div style="margin-top:10px">${srcRow}</div>
+    <div class="note">Indice calculé chaque nuit : les ventes réalisées pèsent le plus, les plus récentes davantage ; les prix aberrants sont écartés. Relevé du ${dateFr(m.at)}. <a href="mailto:axel.ger@gmail.com?subject=${subj}&body=${body}">Signaler une erreur de prix</a></div>
+  </div>`;
+}
+
+// Read-only sheet of a catalogue sealed product: market index, history, sources, and a button to add it to the collection.
+export function openSealedInfo(p) {
+  let range = '3M';
+  let row = null;
+  const s = openSheet({ title: p.s || 'Produit scellé', full: true });
+  const draw = () => {
+    const m = row ? { src: 'Index', conf: row.c, srcs: row.s || {}, drop: row.x || [], n30: row.n || 0, d1: row.v, t30: row.t != null ? row.t : null, h: row.h || [], at: today() } : null;
+    const a = { name: p.n };
+    s.render(`<div class="detail-hero"><div class="art sq cat"><img src="${esc(sealedImage(p.id, 400))}" alt=""></div>
+      <div><h2>${esc(p.n)}</h2><div class="sub">${esc([p.s, p.c].filter(Boolean).join(' · '))}</div>
+        ${m ? `<div class="price"><div class="faint" style="font-size:12px;font-weight:700">COTE DU MARCHÉ</div><div class="v num">${money(m.d1)}</div></div>` : ''}</div></div>
+      ${m ? indexPanel(a, m, range, { withInvest: false, withUse: false }) : row === false ? '<div class="empty" style="margin-top:16px"><p style="margin:0">Pas encore de cote pour ce produit.</p></div>' : '<div class="loading"><div class="spinner"></div></div>'}
+      <div class="btn-row" style="margin-top:16px"><button class="btn primary block" data-add>${icon('plus')}Ajouter à mon portefeuille</button></div>`);
+  };
+  draw();
+  sealedMarketRow(p.id).then((r) => { row = r || false; if (!s.closed) draw(); }).catch(() => { row = false; if (!s.closed) draw(); });
+  s.body.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-range],[data-add]');
+    if (!t) return;
+    if (t.dataset.range) { range = t.dataset.range; draw(); return; }
+    s.close();
+    openForm('item', null, { ...sealedPrefill(p), lang: p.lang || 'fr' });
+  });
+}
+
 export function openCatalogueCard(lang, id, { photoData = null, extra = {} } = {}) {
   const sheet = openSheet({ title: 'Catalogue', full: true });
   sheet.render('<div class="loading"><div class="spinner"></div></div>');
