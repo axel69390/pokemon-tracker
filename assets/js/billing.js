@@ -97,38 +97,47 @@ export function statusLabel() {
 
 export function openPaywall({ reason = '' } = {}) {
   const sheet = openSheet({ title: 'CardVault Premium', full: true });
+  let plan = 'cardvault_yearly';
   const draw = async () => {
     const [prices, buyable] = await Promise.all([planPrices(), canBuy()]);
     const d = trialDaysLeft();
-    sheet.render(`<div data-no-tr>
-      <div class="panel hero" style="margin-top:4px">
-        <div class="label">${esc(statusLabel())}</div>
-        <div class="big" style="font-size:28px">${T('Gérez et valorisez toute votre collection', 'Manage and value your whole collection')}</div>
-        ${reason ? `<p class="muted" style="margin:0">${esc(reason)}</p>` : ''}
+    const label = (p) => (prices[p.sku] ? `${prices[p.sku]} / ${p.sku.endsWith('yearly') ? T('an', 'year') : T('mois', 'month')}` : p.fallback);
+    const perMonth = isEn() ? '≈ €2.08 / month' : 'soit environ 2,08 € / mois';
+    sheet.render(`<div data-no-tr class="paywall">
+      <div class="pw-hero">
+        <div class="pw-ic">${icon('star', 'lg')}</div>
+        <h2>${T('Passez à CardVault Premium', 'Go CardVault Premium')}</h2>
+        <p>${esc(reason) || T('Valorisez toute votre collection avec des prix fiables.', 'Value your whole collection with reliable prices.')}</p>
+        <span class="pill gold">${esc(statusLabel())}</span>
       </div>
-      <div class="list" style="margin-top:14px">
+      <ul class="pw-benefits">
         ${[
-          ['cards', T('Cartes et produits scellés illimités', 'Unlimited cards and sealed products')],
-          ['up', T('Cotes Cardmarket mises à jour chaque jour', 'Cardmarket prices updated every day')],
-          ['history', T('Courbes, moyennes du jour et sur 30 jours', 'Charts, daily and 30-day averages')],
-          ['tag', T('Invest : veille, objectifs de revente et alertes de hausse', 'Invest: watchlist, resale targets and rise alerts')],
-          ['layers', T('Suivi des sets carte par carte', 'Set tracking card by card')],
-        ].map(([ic, txt]) => `<div class="row"><span class="up">${icon(ic)}</span><span class="main"><b style="font-weight:600;white-space:normal">${esc(txt)}</b></span></div>`).join('')}
+          T('Cartes et produits scellés illimités', 'Unlimited cards and sealed products'),
+          T('Cote du marché : ventes réelles, Cardmarket et TCGplayer', 'Market price: real sales, Cardmarket and TCGplayer'),
+          T('Courbes d’évolution et tendance sur 30 jours', 'Price charts and 30-day trend'),
+          T('Invest : monte, baisse, stable, et le bon moment pour vendre', 'Invest: rising, falling, stable, and the right time to sell'),
+          T('Suivi des sets carte par carte', 'Set tracking card by card'),
+        ].map((txt) => `<li><span class="up">${icon('check', 'sm')}</span><span>${esc(txt)}</span></li>`).join('')}
+      </ul>
+      <div class="pw-plans">
+        ${PLANS.map((p) => { const yr = p.sku.endsWith('yearly'); return `<button class="pw-plan ${plan === p.sku ? 'on' : ''}" data-plan="${p.sku}">
+          ${yr ? `<span class="pw-best">${T('Meilleure offre', 'Best value')}</span>` : ''}
+          <span class="pw-t">${yr ? T('Annuel', 'Yearly') : T('Mensuel', 'Monthly')}</span>
+          <b class="num">${esc(label(p))}</b>
+          <small>${yr ? perMonth : T('Sans engagement', 'No commitment')}</small></button>`; }).join('')}
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
-        ${PLANS.map((p) => `<button class="btn ${p.sku.endsWith('yearly') ? 'primary' : ''} block" data-buy="${p.sku}" ${buyable ? '' : 'disabled'}>
-          ${esc(prices[p.sku] ? `${prices[p.sku]} / ${p.sku.endsWith('yearly') ? T('an', 'year') : T('mois', 'month')}` : p.fallback)}${p.badge ? ` <span class="pill up">${p.badge}</span>` : ''}</button>`).join('')}
-        ${buyable ? `<button class="btn ghost block" data-restore>${T('Restaurer mes achats', 'Restore purchases')}</button>`
-          : `<a class="btn block" href="${STORE_URL}" target="_blank" rel="noopener">${icon('ext')}${T('S’abonner dans l’application Android', 'Subscribe in the Android app')}</a>`}
-      </div>
-      <p class="note" style="text-align:center">${d > 0 ? T(`Votre essai gratuit se termine dans ${d} jour${d > 1 ? 's' : ''}. Aucun paiement avant de choisir une offre.`, `Your free trial ends in ${d} day${d > 1 ? 's' : ''}. Nothing is charged until you pick a plan.`)
-        : T('Vos données restent consultables et exportables dans Réglages.', 'Your data stays viewable and exportable in Settings.')}
+      ${buyable ? `<button class="btn primary block pw-cta" data-buy="${plan}">${d > 0 ? T(`Essayer gratuitement · ${d} jour${d > 1 ? 's' : ''}`, `Try free · ${d} day${d > 1 ? 's' : ''}`) : T('S’abonner', 'Subscribe')}</button>
+        <button class="btn ghost block" data-restore>${T('Restaurer mes achats', 'Restore purchases')}</button>`
+        : `<a class="btn primary block pw-cta" href="${STORE_URL}" target="_blank" rel="noopener">${icon('ext')}${T('S’abonner dans l’application Android', 'Subscribe in the Android app')}</a>`}
+      <p class="note" style="text-align:center">${d > 0 ? T('Aucun paiement avant la fin de l’essai.', 'Nothing is charged before the trial ends.') : T('Vos données restent consultables et exportables dans Réglages.', 'Your data stays viewable and exportable in Settings.')}
         ${T(' Abonnement géré par Google Play, résiliable à tout moment.', ' Subscription managed by Google Play, cancel anytime.')}</p>
+      <p class="pw-legal"><a href="privacy.html" target="_blank" rel="noopener">${T('Confidentialité', 'Privacy')}</a> · <a href="https://play.google.com/intl/fr_fr/about/play-terms/" target="_blank" rel="noopener">${T('Conditions', 'Terms')}</a></p>
     </div>`);
   };
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-buy],[data-restore]');
+    const t = e.target.closest('[data-buy],[data-restore],[data-plan]');
     if (!t) return;
+    if (t.dataset.plan) { plan = t.dataset.plan; draw(); return; }
     try {
       if (t.dataset.buy) { await buy(t.dataset.buy); toast(T('Merci ! CardVault Premium est activé', 'Thank you! CardVault Premium is active')); sheet.close(); location.reload(); }
       if ('restore' in t.dataset) { const ok = await checkPurchases(); toast(ok ? T('Abonnement restauré', 'Subscription restored') : T('Aucun abonnement trouvé', 'No subscription found'), { error: !ok }); if (ok) { sheet.close(); location.reload(); } }
