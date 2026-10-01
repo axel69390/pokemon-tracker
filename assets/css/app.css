@@ -1,10 +1,10 @@
 /* Pokédex Invest — design system */
 :root {
-  --bg: #0b0c10;
-  --bg-2: #101117;
-  --surface: #16171f;
-  --surface-2: #1d1f29;
-  --surface-3: #262835;
+  --bg: #080c18;
+  --bg-2: #0d1222;
+  --surface: #121a2e;
+  --surface-2: #19223a;
+  --surface-3: #232d49;
   --line: rgba(255, 255, 255, 0.07);
   --line-2: rgba(255, 255, 255, 0.12);
   --text: #f4f1ea;
@@ -22,7 +22,7 @@
   --radius-sm: 12px;
   --radius-xs: 8px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  --nav-h: 68px;
+  --nav-h: 84px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -46,7 +46,7 @@ body {
 body::before {
   content: '';
   position: fixed; inset: 0 0 auto 0; height: 340px;
-  background: radial-gradient(120% 90% at 50% -20%, rgba(233, 185, 73, 0.13), transparent 60%);
+  background: radial-gradient(120% 90% at 50% -20%, rgba(80, 120, 255, 0.16), transparent 60%);
   pointer-events: none; z-index: 0;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -551,3 +551,36 @@ a.row { color: inherit; }
 .serie-acc[open] > summary { border-bottom: 1px solid var(--line); }
 .serie-acc .set-list { padding: 12px; }
 .st-ic { font-style: normal; margin-right: 4px; }
+
+/* ---------- Refresh: navy theme, floating nav, sealed summary, list view ---------- */
+.nav {
+  left: 12px; right: 12px; bottom: calc(10px + var(--safe-b)); padding: 6px 8px;
+  background: rgba(14, 21, 40, 0.88); border: 1px solid var(--line-2); border-radius: 26px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+}
+.nav-inner { max-width: 520px; }
+.nav a.scan-btn .disc { box-shadow: 0 8px 22px rgba(233, 185, 73, 0.35), 0 0 0 5px rgba(14, 21, 40, 0.95); margin-top: -30px; }
+.nav-badge { box-shadow: 0 0 0 3px #0e1528; }
+.tile { border-radius: 16px; background: var(--surface); }
+.hero-sum {
+  position: relative; overflow: hidden; margin: 2px 0 16px; padding: 18px 18px 16px; border-radius: 20px;
+  background: linear-gradient(145deg, #1a2748 0%, #121a2e 60%); border: 1px solid var(--line-2);
+}
+.hero-sum::after { content: ''; position: absolute; right: -50px; top: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(233, 185, 73, 0.2), transparent 65%); pointer-events: none; }
+.hs-label { color: var(--text-2); font-size: 13px; font-weight: 600; }
+.hs-big { font-size: clamp(32px, 9vw, 42px); font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; margin: 4px 0 8px; }
+.hs-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.hs-count { color: var(--text-2); font-weight: 600; }
+.hs-gain { font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--surface-3); }
+.hs-gain.up { background: var(--up-soft); } .hs-gain.down { background: var(--down-soft); }
+.mkt-chip { white-space: nowrap; display: inline-block; align-self: flex-start; margin-top: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--gold-2); background: var(--gold-soft); }
+.ilist { display: flex; flex-direction: column; gap: 8px; }
+.irow { display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.irow:active { transform: scale(0.99); }
+.irow .ith { width: 56px; height: 56px; border-radius: 12px; background: var(--surface-3); display: grid; place-items: center; overflow: hidden; flex: none; color: var(--text-3); }
+.irow .ith img { width: 100%; height: 100%; object-fit: contain; }
+.irow .imain { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.irow .imain b { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.irow .imain small { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.irow .iend { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: none; }
+.irow .iend b { font-size: 15px; font-weight: 800; }
