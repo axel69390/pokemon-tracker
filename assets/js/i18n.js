@@ -124,7 +124,7 @@ const EN = {
   'Mettez en veille les cartes et items que vous envisagez de revendre : l’appli suit leur prix chaque nuit et vous signale le bon moment.':
     'Add the cards and items you may resell: the app tracks their price every night and tells you when to sell.',
   'Choisir dans ma collection': 'Pick from my collection', 'Tendances dans ma collection': 'Trends in my collection',
-  'cartes possédées, hors veille': 'owned, not on watchlist', 'PRIX DU MARCHÉ': 'MARKET PRICE', 'DERNIÈRE VENTE GCC': 'LAST GCC SALE',
+  'cartes possédées, hors veille': 'owned, not on watchlist', 'PRIX DU MARCHÉ': 'MARKET PRICE', 'COTE GCC (MÉDIANE DES VENTES)': 'GCC PRICE (MEDIAN OF SALES)',
   'Prix': 'Price', 'Moyenne 30 j ': '30-day avg', 'Objectif': 'Target', 'Plus-value': 'Gain', 'Plus haut / bas 30 j': '30-day high / low',
   'Signaux': 'Signals', 'Objectif de revente': 'Resale target', 'Prix unitaire visé': 'Target unit price',
   'Quand le prix du marché atteint l’objectif, la carte passe en « Vendre ».': 'When the market price reaches the target, the card switches to “Sell”.',
