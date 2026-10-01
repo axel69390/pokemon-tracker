@@ -26,6 +26,7 @@ export function openDetail(kind, id) {
   let showOfficial = false;
   let market = null;             // { loading, error, variants, selected }
   let gcc = null;                // { loading, error, sales, scope, edition }
+  let histRange = '3M';          // price history period (index rows)
   let ebay = null;               // { loading } | { error } | { items } — active eBay listings (only when EBAY_API is set)
   const sheet = openSheet({ title: kind === 'card' ? 'Carte' : 'Item', full: true, onClose: () => off() });
   const off = store.on(() => draw());
@@ -147,6 +148,7 @@ export function openDetail(kind, id) {
   function marketBlock(a) {
     const m = a.market;
     if (!m) return '';
+    if (m.src === 'Index') return indexBlock(a, m);
     const gcc = m.src === 'GCC';
     const box = (label, v, sub) => `<div class="m"><span><small>${label}</small><b class="num">${v != null ? money(v) : '—'}</b>${sub ? `<small style="font-weight:600">${sub}</small>` : ''}</span>${v != null ? `<button class="use" data-use="${v}">Utiliser</button>` : ''}</div>`;
     return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">${esc(m.src)}</span><button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button></span></div>
@@ -155,6 +157,42 @@ export function openDetail(kind, id) {
         ${box('Moyenne 30 jours', m.d30, gcc ? `${m.n30 || 0} vente${m.n30 > 1 ? 's' : ''}` : m.src.startsWith('TCG') && m.n30 < 30 ? `${m.n30} jour${m.n30 > 1 ? 's' : ''} relevé${m.n30 > 1 ? 's' : ''}` : '')}
       </div>
       <div class="note">${m.src === 'Cardmarket' ? 'Cardmarket, version exacte' + (a.variant ? ' (' + esc(a.variant) + ')' : '') + ', non gradée.' : gcc ? (a.market.title ? `Ventes réalisées sur Graded Card Center : « ${esc(a.market.title)} ».` : 'Ventes réalisées sur Graded Card Center, même note.') : 'Prix du marché américain converti en euros ; la moyenne 30 jours se construit chaque nuit.'} Relevé du ${dateFr(m.at)}.</div>
+    </div>`;
+  }
+
+
+  // Price index (GCC + Cardmarket + TCGplayer): value, confidence, sources, 30-day trend, history chart.
+  function indexBlock(a, m) {
+    const CONF = ['Faible', 'Moyenne', 'Bonne', 'Haute'];
+    const s = m.srcs || {};
+    const dropped = m.drop || [];
+    const srcRow = [['g', 'Graded Card Center (ventes FR)'], ['c', 'Cardmarket (toutes langues)'], ['t', 'TCGplayer (US, converti)']]
+      .filter(([k]) => s[k] != null)
+      .map(([k, l]) => `<div class="row" style="padding:8px 0"><span class="main"><b style="font-weight:600">${l}</b>${dropped.includes(k) ? '<small>Écartée : trop éloignée des autres</small>' : ''}</span><span class="end num">${money(s[k])}</span></div>`).join('');
+    const t = m.t30 != null ? m.t30 : null;
+    const trend = t == null ? '' : `<span class="trend-tag ${t > 0.03 ? 'up' : t < -0.03 ? 'down' : 'flat'}">${t > 0.03 ? '↗' : t < -0.03 ? '↘' : '→'} ${(t * 100 > 0 ? '+' : '') + (t * 100).toFixed(1).replace('.', ',')} % sur 30 j</span>`;
+    const days = { '1S': 7, '1M': 30, '3M': 90, '6M': 180, '1A': 365, MAX: 9999 }[histRange];
+    const cut = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+    let pts = (m.h || []).filter(([d]) => d >= cut);
+    if (pts.length < 2) pts = (m.h || []).slice(-2);
+    let chart = '';
+    if (pts.length >= 2) {
+      const vs = pts.map((x) => x[1]); const lo = Math.min(...vs), hi = Math.max(...vs), W = 300, H = 90, pad = 6;
+      const X = (i) => pad + (i * (W - 2 * pad)) / (pts.length - 1);
+      const Y = (v) => (hi === lo ? H / 2 : H - pad - ((v - lo) / (hi - lo)) * (H - 2 * pad));
+      const path = pts.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(x[1]).toFixed(1)}`).join(' ');
+      chart = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:90px;margin-top:10px" role="img" aria-label="Historique du prix"><path d="${path}" fill="none" stroke="var(--gold, #f5b94a)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.7"><span>${money(lo)}</span><span>${money(hi)}</span></div>
+        <div class="chips" style="margin-top:8px">${['1S', '1M', '3M', '6M', '1A', 'MAX'].map((r) => `<button data-range="${r}" class="${r === histRange ? 'on' : ''}">${r}</button>`).join('')}</div>`;
+    }
+    const subj = encodeURIComponent('Erreur de prix : ' + (a.name || ''));
+    const body = encodeURIComponent(`Produit : ${a.name || ''}\nCote affichée : ${money(m.d1)}\nCe que je constate :`);
+    return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">Indice</span><button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button></span></div>
+      <div class="market"><div class="m"><span><small>Cote du marché</small><b class="num">${money(m.d1)}</b>${trend ? `<small>${trend}</small>` : ''}</span><button class="use" data-use="${m.d1}">Utiliser</button></div>
+      <div class="m"><span><small>Confiance</small><b>${CONF[m.conf] || '—'}</b><small style="font-weight:600">${m.n30 ? m.n30 + ' vente' + (m.n30 > 1 ? 's' : '') + ' FR / 30 j' : 'sans vente récente'}</small></span></div></div>
+      ${chart}
+      <div style="margin-top:10px">${srcRow}</div>
+      <div class="note">Indice calculé chaque nuit : les ventes réalisées pèsent le plus, les plus récentes davantage ; les prix aberrants sont écartés. Relevé du ${dateFr(m.at)}. <a href="mailto:axel.ger@gmail.com?subject=${subj}&body=${body}">Signaler une erreur de prix</a></div>
     </div>`;
   }
 
@@ -325,6 +363,7 @@ export function openDetail(kind, id) {
       } });
     }
     if ('gccFetch' in t.dataset) { t.disabled = true; await quickGccValue(id, { notify: true }); draw(); }
+    if (t.dataset.range) { histRange = t.dataset.range; draw(); }
     if (t.dataset.gccScope) { gcc.scope = t.dataset.gccScope; draw(); }
     if (t.dataset.gccEd) { gcc.edition = t.dataset.gccEd; draw(); }
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
