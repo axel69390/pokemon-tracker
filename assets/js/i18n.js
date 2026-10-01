@@ -118,7 +118,7 @@ const EN = {
 
   // Invest
   'Valeur en veille': 'Watchlist value', 'Plus-value potentielle': 'Potential gain', 'Attendre': 'Wait', 'Surveiller': 'Watch', 'Acheter': 'Buy', 'Garder': 'Hold', 'Monte': 'Rising', 'Baisse': 'Falling', 'Stable': 'Stable',
-  'Prix bas : bon moment pour acheter': 'Low price: good time to buy', 'Rien à faire pour l’instant': 'Nothing to do for now', 'Prix bas sur 30 jours': 'Low price over 30 days', 'Mes cartes en veille': 'My watchlist',
+  'Prix bas : bon moment pour acheter': 'Low price: good time to buy', 'Rien à faire pour l’instant': 'Nothing to do for now', 'Prix bas sur 30 jours': 'Low price over 30 days', 'Mes cartes en veille': 'My watchlist', 'Aucune carte dans cette catégorie.': 'No card in this category.',
   'Bon moment pour vendre': 'Good time to sell', 'Signes favorables, à suivre': 'Positive signs, keep watching', 'Pas le bon moment': 'Not the right time',
   'Hausses ≥ 10 %': 'Rises ≥ 10 %', 'Meilleurs moments pour vendre': 'Best times to sell', 'Aucune carte en veille': 'Nothing on your watchlist',
   'Mettez en veille les cartes et items que vous envisagez de revendre : l’appli suit leur prix chaque nuit et vous signale le bon moment.':
@@ -165,6 +165,7 @@ const EN = {
 // Phrases containing numbers, amounts or dates.
 const RULES = [
   [/^Cartes · (\d+)$/, 'Cards · $1'], [/^Items · (\d+)$/, 'Items · $1'], [/^Sets · (\d+)$/, 'Sets · $1'], [/^Tout · (\d+)$/, 'All · $1'],
+  [/^Toutes · (\d+)$/, 'All · $1'], [/^↗ Monte · (\d+)$/, '↗ Rising · $1'], [/^→ Stable · (\d+)$/, '→ Stable · $1'], [/^↘ Baisse · (\d+)$/, '↘ Falling · $1'],
   [/^(\d+) extensions?$/, (m) => `${m[1]} set${m[1] === '1' ? '' : 's'}`],
   [/^(\d+) cartes?$/, (m) => `${m[1]} card${m[1] === '1' ? '' : 's'}`], [/^(\d+) items?$/, (m) => `${m[1]} item${m[1] === '1' ? '' : 's'}`],
   [/^(\d+) ventes?$/, (m) => `${m[1]} sale${m[1] === '1' ? '' : 's'}`], [/^(\d+) relevés?$/, (m) => `${m[1]} reading${m[1] === '1' ? '' : 's'}`],
