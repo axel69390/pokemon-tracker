@@ -2,7 +2,7 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-  refreshLocalPrices, refreshSealedPrices, refreshPrices,
+  refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow,
 } from './store.js?v=2.4.0';
 import { EBAY_API } from './edition.js?v=2.4.0';
 import {
@@ -585,6 +585,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         <label class="field"><span>Quantité</span><input name="qty" type="number" inputmode="numeric" min="1" step="1" value="${val(a.qty || 1)}"></label>
         <label class="field"><span>Date d’achat</span><input name="buyDate" type="date" value="${val(a.buyDate)}"></label>
         <label class="field"><span>Prix d’achat unitaire</span><div class="suffix" data-suffix="€"><input name="buyPrice" type="number" inputmode="decimal" min="0" step="0.01" value="${val(a.buyPrice)}" placeholder="0"></div></label>
+        ${!isCard && a._mk && a._mkId === a.tcgplayerId ? `<div class="field span"><button type="button" class="mkt-use num" data-fillbuy="${a._mk.v}"><span>Marché ${money(a._mk.v)}</span><small>Utiliser comme prix d’achat</small></button></div>` : ''}
         ${isCard ? `<label class="field"><span>Frais de gradation</span><div class="suffix" data-suffix="€"><input name="gradingCost" type="number" inputmode="decimal" min="0" step="0.01" value="${val(a.gradingCost)}" placeholder="0"></div></label>` : ''}
         <label class="field ${isCard ? 'span' : ''}"><span>Valeur actuelle unitaire</span><div class="suffix" data-suffix="€"><input name="value" type="number" inputmode="decimal" min="0" step="0.01" value="${val(a.value)}" placeholder="Laisser vide = prix d’achat"></div></label>
         <label class="field span"><span>Remarque</span><textarea name="note" placeholder="Emplacement, provenance…">${esc(a.note || '')}</textarea></label>
@@ -611,6 +612,12 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         onPick: (p) => { readForm(); Object.assign(a, sealedPrefill(p)); draw(); },
       });
     }
+    // Sealed product picked: look up the market price once to offer it next to the purchase price.
+    if (!isCard && a.tcgplayerId && a._mkId !== a.tcgplayerId) {
+      const id = a.tcgplayerId;
+      a._mkId = id; a._mk = null;
+      sealedMarketRow(id).then((r) => { if (r && r.v && a.tcgplayerId === id && sheet.body.querySelector('form')) { a._mk = r; readForm(); draw(); } }).catch(() => {});
+    }
   }
 
   // Keep typed values when the form re-renders (grader switch, chips…)
@@ -620,9 +627,10 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
   }
 
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-photo],[data-catalogue],[data-sealed],[data-cat],[data-status]');
+    const t = e.target.closest('[data-photo],[data-catalogue],[data-sealed],[data-cat],[data-status],[data-fillbuy]');
     if (!t) return;
     readForm();
+    if (t.dataset.fillbuy) { a.buyPrice = t.dataset.fillbuy; draw(); return; }
     if (t.dataset.photo === 'remove') { newPhoto = null; removePhoto = true; draw(); return; }
     if (t.dataset.photo) {
       const file = await pickImage({ capture: t.dataset.photo === 'camera' });
