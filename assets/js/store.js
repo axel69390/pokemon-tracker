@@ -397,6 +397,10 @@ export async function sealedMarketRow(id) {
   const mk = await loadSealedMarket();
   return (mk && mk.p && mk.p[id]) || null;
 }
+// Every index row, keyed by TCGplayer id ({} when the index is not built yet); used by the sealed catalogue.
+export async function sealedMarketMap() {
+  try { const mk = await loadSealedMarket(); return (mk && mk.p) || {}; } catch { return {}; }
+}
 async function usdToEur() {
   try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c && c.d === today()) return c.r; } catch { /* ignore */ }
   let r = null;
