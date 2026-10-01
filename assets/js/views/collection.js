@@ -20,6 +20,8 @@ const filters = {
 };
 
 const COLS = [2, 3, 4];
+const VIEW_KEY = 'pdx.itemView';
+let itemView = (() => { try { return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid'; } catch { return 'grid'; } })();
 
 export function render(main, { tab = 'cards', query }) {
   if (tab === 'sets') return renderSets(main);
@@ -38,6 +40,7 @@ export function render(main, { tab = 'cards', query }) {
     </div>
     <div class="toolbar">
       <label class="search">${icon('search', 'sm')}<input id="q" type="search" placeholder="${kind === 'card' ? 'Rechercher une carte…' : 'Rechercher un item…'}" value="${esc(f.q)}" autocomplete="off"></label>
+      ${kind === 'item' ? `<button class="icon-btn" data-view title="Affichage">${icon(itemView === 'list' ? 'grid2' : 'list')}</button>` : ''}
       <button class="icon-btn" data-cols title="Taille de la grille">${icon('grid' + cols)}</button>
       <button class="icon-btn" data-filters title="Filtres">${icon('filter')}${activeFilters ? `<span class="badge">${activeFilters}</span>` : ''}</button>
     </div>
@@ -51,11 +54,12 @@ export function render(main, { tab = 'cards', query }) {
   q.addEventListener('input', () => { f.q = q.value; draw(); });
 
   main.onclick = (e) => {
-    const t = e.target.closest('[data-tab],[data-cols],[data-filters],[data-open],[data-add],[data-serie]');
+    const t = e.target.closest('[data-tab],[data-cols],[data-view],[data-filters],[data-open],[data-add],[data-serie]');
     if (!t) return;
     if (t.dataset.serie) { toggleSerie(t.dataset.serie); draw(); return; }
     if (t.dataset.tab) location.hash = '#/collection/' + t.dataset.tab;
     else if ('cols' in t.dataset) { settings.set({ [colsKey]: COLS[(COLS.indexOf(cols) + 1) % COLS.length] }); render(main, { tab }); }
+    else if ('view' in t.dataset) { itemView = itemView === 'list' ? 'grid' : 'list'; try { localStorage.setItem(VIEW_KEY, itemView); } catch { /* ignore */ } render(main, { tab }); }
     else if ('filters' in t.dataset) openFilters(kind, () => render(main, { tab }));
     else if (t.dataset.open) { const [k, id] = t.dataset.open.split(':'); openDetail(k, id); }
     else if (t.dataset.add) openForm(t.dataset.add);
@@ -89,6 +93,7 @@ function marketLine(a) {
   const m = a.market;
   if (!m || (m.d1 == null && m.d30 == null)) return '';
   const f = (v) => (v == null ? '—' : money(v));
+  if (m.src === 'Index') return `<div class="mkt-chip num">Marché ${f(m.d1)}</div>`;
   return `<div class="mkt num"><span>${m.src === 'GCC' ? 'Dern.' : 'Jour'} ${f(m.d1)}</span><span>30 j ${f(m.d30)}</span></div>`;
 }
 
@@ -96,6 +101,25 @@ function gainBadge(a) {
   const g = gainOf(a);
   if (!costOf(a)) return '';
   return pill(g, pct(gainPct(a)));
+}
+
+// Big summary card on top of the sealed list: total value, gain, count.
+function heroHtml(list, unit) {
+  const t = totals(list);
+  return `<div class="hero-sum"><div class="hs-label">Valeur de la collection</div>
+    <div class="hs-big num">${money(t.value)}</div>
+    <div class="hs-row"><span class="hs-count">${t.count} ${unit}${t.count > 1 ? 's' : ''}</span>
+      ${t.cost ? `<span class="hs-gain num ${trend(t.gain)}">${signed(t.gain)}${t.pct != null ? ' · ' + pct(t.pct) : ''}</span>` : ''}</div></div>`;
+}
+
+function itemRow(a) {
+  const img = imageOf(a, { thumb: true });
+  const m = a.market && a.market.src === 'Index' && a.market.d1 != null ? `<small class="mkt-chip num">Marché ${money(a.market.d1)}</small>` : '';
+  return `<button class="irow" data-open="item:${a.id}">
+    <span class="ith">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : icon(CATEGORY_ICON[a.category] || 'box')}</span>
+    <span class="imain"><b>${esc(a.name)}</b><small>${esc(a.set || a.category)} · ×${qtyOf(a)}</small>${m}</span>
+    <span class="iend"><b class="num">${money(worthOf(a))}</b>${gainBadge(a)}</span>
+  </button>`;
 }
 
 function emptyState(kind) {
@@ -219,13 +243,13 @@ function itemsHtml(cols) {
     groups.get(c).push(a);
   });
   const ordered = [...groups.entries()].sort((a, b) => CATEGORIES.indexOf(a[0]) - CATEGORIES.indexOf(b[0]));
-  return summary(list, 'item') + ordered.map(([cat, arr]) => {
+  return heroHtml(list, 'item') + ordered.map(([cat, arr]) => {
     const t = totals(arr);
     return `<section class="group">
       <div class="group-head"><span class="gi">${icon(CATEGORY_ICON[cat] || 'box')}</span>
         <span class="gt"><b>${esc(cat)}</b><small>${t.count} item${t.count > 1 ? 's' : ''}</small></span>
         <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span></div>
-      <div class="grid ${cols >= 4 ? 'dense' : ''}" style="--cols:${cols}">${arr.map(itemTile).join('')}</div>
+      ${itemView === 'list' ? `<div class="ilist">${arr.map(itemRow).join('')}</div>` : `<div class="grid ${cols >= 4 ? 'dense' : ''}" style="--cols:${cols}">${arr.map(itemTile).join('')}</div>`}
     </section>`;
   }).join('');
 }
