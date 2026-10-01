@@ -46,6 +46,144 @@ function topbar(route, r) {
   let actions = '';
   if (r.name === '') {
     actions = `<a class="icon-btn" href="#/catalogue" title="Catalogue">${icon('search')}</a>
+      ${IS_STORE ? `<a class="icon-btn" href="#/scan" title="Scanner (bêta)">${icon('scan')}</a>` : ''}
+      <button class="icon-btn" data-export title="Exporter">${icon('download')}</button>`;
+  } else if (r.name === 'collection') {
+    actions = `<a class="icon-btn" href="#/scan" title="Scanner${IS_STORE ? ' (bêta)' : ''}">${icon('scan')}</a>
+      <button class="icon-btn gold" data-add="${r.tab === 'items' ? 'item' : 'card'}" title="Ajouter">${icon('plus')}</button>`;
+  }
+  if (r.name === 'invest') actions += `<button class="icon-btn gold" data-watchadd title="Mettre en veille">${icon('plus')}</button>`;
+  if (r.name !== 'settings') actions += `<a class="icon-btn" href="#/settings" title="Réglages">${icon('settings')}</a>`;
+  const brand = r.name === '' ? `<div class="brand"><img src="${ICON}" alt=""><h1>${esc(route.title)}</h1></div>` : `<h1>${esc(route.title)}</h1>`;
+  return `<header class="topbar">${brand}<div class="actions">${actions}</div></header>`;
+}
+
+function nav(active) {
+  return `<nav class="nav"><div class="nav-inner">${NAV.map((n) => `<a href="${n.href}" class="${n.id === active ? 'on' : ''} ${n.center ? 'scan-btn' : ''}">
+    ${n.center ? `<span class="disc">${icon(n.icon)}</span>` : icon(n.icon, 'lg')}<span>${n.label}</span></a>`).join('')}</div></nav>`;
+}
+
+function route() {
+  const r = parse();
+  const def = ROUTES[r.name];
+  closeAllSheets();
+  app.innerHTML = topbar(def, r) + '<main class="view"></main>' + nav(def.nav);
+  current = { r, def, main: app.querySelector('main') };
+  def.view.render(current.main, r);
+  window.scrollTo(0, 0);
+  refreshBadge();
+  document.title = `${def.title} · ${APP_NAME}`;
+}
+
+// Re-render data-driven views when the collection changes, keeping focus in search fields.
+store.on(() => {
+  if (!current || !current.def.live) return;
+  const active = document.activeElement;
+  const focusId = active && active.id && current.main.contains(active) ? active.id : null;
+  const caret = focusId ? active.selectionStart : null;
+  const y = window.scrollY;
+  current.def.view.render(current.main, current.r);
+  if (focusId) {
+    const el = document.getElementById(focusId);
+    if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch { /* not a text input */ } }
+  }
+  window.scrollTo(0, y);
+});
+
+app.addEventListener('click', (e) => {
+  const t = e.target.closest('.topbar [data-add], .topbar [data-export], .topbar [data-watchadd]');
+  if (!t) return;
+  if ('watchadd' in t.dataset) invest.openPicker();
+  if (t.dataset.add) openForm(t.dataset.add);
+  if ('export' in t.dataset) download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
+});
+
+// Badge on the Invest tab (and on the installed app icon) for unseen rises of 10 % or more.
+function refreshBadge() {
+  const n = invest.unseenRises().length;
+  const link = app.querySelector('.nav a[href="#/invest"]');
+  if (link) {
+    let b = link.querySelector('.nav-badge');
+    if (n && !b) { b = document.createElement('span'); b.className = 'nav-badge'; link.appendChild(b); }
+    if (b) { if (n) b.textContent = n > 9 ? '9+' : String(n); else b.remove(); }
+  }
+  try { if (n && navigator.setAppBadge) navigator.setAppBadge(n); else if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch { /* unsupported */ }
+}
+store.on(() => refreshBadge());
+window.addEventListener('pdx:badge', refreshBadge);
+
+window.addEventListener('hashchange', route);
+startAutoTranslate();
+if (IS_STORE) { trialStart(); checkPurchases().then(() => { if (current && current.def.live) current.def.view.render(current.main, current.r); }); }
+route();
+load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).catch(() => {});
+
+// Refresh when the app comes back to the foreground (another device may have edited the collection).
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load(); });
+
+// Always run the latest published version: the service worker revalidates every file,
+// and a newer version.json triggers one reload (guarded against loops).
+if ('serviceWorker' in navigator) navigator.serviceWorker.register(asset('sw.js'), { updateViaCache: 'none' }).catch(() => {});
+async function checkVersion() {
+  try {
+    const { version } = await (await fetch(asset('version.json'), { cache: 'no-store' })).json();
+    // Reload under a new URL (?v=…) so iOS cannot hand back the cached page; every module
+    // URL carries the version too (tools/release.py). Only one attempt per version.
+    if (version && version !== VERSION && new URLSearchParams(location.search).get('v') !== version) {
+      location.replace(location.pathname + '?v=' + encodeURIComponent(version) + location.hash);
+    }
+  } catch { /* offline */ }
+}
+checkVersion();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
+// Pokédex Invest / CardVault — entry point & router.
+import { startAutoTranslate } from './i18n.js?v=2.4.0';
+import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.0';
+import { checkPurchases, trialStart } from './billing.js?v=2.4.0';
+import { store, load, refreshLocalPrices, refreshSealedPrices } from './store.js?v=2.4.0';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.0';
+import { openForm } from './sheets.js?v=2.4.0';
+import * as portfolio from './views/portfolio.js?v=2.4.0';
+import * as collection from './views/collection.js?v=2.4.0';
+import * as scanner from './views/scanner.js?v=2.4.0';
+import * as catalogue from './views/catalogue.js?v=2.4.0';
+import * as settingsView from './views/settings.js?v=2.4.0';
+import * as invest from './views/invest.js?v=2.4.0';
+import { VERSION } from './views/settings.js?v=2.4.0';
+
+const ROUTES = {
+  '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
+  collection: { view: collection, title: 'Collection', nav: 'collection', live: true },
+  scan: { view: scanner, title: 'Scanner', nav: 'scan' },
+  catalogue: { view: catalogue, title: 'Catalogue', nav: 'catalogue' },
+  invest: { view: invest, title: 'Invest', nav: 'invest', live: true },
+  settings: { view: settingsView, title: 'Réglages', nav: 'settings' },
+};
+
+const NAV = [
+  { id: 'catalogue', href: '#/catalogue', label: 'Catalogue', icon: 'compass' },
+  { id: 'collection', href: '#/collection/cards', label: 'Collection', icon: 'cards' },
+  IS_STORE
+    ? { id: 'add', href: '#/collection/cards?add=1', label: 'Ajouter', icon: 'plus', center: true }
+    : { id: 'scan', href: '#/scan', label: 'Scanner', icon: 'scan', center: true },
+  { id: 'home', href: '#/', label: 'Portefeuille', icon: 'wallet' },
+  { id: 'invest', href: '#/invest', label: 'Invest', icon: 'up' },
+];
+
+const app = document.getElementById('app');
+let current = null;
+
+function parse() {
+  const raw = location.hash.replace(/^#\/?/, '');
+  const [path, qs] = raw.split('?');
+  const [name = '', tab] = path.split('/');
+  return { name: ROUTES[name] ? name : '', tab, query: new URLSearchParams(qs || '') };
+}
+
+function topbar(route, r) {
+  let actions = '';
+  if (r.name === '') {
+    actions = `<a class="icon-btn" href="#/catalogue" title="Catalogue">${icon('search')}</a>
       <button class="icon-btn" data-export title="Exporter">${icon('download')}</button>`;
   } else if (r.name === 'collection') {
     actions = `${IS_STORE ? '' : `<a class="icon-btn" href="#/scan" title="Scanner">${icon('scan')}</a>`}
