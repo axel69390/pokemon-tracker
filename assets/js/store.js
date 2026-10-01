@@ -392,6 +392,11 @@ async function loadSealedMarket() {
   }
   return sealedMarket;
 }
+// Index row of one sealed product ({v, c, ...}) or null; used by the add form to suggest the market price.
+export async function sealedMarketRow(id) {
+  const mk = await loadSealedMarket();
+  return (mk && mk.p && mk.p[id]) || null;
+}
 async function usdToEur() {
   try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c && c.d === today()) return c.r; } catch { /* ignore */ }
   let r = null;
