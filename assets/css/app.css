@@ -584,3 +584,6 @@ a.row { color: inherit; }
 .irow .imain small { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .irow .iend { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: none; }
 .irow .iend b { font-size: 15px; font-weight: 800; }
+.mkt-use { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--gold-soft); border: 1px solid rgba(233, 185, 73, .3); color: var(--gold-2); font-weight: 800; font-size: 14px; }
+.mkt-use small { font-weight: 600; font-size: 12px; color: var(--text-2); }
+.detail-hero .price .v { font-size: 34px; letter-spacing: -0.03em; }
