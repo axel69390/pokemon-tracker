@@ -1,14 +1,15 @@
 import { settings } from '../settings.js?v=2.4.0';
 import { getSets, getSetCards, searchCards, cardImage, setLogo } from '../api.js?v=2.4.0';
-import { esc, icon, toast, CATEGORIES } from '../ui.js?v=2.4.0';
-import { store, addSet } from '../store.js?v=2.4.0';
+import { esc, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.0';
+import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.0';
 import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.0';
-import { openCatalogueCard, openForm, openSetSheet } from '../sheets.js?v=2.4.0';
+import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.0';
 
 const LANG_OPTIONS = [['fr', 'FR'], ['en', 'EN'], ['ja', 'JP']];
 let q = '';
 let mode = 'cards';   // 'cards' | 'sealed'
 let sealedCat = '';
+let sealedGroup = 'type';   // 'type' | 'serie'
 let seq = 0;
 const openSeries = new Set();   // series left unfolded (kept when coming back from a set)
 
@@ -37,10 +38,16 @@ export function render(main, { tab, query }) {
   let t;
   input.addEventListener('input', () => { q = input.value; clearTimeout(t); t = setTimeout(show, 350); });
   main.onclick = (e) => {
-    const b = e.target.closest('[data-lang],[data-card],[data-set],[data-back],[data-mode],[data-sc],[data-sealed],[data-track],[data-tracked]');
+    const b = e.target.closest('[data-lang],[data-card],[data-set],[data-back],[data-mode],[data-sc],[data-sg],[data-sinfo],[data-sealed],[data-track],[data-tracked]');
     if (!b) return;
     if (b.dataset.mode) { mode = b.dataset.mode; q = ''; render(main, { tab, query }); return; }
     if ('sc' in b.dataset) { sealedCat = b.dataset.sc; show(); return; }
+    if (b.dataset.sg) { sealedGroup = b.dataset.sg; show(); return; }
+    if (b.dataset.sinfo) {
+      const p = (out._sealed || []).find((x) => String(x.id) === b.dataset.sinfo);
+      if (p) openSealedInfo(p);
+      return;
+    }
     if (b.dataset.sealed) {
       const p = (out._sealed || []).find((x) => String(x.id) === b.dataset.sealed);
       if (p) openForm('item', null, sealedPrefill(p));
@@ -120,14 +127,29 @@ async function showSealed(out) {
   const my = ++seq;
   out.innerHTML = loading;
   try {
-    const res = await searchSealed(q, sealedCat);
+    const [res, mk] = await Promise.all([searchSealed(q, sealedCat), sealedMarketMap()]);
     if (my !== seq) return;
     out._sealed = res;
-    out.innerHTML = `<div class="chips scroll" style="margin-bottom:12px"><button data-sc="" class="${!sealedCat ? 'on' : ''}">Tous</button>${CATEGORIES.filter((c) => !['Accessoire', 'Autre'].includes(c)).map((c) => `<button data-sc="${c}" class="${sealedCat === c ? 'on' : ''}">${c}</button>`).join('')}</div>
-      ${res.length ? `<div class="grid" style="--cols:3">${res.slice(0, 150).map((p) => `<button class="tile" data-sealed="${p.id}">
-        <div class="art item-art cat"><img src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"></div>
-        <div class="meta"><b>${esc(p.s)}</b><small>${esc(p.n)}</small></div></button>`).join('')}</div>`
-        : '<div class="empty"><h3>Aucun produit</h3><p>Essayez un autre nom.</p></div>'}`;
+    const card = (p) => {
+      const r = mk[p.id];
+      const t = r && r.t != null ? r.t : null;
+      const tr = t == null ? '' : `<span class="trend-tag ${t > 0.03 ? 'up' : t < -0.03 ? 'down' : 'flat'}">${t > 0.03 ? '↗' : t < -0.03 ? '↘' : '→'} ${(t * 100 > 0 ? '+' : '') + (t * 100).toFixed(1).replace('.', ',')} %</span>`;
+      return `<div class="pcard"><button class="pimg" data-sinfo="${p.id}"><img src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"></button>
+        <b>${esc(p.n)}</b><small>${esc(p.c)}</small>
+        <div class="pprice">${r ? `<span class="num">${money(r.v)}</span>${tr}` : '<span class="faint">Pas de cote</span>'}</div>
+        <div class="pbtns"><button data-sealed="${p.id}">+ Portefeuille</button><button data-sinfo="${p.id}">Détails ›</button></div></div>`;
+    };
+    const list = res.slice(0, 150);
+    let body;
+    if (!list.length) body = '<div class="empty"><h3>Aucun produit</h3><p>Essayez un autre nom.</p></div>';
+    else if (sealedGroup === 'serie') {
+      const groups = new Map();
+      list.forEach((p) => { const k = p.s || 'Autres'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(p); });
+      body = [...groups.entries()].map(([k, arr]) => `<div class="pgroup"><h4>${esc(k)}<small>${arr.length}</small></h4><div class="pgrid">${arr.map(card).join('')}</div></div>`).join('');
+    } else body = `<div class="pgrid">${list.map(card).join('')}</div>`;
+    out.innerHTML = `<div class="seg small" style="margin-bottom:10px"><button data-sg="type" class="${sealedGroup === 'type' ? 'on' : ''}">Par type</button><button data-sg="serie" class="${sealedGroup === 'serie' ? 'on' : ''}">Par série</button></div>
+      ${sealedGroup === 'type' ? `<div class="chips scroll" style="margin-bottom:12px"><button data-sc="" class="${!sealedCat ? 'on' : ''}">Tous</button>${CATEGORIES.filter((c) => !['Accessoire', 'Autre'].includes(c)).map((c) => `<button data-sc="${c}" class="${sealedCat === c ? 'on' : ''}">${c}</button>`).join('')}</div>` : ''}
+      ${body}`;
   } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
 }
 
