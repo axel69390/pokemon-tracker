@@ -587,3 +587,36 @@ a.row { color: inherit; }
 .mkt-use { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--gold-soft); border: 1px solid rgba(233, 185, 73, .3); color: var(--gold-2); font-weight: 800; font-size: 14px; }
 .mkt-use small { font-weight: 600; font-size: 12px; color: var(--text-2); }
 .detail-hero .price .v { font-size: 34px; letter-spacing: -0.03em; }
+/* Sealed catalogue cards */
+.pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 720px) { .pgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.pcard { display: flex; flex-direction: column; gap: 3px; padding: 10px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.pcard .pimg { aspect-ratio: 1 / 1; border-radius: 12px; background: #fff; display: grid; place-items: center; overflow: hidden; margin-bottom: 6px; }
+.pcard .pimg img { width: 100%; height: 100%; object-fit: contain; }
+.pcard b { font-size: 13px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 32px; }
+.pcard small { font-size: 11px; color: var(--text-2); }
+.pcard .pprice { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin: 4px 0 6px; font-weight: 800; font-size: 16px; }
+.pcard .pbtns { display: grid; gap: 6px; }
+.pcard .pbtns button { height: 34px; border-radius: 10px; font-size: 12.5px; font-weight: 800; background: var(--surface-3); color: var(--text); }
+.pcard .pbtns button:first-child { background: var(--gold-grad); color: #1a1305; }
+.pgroup { margin-bottom: 18px; }
+.pgroup h4 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.pgroup h4 small { color: var(--text-3); font-weight: 600; }
+/* Paywall */
+.pw-hero { text-align: center; padding: 8px 4px 4px; }
+.pw-ic { width: 60px; height: 60px; border-radius: 20px; margin: 0 auto 12px; display: grid; place-items: center; background: var(--gold-grad); color: #1a1305; box-shadow: 0 10px 28px rgba(233, 185, 73, .3); }
+.pw-hero h2 { margin: 0 0 6px; font-size: 24px; letter-spacing: -0.02em; }
+.pw-hero p { margin: 0 0 10px; color: var(--text-2); font-size: 14px; }
+.pw-benefits { list-style: none; margin: 16px 0; padding: 14px 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 11px; }
+.pw-benefits li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; font-weight: 600; }
+.pw-benefits li .up { margin-top: 2px; }
+.pw-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.pw-plan { position: relative; display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 18px 12px 12px; border-radius: 16px; background: var(--surface); border: 2px solid var(--line-2); }
+.pw-plan.on { border-color: var(--gold); background: var(--gold-soft); }
+.pw-plan .pw-t { font-size: 12px; font-weight: 700; color: var(--text-2); }
+.pw-plan b { font-size: 16px; }
+.pw-plan small { font-size: 11px; color: var(--text-3); }
+.pw-best { position: absolute; top: -10px; left: 12px; padding: 2px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; background: var(--gold-grad); color: #1a1305; }
+.pw-cta { height: 52px; font-size: 16px; margin-bottom: 8px; }
+.pw-legal { text-align: center; font-size: 12px; margin: 0; }
+.pw-legal a { color: var(--text-3); }
