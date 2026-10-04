@@ -9,4 +9,4 @@ export const ROOT = new URL('../../', import.meta.url).href.replace(/\?.*$/, '')
 export const ICON = IS_STORE ? ROOT + 'cardvault/icon.svg' : ROOT + 'icon.svg';
 export const asset = (path) => ROOT + path;
 // URL of the eBay listings proxy (tools/ebay-proxy/worker.js, deployed on Cloudflare). Empty = the eBay section is hidden.
-export const EBAY_API = '';
+export const EBAY_API = 'https://ebay-proxy.axel-ger.workers.dev/';
