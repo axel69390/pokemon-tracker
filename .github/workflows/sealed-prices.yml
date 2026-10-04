@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Sealed catalogue
+        continue-on-error: true
+        run: python3 tools/build_sealed.py
       - run: python3 tools/build_prices.py
       - name: GCC (French market)
         continue-on-error: true
@@ -30,6 +33,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
           git add assets/data/sealed-prices.json
+          git add assets/data/sealed.json || true
           git add assets/data/sealed-gcc.json || true
           git add assets/data/sealed-cm.json || true
           git add assets/data/sealed-market.json || true
