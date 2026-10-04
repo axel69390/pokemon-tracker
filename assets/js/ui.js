@@ -257,3 +257,10 @@ export function attachSuggest(input, { search, render, onPick, min = 2, max = 8 
     onPick(items[+b.dataset.i]);
   });
 }
+
+/* Missing picture -> a generic card back (original artwork) instead of a broken-image icon. */
+const CARD_BACK = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280"><rect width="200" height="280" rx="14" fill="#1a2236"/><rect x="10" y="10" width="180" height="260" rx="9" fill="none" stroke="#c9a24a" stroke-width="3"/><g fill="none" stroke="#c9a24a" stroke-opacity=".45" stroke-width="2"><path d="M100 50L150 140L100 230L50 140Z"/><circle cx="100" cy="140" r="34"/></g><circle cx="100" cy="140" r="10" fill="#c9a24a"/></svg>');
+document.addEventListener('error', (e) => {
+  const t = e.target;
+  if (t && t.tagName === 'IMG' && !t.dataset.fb && !(t.src || '').startsWith('data:')) { t.dataset.fb = '1'; t.src = CARD_BACK; }
+}, true);
