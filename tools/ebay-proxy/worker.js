@@ -1,4 +1,4 @@
-/* CardVault / Pokédex Invest — eBay listings proxy (Cloudflare Worker, free plan is enough)
+0');0');0/* CardVault / Pokédex Invest — eBay listings proxy (Cloudflare Worker, free plan is enough)
 
    Why: the eBay Browse API needs a secret key, which must never ship inside the app, and browsers cannot call
    it directly. This tiny worker holds the key and returns compact, cache-friendly JSON to the app.
@@ -42,7 +42,7 @@ export default {
     try {
       const api = new URL('https://api.ebay.com/buy/browse/v1/item_summary/search');
       api.searchParams.set('q', q);
-      api.searchParams.set('limit', '10
+      api.searchParams.set('limit', '100');
       const res = await fetch(api, {
         headers: { Authorization: 'Bearer ' + (await getToken(env)), 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_FR', 'Accept-Language': 'fr-FR' },
         cf: { cacheTtl: 900, cacheEverything: true },
