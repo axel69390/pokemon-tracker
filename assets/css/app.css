@@ -413,7 +413,7 @@ a.row { color: inherit; }
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--nav-h) + var(--safe-b) + 18px); transform: translate(-50%, 20px);
   background: var(--surface-3); border: 1px solid var(--line-2); color: var(--text); padding: 11px 16px; border-radius: 14px;
-  font-size: 14px; font-weight: 600; z-index: 80; opacity: 0; transition: opacity .2s, transform .2s; box-shadow: var(--shadow);
+  font-size: 14px; font-weight: 600; z-index: 80; opacity: 0; transition: opacity .2s, transform .2s; box-shadow: var(--shadow); pointer-events: none;
   display: flex; gap: 10px; align-items: center; max-width: calc(100vw - 32px);
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
