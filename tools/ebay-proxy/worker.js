@@ -42,8 +42,7 @@ export default {
     try {
       const api = new URL('https://api.ebay.com/buy/browse/v1/item_summary/search');
       api.searchParams.set('q', q);
-      api.searchParams.set('limit', '50');
-      api.searchParams.set('sort', 'price');
+      api.searchParams.set('limit', '10
       const res = await fetch(api, {
         headers: { Authorization: 'Bearer ' + (await getToken(env)), 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_FR', 'Accept-Language': 'fr-FR' },
         cf: { cacheTtl: 900, cacheEverything: true },
