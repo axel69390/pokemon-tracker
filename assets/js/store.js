@@ -411,7 +411,7 @@ async function usdToEur() {
   return 0.88;
 }
 export async function refreshSealedPrices({ only = null, force = false } = {}) {
-  if (settings.isServer() || !hasAccess()) return null;
+  if (!hasAccess()) return null;
   const day = today();
   if (!only && !force) { try { if (localStorage.getItem(SEALED_RUN_KEY) === day) return null; } catch { /* ignore */ } }
   const items = state.items.filter((i) => i.tcgplayerId && (!only || only.includes(i.id)));
