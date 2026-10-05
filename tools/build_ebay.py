@@ -63,7 +63,7 @@ def one(p):
         t = fold(x.get('title'))
         if x.get('currency') != 'EUR' or not x.get('price') or x['price'] <= 0 or x.get('buying') == 'auction':
             continue
-        if BAD.search(t) or not all(stem(w) in t for w in nw):
+        if BAD.search(t) or not all(stem(w) in t for w in nw + words(' '.join(re.findall(r'\(([^)]*)\)', name)))):
             continue
         prices.append(float(x['price']))
     if len(prices) < 3:
