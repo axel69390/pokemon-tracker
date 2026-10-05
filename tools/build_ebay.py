@@ -22,6 +22,16 @@ DATA = ROOT / 'assets/data'
 WORKER = 'https://ebay-proxy.axel-ger.workers.dev/'
 BAD = re.compile(r'\b(vide|empty|proxy|custom|reproduction|replica|fake|lot|lots|boite seule|carte seule|japon\w*|jap|jp|'
                  r'anglais|english|eng|korean|coreen|chinese|chinois|allemand|deutsch|german|italien|italian|espagnol|spanish)\b')
+# Other product types a listing must NOT be when we price this category (a "Booster Célébrations" search also returns
+# coffrets, ETB and displays that contain the word booster: they pulled the median up).
+OTHER = {
+    'Booster': r'coffret|etb|display|bundle|blister|tripack|tri pack|duo|pokebox|deck|tin|ultra|premium|collection|classique|classic|\d+ ?boosters|x ?\d+|36',
+    'ETB': r'display|bundle|blister|tripack|tri pack|duo|pokebox|boosters? seuls?',
+    'Bundle': r'display|etb|blister|tripack|tri pack|duo|pokebox',
+    'Duo Pack': r'display|etb|bundle|tripack|tri pack|pokebox',
+    'Display': r'etb|bundle|blister|tripack|tri pack|duo|pokebox|booster seul',
+}
+ANNIV30 = re.compile(r'\b30 ?(e|eme|ans|th)\b|30e')   # 30th anniversary (2026) vs Célébrations = 25th anniversary (2021)
 GENERIC = {'pokemon', 'edition', 'promo', 'promos', 'coffret', 'display', 'booster', 'blister'}
 
 
@@ -62,6 +72,10 @@ def one(p):
     for x in items:
         t = fold(x.get('title'))
         if x.get('currency') != 'EUR' or not x.get('price') or x['price'] <= 0 or x.get('buying') == 'auction':
+            continue
+        if OTHER.get(p.get('c')) and re.search(r'\b(' + OTHER[p['c']] + r')\b', t):
+            continue
+        if 'Célébrations' in (p.get('s') or '') and ANNIV30.search(t):
             continue
         if BAD.search(t) or not all(stem(w) in t for w in nw + words(' '.join(re.findall(r'\(([^)]*)\)', name)))):
             continue
