@@ -135,8 +135,8 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
         srcs['g'] = (est['v'], 0.0 if n < 1 else min(1.0, n / 8) if n >= 3 else 0.15)
     if cm and cm[0] and cm[0] > 0:
         srcs['c'] = (float(cm[0]), 1.0)
-    if tcg_usd and p.get('c') != 'Blister':
-        srcs['t'] = (tcg_usd * fx, 0.25)
+    if tcg_usd:
+        srcs['e'] = (tcg_usd * fx, 0.5)
     srcs = {k: v for k, v in srcs.items() if v[0] > 0 and v[1] > 0}
     if not srcs:
         return None
@@ -172,7 +172,7 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
     if cm and cm[0]:
         row['s']['c'] = r2(float(cm[0]))
     if tcg_usd:
-        row['s']['t'] = r2(tcg_usd * fx)
+        row['s']['e'] = r2(tcg_usd * fx)
     if dropped:
         row['x'] = dropped
     if est:
@@ -192,7 +192,7 @@ def main():
     gcc = gcc_file.get('p', {}) if gcc_file.get('v') == 2 else {}      # v1 rows (older layout) are ignored
     cmj = load('sealed-cm.json') or {}
     cm = cmj.get('p', {})
-    tcgj = {}   # TCGplayer (US prices) is no longer a source: French sales (GCC) and Cardmarket only
+    tcgj = load('sealed-ebay.json') or {}   # eBay France asking prices (tools/build_ebay.py)
     tcg = tcgj.get('p', {})
     old = load('sealed-market.json') or {}
     old_age = 99
@@ -200,7 +200,7 @@ def main():
         old_age = (today - date.fromisoformat(old.get('built'))).days
     except Exception:
         pass
-    fx = get_fx()
+    fx = 1.0
     rows = {}
     for p in products:
         pid = str(p['id'])
