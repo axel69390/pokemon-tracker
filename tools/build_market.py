@@ -140,14 +140,17 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
     srcs = {k: v for k, v in srcs.items() if v[0] > 0 and v[1] > 0}
     if not srcs:
         return None
+    vals = sorted(v[0] for v in srcs.values())
+    if len(vals) == 2 and vals[1] > vals[0] * 2 and not (est and est['n'] >= 5):
+        return None   # two sources far apart and no solid French sales: no cote is better than a wrong one
     dropped = []
     if len(srcs) >= 2:
         # Reference = the best evidence: GCC with 5+ sales (real French sales), else Cardmarket, else the weighted median.
         n_ref = est['n'] if est else 0
-        ref = srcs['g'][0] if 'g' in srcs and n_ref >= 5 else srcs['c'][0] if 'c' in srcs else \
+        ref = srcs['g'][0] if 'g' in srcs and n_ref >= 5 else \
             wmedian([v for v, _ in srcs.values()], [w for _, w in srcs.values()])
         for k in list(srcs):
-            if not (ref / 3 <= srcs[k][0] <= ref * 3):
+            if not (ref / 2 <= srcs[k][0] <= ref * 2):
                 dropped.append(k)
                 del srcs[k]
     tw = sum(w for _, w in srcs.values())
