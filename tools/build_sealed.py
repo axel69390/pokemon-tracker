@@ -247,6 +247,11 @@ def main():
             seen.setdefault(key, set()).add(en_key)
             out.append({'id': p['productId'], 'g': g['groupId'], 'n': name, 'c': cat, 's': fr_set, 'd': (g.get('publishedOn') or '')[:7]})
     out = finalize(out, names)
+    try:   # hand-added French products missing from TCGplayer (tools/sealed-extra.json); ids start at 9000000
+        have = {x['id'] for x in out}
+        out += [x for x in json.loads((OUT.parents[2] / 'tools/sealed-extra.json').read_text()) if x['id'] not in have]
+    except Exception as e:
+        print('extras:', e)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({'built': time.strftime('%Y-%m-%d'), 'products': out}, ensure_ascii=False, separators=(',', ':')))
     print(f'{len(out)} produits -> {OUT} ({OUT.stat().st_size // 1024} Ko)')
