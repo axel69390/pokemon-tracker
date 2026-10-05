@@ -26,6 +26,9 @@ jobs:
       - name: Cardmarket
         continue-on-error: true
         run: python3 tools/build_cm.py
+      - name: eBay listings
+        continue-on-error: true
+        run: python3 tools/build_ebay.py
       - name: Price index
         run: python3 tools/build_market.py
       - name: Commit
@@ -36,5 +39,6 @@ jobs:
           git add assets/data/sealed.json || true
           git add assets/data/sealed-gcc.json || true
           git add assets/data/sealed-cm.json || true
+          git add assets/data/sealed-ebay.json || true
           git add assets/data/sealed-market.json || true
           git diff --cached --quiet || (git commit -m "Update sealed prices" && git push)
