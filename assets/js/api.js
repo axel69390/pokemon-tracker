@@ -92,11 +92,26 @@ export async function getSets(lang = 'fr') {
 
 const normNum = (n) => String(n || '').split('/')[0].replace(/^0+(?=\d)/, '').trim().toLowerCase();
 
+// All pages of a name search (120 per page, up to 600 cards): a popular name such as Dracaufeu has far more than
+// one page, and the old Set de Base cards used to be cut off.
+async function searchPages(lang, q) {
+  const PAGE = 120, MAX = 5;
+  const url = (p) => `/${lang}/cards?name=${encodeURIComponent(q)}&pagination:page=${p}&pagination:itemsPerPage=${PAGE}`;
+  const first = await tcg(url(1));
+  if (!Array.isArray(first) || first.length < PAGE) return first || [];
+  const more = await Promise.all(Array.from({ length: MAX - 1 }, (_, i) => tcg(url(i + 2)).catch(() => [])));
+  const seen = new Set();
+  return [first, ...more].flat().filter((c) => c && !seen.has(c.id) && seen.add(c.id));
+}
+
 export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
-  const q = query.trim();
+  let q = query.trim();
   if (q.length < 2) return [];
+  // "Dracaufeu 4/102", "dracaufeu 4" or "dracaufeu #4": the trailing number narrows the search.
+  const m = q.match(/^(.*\S)\s+#?(\d{1,3})(?:\s*\/\s*\d{1,3})?$/);
+  if (m && m[1].length >= 2 && !number) { q = m[1]; number = m[2]; }
   const [list, sets] = await Promise.all([
-    tcg(`/${lang}/cards?name=${encodeURIComponent(q)}&pagination:itemsPerPage=120`),
+    searchPages(lang, q),
     getSets(lang).catch(() => []),
   ]);
   const setIdx = new Map(sets.map((s) => [s.id, s]));
