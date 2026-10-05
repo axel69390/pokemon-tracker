@@ -192,7 +192,7 @@ def main():
     gcc = gcc_file.get('p', {}) if gcc_file.get('v') == 2 else {}      # v1 rows (older layout) are ignored
     cmj = load('sealed-cm.json') or {}
     cm = cmj.get('p', {})
-    tcgj = load('sealed-prices.json') or {}
+    tcgj = {}   # TCGplayer (US prices) is no longer a source: French sales (GCC) and Cardmarket only
     tcg = tcgj.get('p', {})
     old = load('sealed-market.json') or {}
     old_age = 99
