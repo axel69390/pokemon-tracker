@@ -781,7 +781,7 @@ function indexPanel(a, m, histRange, { withInvest = true, withUse = true } = {})
   const CONF = ['Faible', 'Moyenne', 'Bonne', 'Haute'];
   const s = m.srcs || {};
   const dropped = m.drop || [];
-  const srcRow = [['g', 'Graded Card Center (ventes FR)'], ['c', 'Cardmarket (toutes langues)'], ['t', 'TCGplayer (US, converti)']]
+  const srcRow = [['g', 'Graded Card Center (ventes FR)'], ['c', 'Cardmarket (toutes langues)'], ['e', 'eBay France (annonces en cours)']]
     .filter(([k]) => s[k] != null)
     .map(([k, l]) => `<div class="row" style="padding:8px 0"><span class="main"><b style="font-weight:600">${l}</b>${dropped.includes(k) ? '<small>Écartée : trop éloignée des autres</small>' : ''}</span><span class="end num">${money(s[k])}</span></div>`).join('');
   const t = m.t30 != null ? m.t30 : null;
