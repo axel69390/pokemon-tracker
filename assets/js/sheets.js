@@ -654,7 +654,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
         // Personal-server edition: ask the server for GCC / market prices now instead of waiting for the night run.
         if (settings.isServer()) {
           if (isCard) { toast('Cote en cours de récupération…'); refreshPrices().catch(() => {}); }
-          else quickGccValue(created.id, { notify: true });
+          else if (created.tcgplayerId) refreshSealedPrices({ only: [created.id] }).then((r) => { if (!(r && r.updated)) quickGccValue(created.id, { notify: true }); }).catch(() => quickGccValue(created.id, { notify: true })); else quickGccValue(created.id, { notify: true });
         }
         else if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
         else if (!isCard && created.tcgplayerId && !hasValue(created)) refreshSealedPrices({ only: [created.id] }).then((r) => { if (r && r.updated) toast('Cote TCGplayer ajoutée'); }).catch(() => {});
