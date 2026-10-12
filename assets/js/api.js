@@ -1,6 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.6';
-import { asset } from './edition.js?v=2.4.6';
+import { settings } from './settings.js?v=2.4.7';
+import { asset } from './edition.js?v=2.4.7';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -86,7 +86,7 @@ export async function getSets(lang = 'fr') {
       const se = serieOf.get(s.id) || { id: 'misc', name: 'Autres', order: -1 };
       // TCGdex uses the Jungle logo for the Base serie; the Base Set logo only exists in English.
       const serieLogo = se.id === 'base' ? 'https://assets.tcgdex.net/en/base/base1/logo' : se.logo || null;
-      return { ...s, idx, serie: se.id, serieName: se.name, serieOrder: se.order, serieLogo };
+      return { ...s, name: cleanSetName(s.id, s.name), idx, serie: se.id, serieName: se.name, serieOrder: se.order, serieLogo };
     })
     .filter((s) => s.serie !== 'tcgp'); // Pokémon TCG Pocket is digital-only
 }
@@ -160,7 +160,7 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
     const setId = c.id.slice(0, c.id.length - String(c.localId).length - 1);
     const set = setIdx.get(setId);
     const printed = printedNumber({ set: { id: setId }, localId: c.localId })?.num || '';
-    return { ...c, setId, printed, setName: set?.name || setId, setTotal: set?.cardCount?.official, order: set ? set.idx : -1 };
+    return { ...c, setId, printed, setName: cleanSetName(setId, set?.name || setId), setTotal: set?.cardCount?.official, order: set ? set.idx : -1 };
   });
   if (setWords.length) {
     const inSet = out.filter((c) => setWords.every((w) => fold(c.setName + ' ' + c.setId).includes(w)));
@@ -207,6 +207,13 @@ const CLASSIC_NUMBERS = {
     ['60/145', 'Gardiens Ascendants'],
   ],
 };
+
+// The classic collections are sold inside their anniversary set: they belong with it in the collection, and
+// TCGdex names one of them without a space ("Collection Classique30ᵉ Anniversaire").
+const CLASSIC_PARENT = { '30th-c': '30th', cel25cc: 'cel25' };
+const CLASSIC_SET_NAMES = { '30th-c': '30ᵉ Anniversaire · Collection Classique', cel25cc: 'Célébrations · Collection Classique' };
+export const parentSetId = (setId) => CLASSIC_PARENT[setId] || setId;
+export const cleanSetName = (setId, name) => CLASSIC_SET_NAMES[setId] || name || '';
 
 // { num: '11/113', set: 'EX Espèces Delta' } for a classic-collection reprint, null otherwise.
 export function printedNumber(card) {

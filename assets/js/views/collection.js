@@ -1,9 +1,9 @@
-import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.6';
-import { settings } from '../settings.js?v=2.4.6';
-import { IS_STORE } from '../edition.js?v=2.4.6';
-import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.6';
-import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.6';
-import { getSets, setLogo } from '../api.js?v=2.4.6';
+import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.7';
+import { settings } from '../settings.js?v=2.4.7';
+import { IS_STORE } from '../edition.js?v=2.4.7';
+import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.7';
+import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.7';
+import { getSets, setLogo, parentSetId } from '../api.js?v=2.4.7';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },
@@ -156,7 +156,8 @@ function ensureSetMeta(onReady) {
     .then((sets) => { setMeta = new Map(sets.map((x) => [x.id, x])); onReady(); })
     .catch(() => { setMeta = new Map(); });
 }
-const setIdOf = (c) => (c.tcgdexId && (!c.tcgLang || c.tcgLang === 'fr') ? c.tcgdexId.slice(0, c.tcgdexId.lastIndexOf('-')) : null);
+// A classic-collection reprint is grouped with its anniversary set (Metalosse 11/113 → 30ᵉ Anniversaire).
+const setIdOf = (c) => (c.tcgdexId && (!c.tcgLang || c.tcgLang === 'fr') ? parentSetId(c.tcgdexId.slice(0, c.tcgdexId.lastIndexOf('-'))) : null);
 const numKey = (c) => parseInt(String(c.num || '').replace(/^\D+/, ''), 10) || 0;
 
 function cardsHtml(cols) {
