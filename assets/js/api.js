@@ -1,6 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.4';
-import { asset } from './edition.js?v=2.4.4';
+import { settings } from './settings.js?v=2.4.5';
+import { asset } from './edition.js?v=2.4.5';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -159,7 +159,8 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
   let out = list.map((c) => {
     const setId = c.id.slice(0, c.id.length - String(c.localId).length - 1);
     const set = setIdx.get(setId);
-    return { ...c, setId, setName: set?.name || setId, setTotal: set?.cardCount?.official, order: set ? set.idx : -1 };
+    const printed = printedNumber({ set: { id: setId }, localId: c.localId })?.num || '';
+    return { ...c, setId, printed, setName: set?.name || setId, setTotal: set?.cardCount?.official, order: set ? set.idx : -1 };
   });
   if (setWords.length) {
     const inSet = out.filter((c) => setWords.every((w) => fold(c.setName + ' ' + c.setId).includes(w)));
@@ -167,7 +168,7 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
   }
   const n = normNum(number);
   if (n) {
-    const exact = out.filter((c) => normNum(c.localId) === n);
+    const exact = out.filter((c) => normNum(c.printed || c.localId) === n);
     // Reprint sets (30th anniversary, Celebrations) keep the ORIGINAL printed number (11/113), never the TCGdex one (3/30):
     // always keep them next to the exact matches so the stamped reprint can be picked.
     if (exact.length) out = [...exact, ...out.filter((c) => REPRINT_SETS.test(c.setId) && !exact.includes(c))];
@@ -181,6 +182,37 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
 
 export const getSetCards = (lang, setId) => tcg(`/${lang}/sets/${encodeURIComponent(setId)}`, 24);
 export const getCard = (lang, id) => tcg(`/${lang}/cards/${encodeURIComponent(id)}`);
+
+// Classic collections (30th anniversary, Celebrations) reprint old cards with their ORIGINAL printed number
+// (the 30th Metalosse reads 11/113, from EX Espèces Delta) while TCGdex numbers them in the small set (003/30).
+// Both sets are closed: number printed on each card, in TCGdex order.
+const CLASSIC_NUMBERS = {
+  '30th-c': [
+    ['4/102', 'Set de Base'], ['5/109', 'EX Rubis & Saphir'], ['11/113', 'EX Espèces Delta'], ['11/101', 'Explosion Plasma'],
+    ['18/132', 'Gym Heroes'], ['19/109', 'EX Team Rocket Returns'], ['25/111', 'Neo Genesis'], ['33/181', 'Duo de Choc'],
+    ['41/122', 'Rupture TURBO'], ['43/146', 'Éveil des Légendes'], ['47/127', 'Platine'], ['50/185', 'Voltage Éclatant'],
+    ['57/111', 'Invasion Carmin'], ['58/102', 'Set de Base'], ['69/132', 'Gym Challenge'], ['85/124', 'Dragons Exaltés'],
+    ['89/149', 'Soleil et Lune'], ['94/102', 'Triomphe'], ['99/102', 'Triomphe'], ['100/102', 'Triomphe'],
+    ['101/101', 'Nobles Victoires'], ['106/160', 'Primo-Choc'], ['106/106', 'Duels au Sommet'], ['106/105', 'Neo Destiny'],
+    ['108/115', 'EX Forces Cachées'], ['114/264', 'Poing de Fusion'], ['123/172', 'Stars Étincelantes'], ['138/202', 'Épée et Bouclier'],
+    ['149/147', 'Aquapolis'], ['203/193', 'Évolutions à Paldea'],
+  ],
+  'cel25cc': [
+    ['2/102', 'Set de Base'], ['4/102', 'Set de Base'], ['15/102', 'Set de Base'], ['73/102', 'Set de Base'],
+    ['8/82', 'Team Rocket'], ['15/82', 'Team Rocket'], ['15/132', 'Gym Challenge'], ['24', 'Promo Wizards'],
+    ['20/111', 'Neo Genesis'], ['66/64', 'Neo Revelation'], ['9/95', 'EX Team Magma vs Team Aqua'], ['86/109', 'EX Team Rocket Returns'],
+    ['88/92', 'EX Créateurs de Légendes'], ['93/101', 'EX Île des Dragons'], ['17/17', 'POP Série 5'], ['15/106', 'Duels au Sommet'],
+    ['109/111', 'Rivaux Émergeants'], ['145/147', 'Vainqueurs Suprêmes'], ['107/123', 'HeartGold SoulSilver'], ['113/114', 'Noir & Blanc'],
+    ['114/114', 'Noir & Blanc'], ['54/99', 'Destinées Futures'], ['97/146', 'XY'], ['76/108', 'Ciel Rugissant'],
+    ['60/145', 'Gardiens Ascendants'],
+  ],
+};
+
+// { num: '11/113', set: 'EX Espèces Delta' } for a classic-collection reprint, null otherwise.
+export function printedNumber(card) {
+  const row = CLASSIC_NUMBERS[card?.set?.id]?.[parseInt(String(card.localId).replace(/\D/g, ''), 10) - 1];
+  return row ? { num: row[0], set: row[1] } : null;
+}
 
 // Normalises TCGdex pricing into [{ id, label, cm:{avg,low,trend,avg7,avg30}, tp:{market,low} }]
 export function priceVariants(card) {

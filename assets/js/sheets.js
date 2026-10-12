@@ -3,17 +3,17 @@ import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
   refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow,
-} from './store.js?v=2.4.4';
-import { EBAY_API } from './edition.js?v=2.4.4';
+} from './store.js?v=2.4.5';
+import { EBAY_API } from './edition.js?v=2.4.5';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.4.4';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.4';
-import { getCard, getSetCards, searchCards, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.4';
-import { settings } from './settings.js?v=2.4.4';
-import { requireAccess } from './billing.js?v=2.4.4';
-import { renderChart } from './chart.js?v=2.4.4';
+} from './ui.js?v=2.4.5';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.5';
+import { getCard, getSetCards, searchCards, printedNumber, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.5';
+import { settings } from './settings.js?v=2.4.5';
+import { requireAccess } from './billing.js?v=2.4.5';
+import { renderChart } from './chart.js?v=2.4.5';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -336,7 +336,7 @@ export function openDetail(kind, id) {
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
     if (t.dataset.mode) { updateAsset(kind, id, { priceMode: t.dataset.mode }); toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle'); }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.4').then((mod) => mod.openInvest(kind, id));
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.5').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
@@ -564,7 +564,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
     if (isCard) {
       attachSuggest(nameInput, {
         search: (q) => searchCards(q, { lang: 'fr' }),
-        render: (c) => `${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : '<img alt="">'}<span class="main"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.localId)}${c.setTotal ? '/' + c.setTotal : ''}</small></span>`,
+        render: (c) => `${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : '<img alt="">'}<span class="main"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId + (c.setTotal ? '/' + c.setTotal : ''))}</small></span>`,
         onPick: async (c) => {
           readForm();
           try { Object.assign(a, await prefillFromCatalogue('fr', c.id)); } catch { toast('Carte indisponible', { error: true }); }
@@ -677,9 +677,10 @@ export async function prefillFromCatalogue(lang, id) {
   const card = await getCard(lang, id);
   let year = '';
   try { const set = await getSetCards(lang, card.set.id); year = (set.releaseDate || '').slice(0, 4); } catch { /* optional */ }
+  const printed = printedNumber(card);   // classic-collection reprint: number printed on the card
   const total = card.set?.cardCount?.official;
   return {
-    name: card.name, set: card.set?.name || '', num: total ? `${card.localId}/${total}` : card.localId, year,
+    name: card.name, set: card.set?.name || '', num: printed ? printed.num : total ? `${card.localId}/${total}` : card.localId, year,
     rarity: card.rarity || '', lang: appLang(lang), image: card.image ? cardImage(card.image, 'high') : null,
     tcgdexId: card.id, tcgLang: lang,
   };
@@ -843,17 +844,19 @@ export function openCatalogueCard(lang, id, { photoData = null, extra = {} } = {
   getCard(lang, id).then((card) => {
     const variants = priceVariants(card);
     selected = variants[0]?.id;
+    const printed = printedNumber(card);   // classic-collection reprint: number printed on the card
+    const num = printed ? printed.num : card.localId + (card.set?.cardCount?.official ? '/' + card.set.cardCount.official : '');
     const draw = () => {
       const v = variants.find((x) => x.id === selected);
       const cm = v?.cm || {};
-      const ref = { name: card.name, num: card.localId + (card.set?.cardCount?.official ? '/' + card.set.cardCount.official : ''), set: card.set?.name || '' };
+      const ref = { name: card.name, num, set: card.set?.name || '' };
       sheet.setTitle(card.name);
       sheet.render(`
         <div class="detail-hero">
           <div class="art">${card.image ? `<img src="${esc(cardImage(card.image, 'high'))}" alt="" data-zoom>` : ''}</div>
           <div><h2>${esc(card.name)}</h2>
-            <div class="sub">${esc(card.set?.name || '')} · ${esc(card.localId)}${card.set?.cardCount?.official ? '/' + card.set.cardCount.official : ''}</div>
-            <div class="tags">${card.rarity ? `<span class="tag">${esc(card.rarity)}</span>` : ''}${card.illustrator ? `<span class="tag">${esc(card.illustrator)}</span>` : ''}</div>
+            <div class="sub">${esc(card.set?.name || '')} · ${esc(num)}</div>
+            <div class="tags">${printed?.set ? `<span class="tag">Réédition · ${esc(printed.set)}</span>` : ''}${card.rarity ? `<span class="tag">${esc(card.rarity)}</span>` : ''}${card.illustrator ? `<span class="tag">${esc(card.illustrator)}</span>` : ''}</div>
             ${cm.avg != null ? `<div class="price"><div class="faint" style="font-size:12px;font-weight:700">PRIX MOYEN CARDMARKET</div><div class="v num">${money(cm.avg)}</div></div>` : ''}
           </div>
         </div>
@@ -905,7 +908,7 @@ export function openCataloguePicker({ query = '', number = '', lang = 'fr', onPi
       if (my !== seq) return;
       out.innerHTML = res.length ? `<div class="grid" style="--cols:3">${res.slice(0, 90).map((c) => `<button class="tile" data-id="${esc(c.id)}">
         <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : `<span class="ph">${icon('image')}</span>`}</div>
-        <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.localId)}</small></div></button>`).join('')}</div>`
+        <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>`
         : '<div class="empty"><h3>Aucune carte trouvée</h3><p>Essayez une autre langue ou orthographe.</p></div>';
     } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
   };

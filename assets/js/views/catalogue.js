@@ -1,9 +1,9 @@
-import { settings } from '../settings.js?v=2.4.4';
-import { getSets, getSetCards, searchCards, cardImage, setLogo } from '../api.js?v=2.4.4';
-import { esc, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.4';
-import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.4';
-import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.4';
-import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.4';
+import { settings } from '../settings.js?v=2.4.5';
+import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.5';
+import { esc, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.5';
+import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.5';
+import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.5';
+import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.5';
 
 const LANG_OPTIONS = [['fr', 'FR'], ['en', 'EN'], ['ja', 'JP']];
 let q = '';
@@ -65,7 +65,7 @@ export function render(main, { tab, query }) {
 
 const cardGrid = (cards) => `<div class="grid" style="--cols:3">${cards.map((c) => `<button class="tile" data-card="${esc(c.id)}">
   <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : `<span class="ph">${icon('image')}</span>`}</div>
-  <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName ? c.setName + ' · ' : '')}${esc(c.localId)}</small></div></button>`).join('')}</div>`;
+  <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName ? c.setName + ' · ' : '')}${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>`;
 
 const loading = '<div class="loading"><div class="spinner"></div></div>';
 
@@ -119,7 +119,7 @@ async function showSet(out, lang, setId) {
           ? `<button class="btn block" data-tracked="${t.id}" style="margin-bottom:14px">${icon('check')}Set suivi — voir ma progression</button>`
           : `<button class="btn primary block" data-track="${esc(set.id)}" style="margin-bottom:14px">${icon('plus')}Suivre ce set</button>`;
       })()}
-      ${cardGrid((set.cards || []).map((c) => ({ ...c, setName: '' })))}`;
+      ${cardGrid((set.cards || []).map((c) => ({ ...c, setName: '', printed: printedNumber({ set: { id: set.id }, localId: c.localId })?.num })))}`;
   } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
 }
 

@@ -1,7 +1,7 @@
-import { settings } from '../settings.js?v=2.4.4';
-import { server, searchCards, tcgLang, cardImage } from '../api.js?v=2.4.4';
-import { esc, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js?v=2.4.4';
-import { openCatalogueCard, openForm } from '../sheets.js?v=2.4.4';
+import { settings } from '../settings.js?v=2.4.5';
+import { server, searchCards, tcgLang, cardImage } from '../api.js?v=2.4.5';
+import { esc, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js?v=2.4.5';
+import { openCatalogueCard, openForm } from '../sheets.js?v=2.4.5';
 
 let last = null; // { photo, result, matches, error } — kept while navigating
 
@@ -105,7 +105,7 @@ function resultHtml() {
     <div class="section"><div class="section-head"><h2>${m.length ? 'Choisissez la bonne version' : 'Aucune correspondance catalogue'}</h2></div>
       ${m.length ? `<div class="grid" style="--cols:3">${m.map((c) => `<button class="tile" data-match="${esc(c.id)}" data-lang="${esc(c.lang)}">
         <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : `<span class="ph">${icon('image')}</span>`}</div>
-        <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.localId)}</small></div></button>`).join('')}</div>` : ''}
+        <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>` : ''}
       <button class="btn block" style="margin-top:12px" data-add-card>${icon('edit')}Ajouter sans fiche catalogue</button>
     </div>`;
 }
