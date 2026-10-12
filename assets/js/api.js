@@ -1,5 +1,5 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.2';
+import { settings } from './settings.js?v=2.4.3';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -90,6 +90,7 @@ export async function getSets(lang = 'fr') {
     .filter((s) => s.serie !== 'tcgp'); // Pokémon TCG Pocket is digital-only
 }
 
+const REPRINT_SETS = /^(30th|cel25)/;
 const normNum = (n) => String(n || '').split('/')[0].replace(/^0+(?=\d)/, '').trim().toLowerCase();
 
 // All pages of a name search (120 per page, up to 600 cards): a popular name such as Dracaufeu has far more than
@@ -123,10 +124,15 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
   const n = normNum(number);
   if (n) {
     const exact = out.filter((c) => normNum(c.localId) === n);
-    if (exact.length) out = exact;
+    // Reprint sets (30th anniversary, Celebrations) keep the ORIGINAL printed number (11/113), never the TCGdex one (3/30):
+    // always keep them next to the exact matches so the stamped reprint can be picked.
+    if (exact.length) out = [...exact, ...out.filter((c) => REPRINT_SETS.test(c.setId) && !exact.includes(c))];
   }
-  // Newest sets first, cards with artwork first.
-  return out.sort((a, b) => (!!b.image - !!a.image) || (b.order - a.order));
+  // Newest sets first, cards with artwork first. A card of a brand-new set whose artwork is not published yet
+  // (TCGdex lags a few weeks) is not pushed to the bottom.
+  const recentFrom = Math.max(0, sets.length - 14);
+  const rank = (c) => (c.image || c.order >= recentFrom ? 1 : 0);
+  return out.sort((a, b) => (rank(b) - rank(a)) || (b.order - a.order));
 }
 
 export const getSetCards = (lang, setId) => tcg(`/${lang}/sets/${encodeURIComponent(setId)}`, 24);
