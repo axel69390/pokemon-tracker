@@ -1,4 +1,4 @@
-import { asset } from './edition.js?v=2.4.7';
+import { asset } from './edition.js?v=2.4.8';
 
 // French catalogue of sealed products (built by tools/build_sealed.py from TCGplayer data).
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -6,7 +6,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 let cache = null;
 export function loadSealed() {
   if (!cache) {
-    cache = fetch(asset('assets/data/sealed.json?v=2.4.7'))
+    cache = fetch(asset('assets/data/sealed.json?v=2.4.8'))
       .then((r) => { if (!r.ok) throw new Error('Catalogue indisponible'); return r.json(); })
       .then((d) => d.products.filter((p) => !/Pokémon Center/i.test(p.n)).map((p) => ({ ...p, key: fold(`${p.n} ${p.c}`) })))
       .catch((e) => { cache = null; throw e; });

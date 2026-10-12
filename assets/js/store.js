@@ -1,9 +1,9 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.7';
-import { IS_STORE, asset } from './edition.js?v=2.4.7';
-import { server, ServerError, getCard } from './api.js?v=2.4.7';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.7';
-import { hasAccess } from './billing.js?v=2.4.7';
+import { settings } from './settings.js?v=2.4.8';
+import { IS_STORE, asset } from './edition.js?v=2.4.8';
+import { server, ServerError, getCard } from './api.js?v=2.4.8';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.8';
+import { hasAccess } from './billing.js?v=2.4.8';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
