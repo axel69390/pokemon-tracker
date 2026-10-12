@@ -1,10 +1,10 @@
-import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.1';
-import { settings } from '../settings.js?v=2.4.1';
-import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.1';
-import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.1';
-import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.4.1';
-import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.4.1';
-import { openDetail, openSales } from '../sheets.js?v=2.4.1';
+import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.2';
+import { settings } from '../settings.js?v=2.4.2';
+import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.2';
+import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.2';
+import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.4.2';
+import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.4.2';
+import { openDetail, openSales } from '../sheets.js?v=2.4.2';
 
 let period = '1m';   // the home chart always opens on the last month (Max flattens the recent evolution)
 let perfMode = 'eur';

@@ -1,9 +1,9 @@
-import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.1';
-import { settings } from '../settings.js?v=2.4.1';
-import { IS_STORE } from '../edition.js?v=2.4.1';
-import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.1';
-import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.1';
-import { getSets, setLogo } from '../api.js?v=2.4.1';
+import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.2';
+import { settings } from '../settings.js?v=2.4.2';
+import { IS_STORE } from '../edition.js?v=2.4.2';
+import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.2';
+import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.2';
+import { getSets, setLogo } from '../api.js?v=2.4.2';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },
@@ -164,7 +164,7 @@ function cardsHtml(cols) {
   const list = applyFilters('card', all);
   if (!list.length) return emptyState('card');
   const grid = (arr) => `<div class="grid ${cols >= 4 ? 'dense' : ''}" style="--cols:${cols}">${arr.map(cardTile).join('')}</div>`;
-  if (!filters.card.group) return summary(list, 'carte') + grid(list);
+  if (!filters.card.group) return heroHtml(list, 'carte') + grid(list);
 
   // Serie accordions (collapsed unless opened) → extensions (newest first) → cards by number.
   const groups = new Map();
@@ -184,7 +184,7 @@ function cardsHtml(cols) {
     series.get(key).groups.push(g);
   });
   const searching = !!filters.card.q.trim();
-  return summary(list, 'carte') + [...series.values()].map((se) => {
+  return heroHtml(list, 'carte') + [...series.values()].map((se) => {
     const cards = se.groups.flatMap((g) => g.cards);
     const t = totals(cards);
     const open = searching || openSeries.has(se.key);
