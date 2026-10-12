@@ -4,6 +4,8 @@ import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.0';
 import { checkPurchases, trialStart } from './billing.js?v=2.4.0';
 import { store, load, refreshLocalPrices, refreshSealedPrices } from './store.js?v=2.4.0';
 import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.0';
+import { settings } from './settings.js?v=2.4.0';
+import { avatarHtml } from './profile.js?v=2.4.0';
 import { openForm } from './sheets.js?v=2.4.0';
 import * as portfolio from './views/portfolio.js?v=2.4.0';
 import * as collection from './views/collection.js?v=2.4.0';
@@ -52,7 +54,7 @@ function topbar(route, r) {
       <button class="icon-btn gold" data-add="${r.tab === 'items' ? 'item' : 'card'}" title="Ajouter">${icon('plus')}</button>`;
   }
   if (r.name === 'invest') actions += `<button class="icon-btn gold" data-watchadd title="Mettre en veille">${icon('plus')}</button>`;
-  if (r.name !== 'settings') actions += `<a class="icon-btn" href="#/settings" title="Réglages">${icon('settings')}</a>`;
+  if (r.name !== 'settings') actions += `<a class="icon-btn" href="#/settings" title="Réglages">${settings.get().avatar || settings.get().avatarMon ? avatarHtml(30) : icon('settings')}</a>`;
   const brand = r.name === '' ? `<div class="brand"><img src="${ICON}" alt=""><h1>${esc(route.title)}</h1></div>` : `<h1>${esc(route.title)}</h1>`;
   return `<header class="topbar">${brand}<div class="actions">${actions}</div></header>`;
 }
