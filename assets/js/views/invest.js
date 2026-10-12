@@ -1,9 +1,9 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.8-202610122117';
-import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.8-202610122117';
-import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.8-202610122117';
-import { openDetail, openSell } from '../sheets.js?v=2.4.8-202610122117';
-import { hasAccess, openPaywall } from '../billing.js?v=2.4.8-202610122117';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.8-202610122144';
+import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.8-202610122144';
+import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.8-202610122144';
+import { openDetail, openSell } from '../sheets.js?v=2.4.8-202610122144';
+import { hasAccess, openPaywall } from '../billing.js?v=2.4.8-202610122144';
 
 const DAY = 864e5;
 const STATUS = {
@@ -67,7 +67,7 @@ const dailyPts = (a) => (a.hist || []).filter((x) => !x.est && x.p > 0).map((x) 
 const MIN_PRICE = 1;
 const COMMON = /^(commune|peu commune|common|uncommon)$/i;
 export const isCommon = (kind, a) => kind === 'card' && COMMON.test(String(a.rarity || '').trim());
-const tracked = (kind, a) => !isCommon(kind, a) && (kind === 'item' || priceModeOf(kind, a) === 'auto') && Number(a.buyPrice) > 0 && unitValue(a) >= MIN_PRICE;
+const tracked = (kind, a) => !isCommon(kind, a) && (kind === 'item' || ['auto', 'fr'].includes(priceModeOf(kind, a))) && Number(a.buyPrice) > 0 && unitValue(a) >= MIN_PRICE;
 
 export function analyse(kind, a) {
   const pts = pointsOf(a);

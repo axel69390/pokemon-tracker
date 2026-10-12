@@ -2,22 +2,25 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-  refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow,
-} from './store.js?v=2.4.8-202610122117';
-import { EBAY_API } from './edition.js?v=2.4.8-202610122117';
+  refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow, setFrValue,
+} from './store.js?v=2.4.8-202610122144';
+import { EBAY_API } from './edition.js?v=2.4.8-202610122144';
+import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.8-202610122144';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.4.8-202610122117';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.8-202610122117';
-import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.8-202610122117';
-import { settings } from './settings.js?v=2.4.8-202610122117';
-import { requireAccess } from './billing.js?v=2.4.8-202610122117';
-import { renderChart } from './chart.js?v=2.4.8-202610122117';
+} from './ui.js?v=2.4.8-202610122144';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.8-202610122144';
+import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.8-202610122144';
+import { settings } from './settings.js?v=2.4.8-202610122144';
+import { requireAccess } from './billing.js?v=2.4.8-202610122144';
+import { renderChart } from './chart.js?v=2.4.8-202610122144';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
 const appLang = (l) => (l === 'ja' ? 'jp' : l);
+// A French raw card linked to the catalogue can follow the Cote France (eBay France listings).
+const frCard = (kind, a) => kind === 'card' && (!a.grader || a.grader === 'raw') && a.lang === 'fr' && !!a.tcgdexId;
 
 /* ======================================================================
    Detail
@@ -82,13 +85,16 @@ export function openDetail(kind, id) {
 
       <div class="section">
         <div class="section-head"><h2>Cote</h2>
-          ${kind === 'card' || (a.market && a.market.src === 'GCC') ? `<div class="seg small" style="width:170px">
-            <button data-mode="auto" class="${priceModeOf(kind, a) === 'auto' ? 'on' : ''}">Auto</button>
+          ${kind === 'card' || (a.market && a.market.src === 'GCC') ? `<div class="seg small" style="width:${frCard(kind, a) ? 250 : 170}px">
+            ${frCard(kind, a) ? `<button data-mode="fr" class="${priceModeOf(kind, a) === 'fr' ? 'on' : ''}">France</button>` : ''}
+            <button data-mode="auto" class="${priceModeOf(kind, a) === 'auto' ? 'on' : ''}">${frCard(kind, a) ? 'Cardmarket' : 'Auto'}</button>
             <button data-mode="manual" class="${priceModeOf(kind, a) === 'manual' ? 'on' : ''}">Manuelle</button></div>` : ''}</div>
         ${a.pendingValue ? `<div class="banner" style="margin:0 0 10px">${icon('info')}<div class="main"><b>Nouvelle cote proposée : ${money(a.pendingValue.v)}</b><br>
           <small class="muted">${esc(a.pendingValue.src)} · variation de ${pct(((a.pendingValue.v - a.value) / a.value) * 100)}, à valider</small></div>
           <div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm primary" data-pending="apply">Appliquer</button><button class="btn sm" data-pending="skip">Ignorer</button></div></div>` : ''}
-        <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'auto'
+        <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'fr'
+          ? `Cote France : exemplaires français en vente sur eBay France (${EST_MIN_VALUE} annonces minimum, sinon tendance Cardmarket), mise à jour le lundi et le jeudi${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
+          : priceModeOf(kind, a) === 'auto'
           ? `Mise à jour automatique chaque nuit${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
           : 'Cote saisie par vous : elle n’est jamais modifiée automatiquement.'}</p>
         <form class="quick-value" data-quick>
@@ -246,7 +252,10 @@ export function openDetail(kind, id) {
       const m = Math.floor(v.length / 2);
       const med = v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
       inner = `${ebay.est != null ? `<div class="market" style="margin-bottom:10px">
-          <div class="m"><span><small>Cote France estimée</small><b class="num">${money(ebay.est)}</b><small style="font-weight:600">${ebay.estCount} annonces FR</small></span><button class="use" data-use="${ebay.est}">Utiliser</button></div>
+          <div class="m"><span><small>Cote France estimée</small><b class="num">${money(ebay.est)}</b><small style="font-weight:600">${ebay.estCount} annonces FR</small></span>${
+            priceModeOf(kind, a) === 'fr' && ebay.estCount >= EST_MIN_VALUE ? '<span class="pill gold">Cote suivie</span>'
+            : frCard(kind, a) && ebay.estCount >= EST_MIN_VALUE ? '<button class="use" data-mode="fr">Suivre</button>'
+            : `<button class="use" data-use="${ebay.est}">Utiliser</button>`}</div>
         </div>
         <div class="note" style="margin:-4px 0 10px">Exemplaires français à prix fixe sur eBay France : 30 % des annonces les moins chères, car les prix demandés dépassent les ventes réelles.</div>` : ''}
         <div class="market">
@@ -266,46 +275,9 @@ export function openDetail(kind, id) {
   async function loadEbay(a) {
     ebay = { loading: true };
     try {
-      const fold2 = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      const base = String(a.name || '').replace(/\([^)]*\)/g, ' ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-      const words = fold2(base).split(/[^a-z0-9]+/).filter((w) => w.length >= 3).map((w) => (w.length > 5 ? w.slice(0, 5) : w));
-      const isCard = kind === 'card';
-      const q = base + ' pokemon' + (isCard && a.num ? ' ' + String(a.num).split('/')[0] : '');
-      // A classic-collection reprint is often listed as "… 30 ans" without its number: ask for those too.
-      const r = isCard ? reprintOf(a) : '';
-      const queries = [q, ...(r ? [base + ' pokemon ' + (r === '30' ? '30 ans' : 'celebrations')] : [])];
-      const answers = await Promise.all(queries.map(async (s) => {
-        const res = await fetch(`${EBAY_API}?q=${encodeURIComponent(s)}`);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return (await res.json()).items || [];
-      }));
-      const seen = new Set();
-      // Keep only real matches: every word of the name, EUR prices, no empty boxes / proxies / lots.
-      const bad = /\b(vide|empty|proxy|custom|reproduction|replica|fake|lot|boite seule|carte seule)\b/i;
-      // Same card only: the full number (11/113, not 11/107), the same edition (original vs 30th reprint) and,
-      // for a raw card, no graded slab.
-      const [n, total] = isCard && a.num ? String(a.num).split('/').map((x) => x.trim().replace(/^0+(?=\d)/, '')) : [];
-      const numRe = n && total ? new RegExp(`(^|\\D)0*${n}\\s*/\\s*0*${total}(\\D|$)`) : null;
-      const raw = !a.grader || a.grader === 'raw';
-      const items = answers.flat().filter((x) => {
-        const key = x && x.title + '|' + x.price;    // the same listing comes back from both searches
-        if (!x || seen.has(key)) return false;
-        seen.add(key);
-        const t = fold2(x.title);
-        if (x.currency !== 'EUR' || !(x.price > 0) || !words.every((w) => t.includes(w)) || bad.test(t)) return false;
-        if (!isCard) return true;
-        // Another number in the title (11/107, 11/128) is another card; no number at all is only accepted for a
-        // reprint listed by its collection ("Metalosse 30 ans").
-        if (numRe && !numRe.test(t) && (/\d+\s*\/\s*\d+/.test(t) || !(r && REPRINT_MARK.test(markText(x.title))))) return false;
-        if (raw && GRADED.test(t)) return false;
-        if (a.lang === 'fr' && FOREIGN.test(t)) return false;   // a French card is priced on French copies only
-        return sameEdition(a, x.title);
-      });
-      // French market estimate, same rule as the sealed products (tools/build_ebay.py): asking prices run above real
-      // sales, so the 30th percentile of the fixed-price listings, and at least 3 of them.
-      const fixed = items.filter((x) => x.buying !== 'auction').map((x) => x.price).sort((p, q) => p - q);
-      const est = isCard && a.lang === 'fr' && fixed.length >= 3 ? Math.round(fixed[Math.floor((fixed.length - 1) * 0.3)] * 100) / 100 : null;
-      ebay = { items, est, estCount: fixed.length };
+      ebay = await ebayListings(a, kind);
+      // Cote France: the listings just loaded refresh the value of a card priced on them (no extra eBay call).
+      if (kind === 'card') setFrValue(a.id, ebay.est, ebay.estCount);
     } catch (e) {
       ebay = { error: e.message };
     }
@@ -378,8 +350,13 @@ export function openDetail(kind, id) {
     if (t.dataset.gccEd) { gcc.edition = t.dataset.gccEd; draw(); }
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
-    if (t.dataset.mode) { updateAsset(kind, id, { priceMode: t.dataset.mode }); toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle'); }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.8-202610122117').then((mod) => mod.openInvest(kind, id));
+    if (t.dataset.mode) {
+      updateAsset(kind, id, { priceMode: t.dataset.mode });
+      // Cote France chosen: apply the estimate of the listings already on screen right away.
+      if (t.dataset.mode === 'fr' && ebay && ebay.est != null) setFrValue(id, ebay.est, ebay.estCount);
+      toast(t.dataset.mode === 'fr' ? 'Cote France : mise à jour le lundi et le jeudi' : t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
+    }
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.8-202610122144').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
@@ -486,23 +463,6 @@ const GCC_GRADER = { 'collect aura': 'ca', akat: 'akatsuki' };
 const normRef = (r) => String(r || '').replace(/^#/, '').split('/').map((x) => x.trim().replace(/^0+(?=\d)/, '').toLowerCase()).join('/');
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const editionFr = (e) => (e === 'Edition 1' ? '1ère édition' : e === 'Unlimited' ? 'Illimitée' : e || '');
-
-/* ---------- Classic-collection reprints ----------
-   A 30th anniversary or Celebrations reprint carries the number of the original card (Metalosse 11/113 exists in
-   2006 and in 2026): a sale or a listing counts for the reprint only when it says so, and never for the original. */
-const markText = (s) => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const REPRINT_MARK = /\b(30|25)\s?(e|eme|th|ans)\b|\b30c\b|anniv|celebration|collection classique|classic collection|reprint/;
-const GRADED = /\b(psa|pca|cgc|bgs|sgs|ccc|beckett|collect aura|gradee?|graded)\b/;
-// Same list as tools/build_ebay.py: listings of another language version.
-const FOREIGN = /\b(japon\w*|jap|jp|anglais|english|eng|korean|coreen|chinese|chinois|allemand|deutsch|german|italien|italian|espagnol|spanish)\b/;
-const reprintOf = (a) => (/^30th-c-/.test(a.tcgdexId || '') ? '30' : /^cel25cc-/.test(a.tcgdexId || '') ? '25' : '');
-function sameEdition(a, text) {
-  const t = markText(text);
-  const r = reprintOf(a);
-  if (!r) return !REPRINT_MARK.test(t) || /^(30th|cel25)/.test(a.tcgdexId || '') || /celebration|anniv/.test(markText(a.set));
-  if (!REPRINT_MARK.test(t)) return false;
-  return r === '30' ? !/\b25\s?(e|eme|th|ans)\b/.test(t) : !/\b30\s?(e|eme|th|ans)\b|\b30c\b/.test(t);
-}
 
 function gccMatches(a, sales) {
   const ref = a.num ? normRef(a.num) : '';

@@ -1,9 +1,9 @@
 // User profile: photo (picked from the device) or a Pokémon as avatar, nickname, member-since date.
 // Everything stays on the device (settings). Pokémon artwork is loaded from the PokéAPI sprites repository.
-import { settings } from './settings.js?v=2.4.8-202610122117';
-import { asset, IS_STORE } from './edition.js?v=2.4.8-202610122117';
-import { esc, icon, toast, openSheet, pickImage, today, dateFr } from './ui.js?v=2.4.8-202610122117';
-import { trialStart } from './billing.js?v=2.4.8-202610122117';
+import { settings } from './settings.js?v=2.4.8-202610122144';
+import { asset, IS_STORE } from './edition.js?v=2.4.8-202610122144';
+import { esc, icon, toast, openSheet, pickImage, today, dateFr } from './ui.js?v=2.4.8-202610122144';
+import { trialStart } from './billing.js?v=2.4.8-202610122144';
 
 const MAX_FILE = 2 * 1024 * 1024;
 const sprite = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;

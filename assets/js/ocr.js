@@ -1,6 +1,6 @@
 // Card scanner without a server: reads the printed name and collector number from a photo, on the device.
 // The OCR engine (Tesseract, WebAssembly) is downloaded on first use only, then cached by the browser.
-import { asset } from './edition.js?v=2.4.8-202610122117';
+import { asset } from './edition.js?v=2.4.8-202610122144';
 
 const LIB = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 const LANG = 'fra';

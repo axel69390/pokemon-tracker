@@ -1,9 +1,10 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.8-202610122117';
-import { IS_STORE, asset } from './edition.js?v=2.4.8-202610122117';
-import { server, ServerError, getCard } from './api.js?v=2.4.8-202610122117';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.8-202610122117';
-import { hasAccess } from './billing.js?v=2.4.8-202610122117';
+import { settings } from './settings.js?v=2.4.8-202610122144';
+import { IS_STORE, asset } from './edition.js?v=2.4.8-202610122144';
+import { server, ServerError, getCard } from './api.js?v=2.4.8-202610122144';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.8-202610122144';
+import { hasAccess } from './billing.js?v=2.4.8-202610122144';
+import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.8-202610122144';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -265,16 +266,72 @@ export function deleteSale(id) {
   commit();
 }
 
-/* ---------- Automatic prices ---------- */
-// Same rule as the server: graded → GCC, recent French cards → Cardmarket trend, the rest stays manual.
+/* ---------- Automatic prices ----------
+   Modes: 'fr' Cote France (eBay France, French raw cards), 'auto' (Cardmarket trend, or GCC for a graded card),
+   'manual'. Without a chosen mode: graded → GCC; French raw card linked to the catalogue → Cote France, unless its
+   value was typed by hand (no valueSource), which stays manual; recent French cards otherwise → Cardmarket. */
 const MODERN = /^(me\d|me0|mep|30th|sv|swsh|sm\d|sm1|smp|xy|bw|svp)/i;
+const isFrRaw = (a) => (!a.grader || a.grader === 'raw') && a.lang === 'fr' && !!a.tcgdexId;
 export function priceModeOf(kind, a) {
   if (kind !== 'card') return a.priceMode || 'manual';
-  if (a.priceMode) return a.priceMode;
+  if (a.priceMode) return a.priceMode === 'fr' && !isFrRaw(a) ? 'auto' : a.priceMode;
   if (a.grader && a.grader !== 'raw') return 'auto';
+  if (isFrRaw(a) && (!hasValue(a) || a.valueSource)) return 'fr';
   return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && MODERN.test(a.tcgdexId) ? 'auto' : 'manual';
 }
 export const pendingPrices = () => state.cards.filter((c) => c.pendingValue);
+
+// Cote France: the French market estimate (ebay.js) becomes the value of a card in that mode, from EST_MIN_VALUE
+// fixed-price listings. The mode is written on the card so that the nightly server job (Cardmarket) leaves it alone.
+function applyFr(c, est, count) {
+  if (!c || priceModeOf('card', c) !== 'fr' || est == null || count < EST_MIN_VALUE) return false;
+  if (c.priceMode === 'fr' && +c.value === est && c.valueSource === `eBay France · ${count} annonces`) return false;
+  c.priceMode = 'fr';
+  delete c.pendingValue;
+  if (+c.value !== est) logValue(c, est);
+  c.value = est;
+  c.valueSource = `eBay France · ${count} annonces`;
+  return true;
+}
+export function setFrValue(id, est, count) {
+  if (applyFr(find('card', id), est, count)) commit();
+}
+
+// Every card in Cote France mode, twice a week: on Mondays and Thursdays (at the first opening of the app from that
+// day on, so a missed day is caught up). Same for every user; the eBay quota is shared by all of them.
+const FR_RUN_KEY = NS + '.frPriceRun';
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function lastFrSlot(now = new Date()) {
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    if (d.getDay() === 1 || d.getDay() === 4) return ymd(d);
+  }
+  return ymd(now);
+}
+let frRunning = null;
+export async function refreshFrPrices({ force = false } = {}) {
+  if (frRunning || !hasAccess()) return frRunning;
+  let last = null;
+  try { last = localStorage.getItem(FR_RUN_KEY); } catch { /* private mode */ }
+  if (!force && last && last >= lastFrSlot()) return null;
+  frRunning = (async () => {
+    const cards = state.cards.filter((c) => priceModeOf('card', c) === 'fr');
+    let updated = 0, errors = 0;
+    for (let i = 0; i < cards.length; i += 3) {
+      await Promise.all(cards.slice(i, i + 3).map(async (c) => {
+        try {
+          const r = await ebayListings(c, 'card');
+          if (applyFr(find('card', c.id), r.est, r.estCount)) updated++;
+        } catch { errors++; }
+      }));
+    }
+    // A run that mostly failed (proxy down, quota reached) is tried again at the next opening.
+    if (!cards.length || errors < cards.length / 2) { try { localStorage.setItem(FR_RUN_KEY, ymd(new Date())); } catch { /* private mode */ } }
+    if (updated) commit();
+    return { updated, errors };
+  })();
+  try { return await frRunning; } finally { frRunning = null; }
+}
 
 export async function refreshPrices() {
   const before = state.priceRun && state.priceRun.at;

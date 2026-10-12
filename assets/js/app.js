@@ -1,19 +1,19 @@
 // Pokédex Invest / CardVault — entry point & router.
-import { startAutoTranslate } from './i18n.js?v=2.4.8-202610122117';
-import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.8-202610122117';
-import { checkPurchases, trialStart } from './billing.js?v=2.4.8-202610122117';
-import { store, load, refreshLocalPrices, refreshSealedPrices } from './store.js?v=2.4.8-202610122117';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.8-202610122117';
-import { settings } from './settings.js?v=2.4.8-202610122117';
-import { avatarHtml } from './profile.js?v=2.4.8-202610122117';
-import { openForm } from './sheets.js?v=2.4.8-202610122117';
-import * as portfolio from './views/portfolio.js?v=2.4.8-202610122117';
-import * as collection from './views/collection.js?v=2.4.8-202610122117';
-import * as scanner from './views/scanner.js?v=2.4.8-202610122117';
-import * as catalogue from './views/catalogue.js?v=2.4.8-202610122117';
-import * as settingsView from './views/settings.js?v=2.4.8-202610122117';
-import * as invest from './views/invest.js?v=2.4.8-202610122117';
-import { BUILD } from './views/settings.js?v=2.4.8-202610122117';
+import { startAutoTranslate } from './i18n.js?v=2.4.8-202610122144';
+import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.8-202610122144';
+import { checkPurchases, trialStart } from './billing.js?v=2.4.8-202610122144';
+import { store, load, refreshLocalPrices, refreshSealedPrices, refreshFrPrices } from './store.js?v=2.4.8-202610122144';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.8-202610122144';
+import { settings } from './settings.js?v=2.4.8-202610122144';
+import { avatarHtml } from './profile.js?v=2.4.8-202610122144';
+import { openForm } from './sheets.js?v=2.4.8-202610122144';
+import * as portfolio from './views/portfolio.js?v=2.4.8-202610122144';
+import * as collection from './views/collection.js?v=2.4.8-202610122144';
+import * as scanner from './views/scanner.js?v=2.4.8-202610122144';
+import * as catalogue from './views/catalogue.js?v=2.4.8-202610122144';
+import * as settingsView from './views/settings.js?v=2.4.8-202610122144';
+import * as invest from './views/invest.js?v=2.4.8-202610122144';
+import { BUILD } from './views/settings.js?v=2.4.8-202610122144';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
@@ -117,10 +117,13 @@ window.addEventListener('hashchange', route);
 startAutoTranslate();
 if (IS_STORE) { trialStart(); checkPurchases().then(() => { if (current && current.def.live) current.def.view.render(current.main, current.r); }); }
 route();
-load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).catch(() => {});
+// Cote France (eBay France) after the daily Cardmarket / sealed updates: it runs on Mondays and Thursdays only.
+load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).then(() => refreshFrPrices()).catch(() => {});
 
 // Refresh when the app comes back to the foreground (another device may have edited the collection).
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load().then(() => refreshFrPrices()).catch(() => {});
+});
 
 // Always run the latest published version: the service worker revalidates every file,
 // and a newer build in version.json triggers one reload (guarded against loops).

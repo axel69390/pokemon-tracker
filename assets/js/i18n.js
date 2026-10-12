@@ -66,6 +66,8 @@ const EN = {
   'Aucune vente pour cette sélection.': 'No sales for this selection.',
   'Cote enregistrée (manuelle)': 'Price saved (manual)', 'Cote automatique : mise à jour chaque nuit': 'Automatic price: updated every night',
   'Cote manuelle': 'Manual price', 'Supprimé de la collection': 'Removed from collection', 'Valeur mise à jour ': 'Value updated',
+  'Cote France : mise à jour le lundi et le jeudi': 'France price: updated on Mondays and Thursdays',
+  'Cote suivie': 'Tracked price', 'Suivre': 'Track', 'Cote France estimée': 'Estimated France price',
   'Mettre en veille': 'Add to watchlist', 'En veille': 'Watching', '✓ En veille': '✓ Watching', '+ Veille': '+ Watch',
 
   // Form
@@ -178,6 +180,8 @@ const RULES = [
   [/^VALEUR · (\d+) EXEMPLAIRES$/, 'VALUE · $1 COPIES'], [/^n° (.+)$/, 'no. $1'],
   [/^Cotes mises à jour :$/, 'Prices updated:'], [/^(.+) · (\d+) cartes?$/, (m) => `${m[1]} · ${m[2]} card${m[2] === '1' ? '' : 's'}`],
   [/^Mise à jour automatique chaque nuit(.*)\.$/, 'Updated automatically every night$1.'],
+  [/^Cote France : exemplaires français en vente sur eBay France \((\d+) annonces minimum, sinon tendance Cardmarket\), mise à jour le lundi et le jeudi(.*)\.$/,
+    'France price: French copies for sale on eBay France ($1 listings minimum, otherwise the Cardmarket trend), updated on Mondays and Thursdays$2.'],
   [/^Cotes à jour : (\d+) cartes?(.*)$/, (m) => `Prices updated: ${m[1]} card${m[1] === '1' ? '' : 's'}${m[2].replace(/(\d+) à valider/, '$1 to review')}`],
   [/^Ventes réalisées sur Graded Card Center(.*)$/, 'Sales completed on Graded Card Center$1'],
   [/^Aucune vente de cette carte sur GCC(.*)\.$/, 'No GCC sales for this card$1.'],
