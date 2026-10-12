@@ -1,1 +1,6 @@
-[{"id":9000001,"g":1842,"n":"Blister Évolutions (Raichu)","c":"Blister","s":"Évolutions","d":"2016-11"}]
+[
+{"id":9000001,"g":1842,"n":"Blister Évolutions (Raichu)","c":"Blister","s":"Évolutions","d":"2016-11","gcc":"Booster Blister XY Evolutions"},
+{"id":9000002,"g":1842,"n":"Blister Évolutions (Florizarre)","c":"Blister","s":"Évolutions","d":"2016-11","gcc":"Booster Blister XY Evolutions"},
+{"id":9000003,"g":1842,"n":"Blister Évolutions (Tortank)","c":"Blister","s":"Évolutions","d":"2016-11","gcc":"Booster Blister XY Evolutions"},
+{"id":9000004,"g":1842,"n":"Blister Évolutions (Dracaufeu)","c":"Blister","s":"Évolutions","d":"2016-11","gcc":"Booster Blister XY Evolutions"}
+]

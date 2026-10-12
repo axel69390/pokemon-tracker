@@ -79,6 +79,12 @@ def r2(v):
 
 def product_sales(p, sales):
     """Sales of the GCC listing that matches the product: (title, [[date, price], ...] most recent first) or None."""
+    if p.get('gcc'):
+        # Hand-added product pinned to a GCC listing (tools/sealed-extra.json): GCC does not name the illustration of
+        # a blister ("Booster Blister XY Evolutions"), so every illustration shares that listing's sales.
+        pin = fold(p['gcc']).strip()
+        lst = sorted((s for s in sales if fold(s['title']).strip() == pin), key=lambda s: s['soldAt'], reverse=True)
+        return (lst[0]['title'], [[x['soldAt'][:10], r2(x['price'])] for x in lst[:60]]) if lst else None
     cw = CAT_WORD.get(p.get('c'), '')
     set_w = [w for w in words(p.get('s')) if len(w) >= 3 and w not in STOP_SET]
     extra = [w for w in words(p.get('n')) if len(w) >= 4 and w not in set_w and w != cw and w not in PACKAGING]
@@ -115,7 +121,7 @@ def main():
     rows, fails, queries = {}, 0, 0
     for p in products:
         cw = CAT_WORD.get(p.get('c'), '')
-        q = ' '.join(x for x in ['ETB' if cw == 'etb' else cw, p.get('s')] if x)
+        q = p.get('gcc') or ' '.join(x for x in ['ETB' if cw == 'etb' else cw, p.get('s')] if x)
         if not q:
             continue
         sales, failed = sales_for(q)
