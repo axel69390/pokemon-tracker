@@ -1,4 +1,4 @@
-0');0');0/* CardVault / Pokédex Invest — eBay listings proxy (Cloudflare Worker, free plan is enough)
+/* CardVault / Pokédex Invest — eBay listings proxy (Cloudflare Worker, free plan is enough)
 
    Why: the eBay Browse API needs a secret key, which must never ship inside the app, and browsers cannot call
    it directly. This tiny worker holds the key and returns compact, cache-friendly JSON to the app.
