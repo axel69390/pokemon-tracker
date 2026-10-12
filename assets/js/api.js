@@ -1,6 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.8-202610121947';
-import { asset } from './edition.js?v=2.4.8-202610121947';
+import { settings } from './settings.js?v=2.4.8-202610122007';
+import { asset } from './edition.js?v=2.4.8-202610122007';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -219,6 +219,37 @@ export const cleanSetName = (setId, name) => CLASSIC_SET_NAMES[setId] || name ||
 export function printedNumber(card) {
   const row = CLASSIC_NUMBERS[card?.set?.id]?.[parseInt(String(card.localId).replace(/\D/g, ''), 10) - 1];
   return row ? { num: row[0], set: row[1] } : null;
+}
+
+// Cards printed with this number (11/113): the cards at that number in every set of that size, plus the
+// classic-collection reprints carrying it. Used by the scanner, where the printed number is read more reliably
+// than the name (holo glare, stylised fonts).
+export async function findByNumber(num, total, lang = 'fr') {
+  const n = normNum(num);
+  const tot = parseInt(String(total || '').replace(/\D/g, ''), 10);
+  if (!n) return [];
+  const sets = await getSets(lang).catch(() => []);
+  const setIdx = new Map(sets.map((s) => [s.id, s]));
+  const wanted = [];   // [setId, index in the set or null, localId or null]
+  Object.entries(CLASSIC_NUMBERS).forEach(([setId, rows]) => rows.forEach(([p], i) => {
+    const [pn, pt] = p.split('/');
+    if (normNum(pn) === n && (!tot || +pt === tot)) wanted.push([setId, i]);
+  }));
+  if (tot) {
+    // A set's printed total is its official count; the 6 most recent sets of that size are enough.
+    sets.filter((s) => s.cardCount?.official === tot && !CLASSIC_PARENT[s.id]).slice(-6).forEach((s) => wanted.push([s.id, null]));
+  }
+  const found = await Promise.all(wanted.map(async ([setId, i]) => {
+    try {
+      const set = await getSetCards(lang, setId);
+      const c = i != null ? set.cards?.[i] : (set.cards || []).find((x) => normNum(x.localId) === n);
+      if (!c) return null;
+      const meta = setIdx.get(setId);
+      return { ...c, setId, printed: printedNumber({ set: { id: setId }, localId: c.localId })?.num || '',
+        setName: cleanSetName(setId, meta?.name || set.name), setTotal: meta?.cardCount?.official, order: meta ? meta.idx : -1 };
+    } catch { return null; }
+  }));
+  return found.filter(Boolean);
 }
 
 // Normalises TCGdex pricing into [{ id, label, cm:{avg,low,trend,avg7,avg30}, tp:{market,low} }]

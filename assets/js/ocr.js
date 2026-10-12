@@ -1,5 +1,7 @@
-// Card scanner (beta): reads the printed name and collector number from a photo, on the device.
+// Card scanner without a server: reads the printed name and collector number from a photo, on the device.
 // The OCR engine (Tesseract, WebAssembly) is downloaded on first use only, then cached by the browser.
+import { asset } from './edition.js?v=2.4.8-202610122007';
+
 const LIB = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 const LANG = 'fra';
 
@@ -67,67 +69,136 @@ function band(img, x0, y0, x1, y1, { invert = false } = {}) {
   return c;
 }
 
-const clean = (s) => s.replace(/[|_~*«»"“”<>{}\[\]\\^=+@#$%&]/g, ' ').replace(/\s+/g, ' ').trim();
-
-// Pulls a collector number such as "025/165", "SWSH123", "TG05/TG30" out of raw text.
+// Pulls a collector number such as "025/165", "SWSH123", "TG05/TG30" out of raw text. The total may be followed
+// by the rarity symbol, read as a digit or a letter ("11/113★" comes out as "11/1142").
 export function parseNumber(text) {
   const t = text.replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, '0').replace(/[Il|](?=\d{2})|(?<=\d{2})[Il|]/g, '1');
-  let m = t.match(/\b([A-Z]{0,3}\d{1,3})\s*[\/7]\s*([A-Z]{0,3}\d{2,3})\b/);
-  if (m) return { num: m[1], total: m[2] };
-  m = t.match(/\b((?:SWSH|SV|SM|XY|BW|HGSS|DP|SVP|TG|GG)\s?\d{1,3})\b/i);
+  // Sparkles also produce digit soup ("977/226"): a number can exceed its total only by the secret rares. The
+  // collector number is printed at the very bottom, and the text comes top to bottom: the last candidate wins.
+  // A digit glued to the total is the rarity symbol misread, which may also have changed the last digit
+  // ("113★" → "1123"): the total is then only known within ±1 (fuzzy).
+  let found = null;
+  for (const m of t.matchAll(/(?<![A-Za-z0-9])([A-Z]{0,3}\d{1,3})\s*[\/7]\s*([A-Z]{0,3}\d{2,3})/g)) {
+    const n = parseInt(m[1].replace(/\D/g, ''), 10), tot = parseInt(m[2].replace(/\D/g, ''), 10);
+    if (/[A-Z]/.test(m[1] + m[2]) || (n >= 1 && tot >= 10 && n <= tot * 1.6)) {
+      found = { num: m[1], total: m[2], fuzzy: /\d/.test(t[m.index + m[0].length] || '') };
+    }
+  }
+  if (found) return found;
+  const m = t.match(/\b((?:SWSH|SV|SM|XY|BW|HGSS|DP|SVP|TG|GG)\s?\d{1,3})\b/i);
   if (m) return { num: m[1].replace(/\s/g, ''), total: '' };
   return null;
 }
 
-// Candidate names from the top band, best first.
-export function parseNames(text) {
-  const lines = text.split(/\n/).map(clean).filter((l) => /[A-Za-zÀ-ÿ]{3,}/.test(l));
-  const out = [];
-  for (const l of lines) {
-    // Drop "Niveau 45", "PV 120", "Base", "Évolution de …", "STADE 1" and other card chrome.
-    let n = l.replace(/\b(PV|HP)\s*\d+\b/gi, ' ').replace(/\b(niv(eau)?|lv|lvl|level)\.?\s*\d+\b/gi, ' ')
-      .replace(/\b(base|stade\s*\d|basic|stage\s*\d|évolution|evolution|pokémon|pokemon|dresseur|trainer|énergie|energy)\b/gi, ' ')
-      .replace(/\d+/g, ' ').replace(/\s+/g, ' ').trim();
-    n = n.replace(/^[^A-Za-zÀ-ÿ]+|[^A-Za-zÀ-ÿ]+$/g, '');
-    if (n.length >= 3 && !out.includes(n)) out.push(n);
-  }
-  // Long phrases: also try the longest words on their own.
-  const extra = [];
-  out.slice(0, 3).forEach((n) => n.split(' ').filter((w) => w.length >= 4).forEach((w) => { if (!out.includes(w) && !extra.includes(w)) extra.push(w); }));
-  return [...out.slice(0, 4), ...extra.slice(0, 3)];
+/* ---------- Pokémon names ----------
+   A holo card makes the OCR read sparkles as letters: the words read are only trusted when they are close to a real
+   Pokémon name (assets/data/pokemon-names.json, French and English). */
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+let dict = null;   // [{ fr, en, f: folded fr, e: folded en }]
+const loadDict = () => (dict ||= fetch(asset('assets/data/pokemon-names.json')).then((r) => r.json())
+  .then((rows) => rows.map(([, fr, en]) => ({ fr, en, f: fold(fr).replace(/ /g, ''), e: fold(en).replace(/ /g, '') })))
+  .catch(() => { dict = null; return []; }));
+
+// Letter-pair similarity (0..1): tolerant of misread letters ("Metal0sse", "Mctalosse").
+export function similar(a, b) {
+  const pairs = (s) => { const t = fold(s).replace(/ /g, ''); const out = []; for (let i = 0; i < t.length - 1; i++) out.push(t.slice(i, i + 2)); return out; };
+  const x = pairs(a), y = pairs(b);
+  if (!x.length || !y.length) return 0;
+  const pool = [...y];
+  let hit = 0;
+  x.forEach((p) => { const i = pool.indexOf(p); if (i >= 0) { hit++; pool.splice(i, 1); } });
+  return (2 * hit) / (x.length + y.length);
 }
 
-// photo: data URL. Returns { names:[...], number:{num,total}|null, raw:{top,bottom} }.
+// Words of the rules text that look like Pokémon names once misread ("type" → Type:0): never a card name.
+const CARD_WORDS = new Set(('type pokemon niveau evolution energie energies attaque attaques degats degat carte cartes votre vos deck main tour '
+  + 'pouvoir talent dresseur especes espece delta faiblesse resistance retraite illus nintendo placez choisissez dessous dessus vous pouvez '
+  + 'autres autre utilise special etat autant attachees voulez cette inflige plus chaque defaussee defaussez supplementaires cout fois lors '
+  + 'avant adversaire actif banc jeu ce cet pioche piochez stade base basic stage weakness resistance retreat energy damage your this').split(' '));
+
+// Words read (text, confidence, position y and letter height h, as fractions of the photo) → the Pokémon names they
+// spell, best first, and the language they were written in (an English name such as "Metagross" means an English card).
+async function namesFromWords(words) {
+  const names = await loadDict();
+  const tokens = [];
+  words.forEach((w, i) => {
+    const t = fold(w.text).replace(/[0-9 ]/g, '');
+    if (t.length >= 4 && w.confidence >= 50 && !CARD_WORDS.has(t)) tokens.push({ t, c: w.confidence, y: w.y, h: w.h });
+    const next = words[i + 1];   // two-word names: "Mr Mime", "Ho Oh"
+    const plain = (x) => !CARD_WORDS.has(fold(x.text).replace(/[0-9 ]/g, ''));
+    if (next && w.confidence >= 50 && next.confidence >= 50 && Math.abs(next.y - w.y) < 0.02 && plain(w) && plain(next)) {
+      tokens.push({ t: fold(w.text + next.text).replace(/[0-9 ]/g, ''), c: Math.min(w.confidence, next.confidence), y: w.y, h: Math.max(w.h, next.h) });
+    }
+  });
+  const hits = [];   // { fr, s, c, y, h, en }
+  tokens.forEach(({ t, c, y, h }) => names.forEach((n) => {
+    if (Math.abs(n.f.length - t.length) > 2 && Math.abs(n.e.length - t.length) > 2) return;
+    const sf = similar(t, n.f), se = similar(t, n.e);
+    const s = Math.max(sf, se);
+    if (s >= (t.length < 7 ? 0.85 : 0.75)) hits.push({ fr: n.fr, s, c, y, h, en: se > sf && n.e !== n.f });
+  }));
+  // The card name is the largest text, at the top: "Évolution de Reptincel" in small print must not win over
+  // "Dracaufeu". Letter height counts most, height on the photo a little.
+  const maxH = Math.max(0, ...hits.map((x) => x.h || 0)) || 1;
+  const best = new Map();   // fr name → { score, en }
+  hits.forEach(({ fr, s, c, y, h, en }) => {
+    const score = s * (0.5 + c / 200) * (0.4 + 0.6 * Math.min(1, (h || 0) / maxH)) * (1.15 - 0.3 * Math.min(1, y || 0));
+    const prev = best.get(fr);
+    if (!prev || score > prev.score) best.set(fr, { score, en });
+  });
+  // Runners-up only when nearly as likely as the best: a clear "Metalosse" must not bring "Malosse" along.
+  const sorted = [...best.entries()].sort((a, b) => b[1].score - a[1].score);
+  const ranked = sorted.filter(([, v]) => v.score >= (sorted[0]?.[1].score || 0) * 0.9).slice(0, 3);
+  return { names: ranked.map(([fr]) => fr), lang: ranked[0] && ranked[0][1].en ? 'en' : 'fr' };
+}
+
+// Whole picture, enlarged to `max` pixels on its long side.
+function scaled(img, max) {
+  const k = Math.min(3, max / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  const g = c.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+
+// photo: data URL (the larger, the better the small number reads). Returns
+// { names: [Pokémon names, best first], number: {num,total}|null, lang: 'fr'|'en' }.
 export async function readCard(photo, progress) {
   onProgress = progress || null;
   const worker = await getWorker();
   const img = await loadImage(photo);
-  const T = window.Tesseract;
   const run = async (canvas, psm) => {
     await worker.setParameters({ tessedit_pageseg_mode: String(psm) });
     const { data } = await worker.recognize(canvas);
-    return data.text || '';
+    const words = (data.words || []).map((w) => ({
+      text: w.text, confidence: w.confidence,
+      y: w.bbox ? w.bbox.y0 / canvas.height : 0, h: w.bbox ? (w.bbox.y1 - w.bbox.y0) / canvas.height : 0,
+    }));
+    return { words, text: data.text || '' };
   };
-  // Name sits in the top ~16 % of a card; the number in the bottom ~14 %.
-  const top = await run(band(img, 0.04, 0.02, 0.96, 0.17), T.PSM ? T.PSM.SINGLE_BLOCK : 6);
-  let bottom = await run(band(img, 0.02, 0.86, 0.98, 0.99), T.PSM ? T.PSM.SINGLE_BLOCK : 6);
-  let number = parseNumber(bottom);
-  if (!number) { // the picture may include margins: try a wider bottom band, then the whole card
-    bottom += '\n' + await run(band(img, 0, 0.78, 1, 1), 11);
-    number = parseNumber(bottom);
+  // 1. The whole photo as sparse text, which works whatever the framing (card on a table, in a sleeve, in a slab):
+  //    a light pass reads the large name well, a detailed one the small collector number. The holo sparkles make
+  //    each pass miss different words, so the second one also adds its words to the first.
+  const words = [];
+  let found = { names: [], lang: 'fr' };
+  let number = null;
+  for (const max of [1400, 2600]) {
+    const pass = await run(scaled(img, max), 11);
+    words.push(...pass.words);
+    found = await namesFromWords(words);
+    number = parseNumber(pass.text) || number;   // the detailed pass reads the small digits better
+    if (found.names.length && number && number.total && !number.fuzzy) break;
   }
-  let names = parseNames(top);
-  if (names.length < 2) { // photo with margins: look at the whole upper third as well
-    const wide = await run(band(img, 0, 0, 1, 0.32), 6);
-    parseNames(wide).forEach((n) => { if (!names.includes(n)) names.push(n); });
-    names = names.slice(0, 7);
+  let { names, lang } = found;
+  // 2. A card filling the photo: its name band (top ~20 %) and number band (bottom ~20 %), enlarged and contrasted.
+  if (!names.length) {
+    const top = await run(band(img, 0.02, 0.01, 0.98, 0.2), 6);
+    ({ names, lang } = await namesFromWords(top.words));
   }
-  if (!names.length || !number) { // last resort: sparse-text reading of the whole photo
-    const all = await run(band(img, 0, 0, 1, 1), 11);
-    if (!number) number = parseNumber(all);
-    if (!names.length) names = parseNames(all);
-  }
-  return { names, number, raw: { top, bottom } };
+  if (!number) number = parseNumber((await run(band(img, 0, 0.8, 1, 1), 11)).text);
+  return { names, number, lang };
 }
 
 export function disposeOcr() {

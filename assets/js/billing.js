@@ -1,9 +1,9 @@
 // CardVault (store edition): 14-day free trial from the first launch, then a Google Play subscription.
 // Purchases go through the Digital Goods API + Payment Request inside the Android app (Trusted Web
 // Activity). In a regular browser the subscription cannot be bought: the paywall points to the Android app.
-import { IS_STORE } from './edition.js?v=2.4.8-202610121947';
-import { openSheet, toast, icon, esc, today } from './ui.js?v=2.4.8-202610121947';
-import { isEn } from './i18n.js?v=2.4.8-202610121947';
+import { IS_STORE } from './edition.js?v=2.4.8-202610122007';
+import { openSheet, toast, icon, esc, today } from './ui.js?v=2.4.8-202610122007';
+import { isEn } from './i18n.js?v=2.4.8-202610122007';
 
 export const TRIAL_DAYS = 14;
 const PLAY = 'https://play.google.com/billing';

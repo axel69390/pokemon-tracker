@@ -7,7 +7,7 @@ Application web (PWA) pour suivre la valeur d'une collection Pokémon TCG : cart
 - **Portefeuille** : valeur globale, plus-value, montant investi, courbe d'évolution (valeur vs investi), top performances du mois, historique des ventes.
 - **Collection** : cartes en grille (2/3/4 colonnes), items regroupés par catégorie (Booster, Blister, Display, ETB, Coffret…), recherche, tri et filtres (langue, gradation, extension, état).
 - **Fiche** : photo personnelle ou visuel officiel, gradation, prix d'achat, historique de valeur, **cote Cardmarket par version exacte** (1ère édition, sans ombre, illimitée…), liens vers les ventes réussies eBay, Cardmarket et Vinted.
-- **Scanner** : photo → identification automatique (IA) → choix de la version dans le catalogue → ajout.
+- **Scanner** : photo → identification automatique → choix de la version dans le catalogue → ajout. Avec le serveur personnel : IA du serveur. Sans serveur (CardVault) : lecture du nom et du numéro sur l'appareil (Tesseract), la photo ne quitte pas le téléphone.
 - **Catalogue** : toutes les extensions et cartes (FR / EN / JP) via TCGdex.
 - **Ventes GCC** : prix moyen, médiane et dernières ventes réelles sur Graded Card Center, filtrés par numéro, langue, gradation et édition (via le serveur personnel).
 - **Sets suivis** : progression carte par carte d’une extension ou d’un master set (possédées / manquantes).
