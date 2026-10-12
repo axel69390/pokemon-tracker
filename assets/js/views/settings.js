@@ -4,6 +4,7 @@ import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.j
 import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.0';
 import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.0';
 import { langSetting, setLang } from '../i18n.js?v=2.4.0';
+import { profileSection, bindProfile } from '../profile.js?v=2.4.0';
 import { statusLabel, openPaywall, isPremium } from '../billing.js?v=2.4.0';
 
 export const VERSION = '2.4.0';
@@ -14,7 +15,8 @@ export function render(main) {
   const d = store.get();
   const ls = langSetting();
   main.innerHTML = `
-    <section class="section" style="margin-top:6px">
+    ${profileSection()}
+    <section class="section">
       <div class="section-head"><h2>Langue</h2></div>
       <div class="seg" data-no-tr>
         <button data-lang="auto" class="${ls === 'auto' ? 'on' : ''}">Auto</button>
@@ -68,6 +70,7 @@ export function render(main) {
       </div>
     </section>`;
 
+  if (!main._profileBound) { main._profileBound = true; bindProfile(main, () => render(main)); }
   main.onclick = async (e) => {
     const t = e.target.closest('[data-mode],[data-export],[data-import],[data-lang],[data-paywall]');
     if (!t) return;
@@ -85,6 +88,7 @@ export function render(main) {
     if ('import' in t.dataset) importBackup();
   };
   main.onsubmit = async (e) => {
+    if (e.target.closest('[data-nick]')) return;   // profile form (profile.js)
     e.preventDefault();
     const f = e.target;
     if ('link' in f.dataset) {
