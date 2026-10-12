@@ -3,17 +3,17 @@ import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
   refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow,
-} from './store.js?v=2.4.5';
-import { EBAY_API } from './edition.js?v=2.4.5';
+} from './store.js?v=2.4.6';
+import { EBAY_API } from './edition.js?v=2.4.6';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.4.5';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.5';
-import { getCard, getSetCards, searchCards, printedNumber, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.5';
-import { settings } from './settings.js?v=2.4.5';
-import { requireAccess } from './billing.js?v=2.4.5';
-import { renderChart } from './chart.js?v=2.4.5';
+} from './ui.js?v=2.4.6';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.6';
+import { getCard, getSetCards, searchCards, printedNumber, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.6';
+import { settings } from './settings.js?v=2.4.6';
+import { requireAccess } from './billing.js?v=2.4.6';
+import { renderChart } from './chart.js?v=2.4.6';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -265,12 +265,37 @@ export function openDetail(kind, id) {
       const fold2 = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       const base = String(a.name || '').replace(/\([^)]*\)/g, ' ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
       const words = fold2(base).split(/[^a-z0-9]+/).filter((w) => w.length >= 3).map((w) => (w.length > 5 ? w.slice(0, 5) : w));
-      const res = await fetch(`${EBAY_API}?q=${encodeURIComponent(base + ' pokemon' + (kind === 'card' && a.num ? ' ' + String(a.num).split('/')[0] : ''))}`);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const j = await res.json();
+      const isCard = kind === 'card';
+      const q = base + ' pokemon' + (isCard && a.num ? ' ' + String(a.num).split('/')[0] : '');
+      // A classic-collection reprint is often listed as "… 30 ans" without its number: ask for those too.
+      const r = isCard ? reprintOf(a) : '';
+      const queries = [q, ...(r ? [base + ' pokemon ' + (r === '30' ? '30 ans' : 'celebrations')] : [])];
+      const answers = await Promise.all(queries.map(async (s) => {
+        const res = await fetch(`${EBAY_API}?q=${encodeURIComponent(s)}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return (await res.json()).items || [];
+      }));
+      const seen = new Set();
       // Keep only real matches: every word of the name, EUR prices, no empty boxes / proxies / lots.
-      const bad = /\b(vide|empty|proxy|custom|reproduction|replica|fake|lot de|boite seule|carte seule)\b/i;
-      const items = (j.items || []).filter((x) => x.currency === 'EUR' && x.price > 0 && words.every((w) => fold2(x.title).includes(w)) && !bad.test(fold2(x.title)));
+      const bad = /\b(vide|empty|proxy|custom|reproduction|replica|fake|lot|boite seule|carte seule)\b/i;
+      // Same card only: the full number (11/113, not 11/107), the same edition (original vs 30th reprint) and,
+      // for a raw card, no graded slab.
+      const [n, total] = isCard && a.num ? String(a.num).split('/').map((x) => x.trim().replace(/^0+(?=\d)/, '')) : [];
+      const numRe = n && total ? new RegExp(`(^|\\D)0*${n}\\s*/\\s*0*${total}(\\D|$)`) : null;
+      const raw = !a.grader || a.grader === 'raw';
+      const items = answers.flat().filter((x) => {
+        const key = x && x.title + '|' + x.price;    // the same listing comes back from both searches
+        if (!x || seen.has(key)) return false;
+        seen.add(key);
+        const t = fold2(x.title);
+        if (x.currency !== 'EUR' || !(x.price > 0) || !words.every((w) => t.includes(w)) || bad.test(t)) return false;
+        if (!isCard) return true;
+        // Another number in the title (11/107, 11/128) is another card; no number at all is only accepted for a
+        // reprint listed by its collection ("Metalosse 30 ans").
+        if (numRe && !numRe.test(t) && (/\d+\s*\/\s*\d+/.test(t) || !(r && REPRINT_MARK.test(markText(x.title))))) return false;
+        if (raw && GRADED.test(t)) return false;
+        return sameEdition(a, x.title);
+      });
       ebay = { items };
     } catch (e) {
       ebay = { error: e.message };
@@ -303,6 +328,12 @@ export function openDetail(kind, id) {
       const card = await getCard(a.tcgLang || tcgLang(a.lang), a.tcgdexId);
       const variants = priceVariants(card);
       market = { variants, selected: a.tcgdexVariant && variants.some((v) => v.id === a.tcgdexVariant) ? a.tcgdexVariant : variants[0]?.id };
+      // No value yet (the nightly job has not run, or skipped this card): take the Cardmarket trend now, same rule
+      // as the nightly job. A value the user typed is never touched.
+      const cur = find(kind, a.id);
+      const cm = variants.find((v) => v.id === market.selected)?.cm;
+      const t = cm && (cm.trend || cm.avg);
+      if (cur && t && !hasValue(cur)) updateAsset(kind, cur.id, { value: Math.round(t * 100) / 100, valueSource: 'Cardmarket · tendance' });
     } catch (e) {
       market = { error: 'Cote indisponible pour le moment.' };
     }
@@ -336,7 +367,7 @@ export function openDetail(kind, id) {
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
     if (t.dataset.mode) { updateAsset(kind, id, { priceMode: t.dataset.mode }); toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle'); }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.5').then((mod) => mod.openInvest(kind, id));
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.6').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
@@ -444,6 +475,21 @@ const normRef = (r) => String(r || '').replace(/^#/, '').split('/').map((x) => x
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const editionFr = (e) => (e === 'Edition 1' ? '1ère édition' : e === 'Unlimited' ? 'Illimitée' : e || '');
 
+/* ---------- Classic-collection reprints ----------
+   A 30th anniversary or Celebrations reprint carries the number of the original card (Metalosse 11/113 exists in
+   2006 and in 2026): a sale or a listing counts for the reprint only when it says so, and never for the original. */
+const markText = (s) => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const REPRINT_MARK = /\b(30|25)\s?(e|eme|th|ans)\b|\b30c\b|anniv|celebration|collection classique|classic collection|reprint/;
+const GRADED = /\b(psa|pca|cgc|bgs|sgs|ccc|beckett|collect aura|gradee?|graded)\b/;
+const reprintOf = (a) => (/^30th-c-/.test(a.tcgdexId || '') ? '30' : /^cel25cc-/.test(a.tcgdexId || '') ? '25' : '');
+function sameEdition(a, text) {
+  const t = markText(text);
+  const r = reprintOf(a);
+  if (!r) return !REPRINT_MARK.test(t) || /^(30th|cel25)/.test(a.tcgdexId || '') || /celebration|anniv/.test(markText(a.set));
+  if (!REPRINT_MARK.test(t)) return false;
+  return r === '30' ? !/\b25\s?(e|eme|th|ans)\b/.test(t) : !/\b30\s?(e|eme|th|ans)\b|\b30c\b/.test(t);
+}
+
 function gccMatches(a, sales) {
   const ref = a.num ? normRef(a.num) : '';
   const refHasTotal = ref.includes('/');
@@ -452,6 +498,7 @@ function gccMatches(a, sales) {
   const setWords = fold(a.set).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !['pokemon', 'edition', 'promo', 'promos'].includes(w));
   return sales.filter((x) => {
     if (lang && x.lang && x.lang !== lang) return false;
+    if (!sameEdition(a, `${x.set || ''} ${x.title || ''}`)) return false;
     if (ref) {
       const r = normRef(x.ref);
       if (refHasTotal ? r !== ref : r.split('/')[0] !== ref) return false;

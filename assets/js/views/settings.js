@@ -1,13 +1,13 @@
-import { settings, parseConnect } from '../settings.js?v=2.4.5';
-import { server } from '../api.js?v=2.4.5';
-import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.5';
-import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.5';
-import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.5';
-import { langSetting, setLang } from '../i18n.js?v=2.4.5';
-import { profileSection, bindProfile } from '../profile.js?v=2.4.5';
-import { statusLabel, openPaywall, isPremium } from '../billing.js?v=2.4.5';
+import { settings, parseConnect } from '../settings.js?v=2.4.6';
+import { server } from '../api.js?v=2.4.6';
+import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.6';
+import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.6';
+import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.6';
+import { langSetting, setLang } from '../i18n.js?v=2.4.6';
+import { profileSection, bindProfile } from '../profile.js?v=2.4.6';
+import { statusLabel, openPaywall, isPremium } from '../billing.js?v=2.4.6';
 
-export const VERSION = '2.4.5';
+export const VERSION = '2.4.6';
 
 export function render(main) {
   const s = settings.get();

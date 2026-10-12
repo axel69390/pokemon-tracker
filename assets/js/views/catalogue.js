@@ -1,9 +1,9 @@
-import { settings } from '../settings.js?v=2.4.5';
-import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.5';
-import { esc, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.5';
-import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.5';
-import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.5';
-import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.5';
+import { settings } from '../settings.js?v=2.4.6';
+import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.6';
+import { esc, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.6';
+import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.6';
+import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.6';
+import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.6';
 
 const LANG_OPTIONS = [['fr', 'FR'], ['en', 'EN'], ['ja', 'JP']];
 let q = '';
