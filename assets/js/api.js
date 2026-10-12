@@ -1,5 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.3';
+import { settings } from './settings.js?v=2.4.4';
+import { asset } from './edition.js?v=2.4.4';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -105,22 +106,65 @@ async function searchPages(lang, q) {
   return [first, ...more].flat().filter((c) => c && !seen.has(c.id) && seen.add(c.id));
 }
 
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+let monNames = null;   // [[num, fr, en]], loaded once
+const loadMonNames = () => (monNames ||= fetch(asset('assets/data/pokemon-names.json')).then((r) => r.json()).catch(() => { monNames = null; return []; }));
+
+// TCGdex name search ignores case but not accents, and its data is not consistent: the 30th anniversary
+// "Metalosse" has no accent while every other card is "Métalosse". Search the typed name, its accent-free
+// spelling and, in French, the accented Pokémon name meant by an accent-free query ("metalosse", "metalosse v").
+async function nameVariants(lang, q) {
+  const f = fold(q);
+  const out = new Map([[q.toLowerCase(), q], [f, f]]);
+  if (lang === 'fr' && f.length >= 4) {
+    (await loadMonNames())
+      .map(([, fr]) => [fr, fold(fr)])
+      .filter(([fr, ff]) => ff !== fr.toLowerCase())   // only names that carry an accent
+      .flatMap(([fr, ff]) => (ff.startsWith(f) ? [fr] : f.startsWith(ff) && /^[\s-]/.test(f.slice(ff.length)) ? [fr + f.slice(ff.length)] : []))
+      .slice(0, 3)
+      .forEach((v) => out.set(v.toLowerCase(), v));
+  }
+  return [...out.values()];
+}
+
+async function searchNames(lang, q) {
+  const lists = await Promise.all((await nameVariants(lang, q)).map((v) => searchPages(lang, v).catch(() => [])));
+  const seen = new Set();
+  return lists.flat().filter((c) => c && !seen.has(c.id) && seen.add(c.id));
+}
+
+// Words that say nothing about the set in "Métalosse 30 ans", "Pikachu édition Célébrations"…
+const SET_NOISE = new Set(['ans', 'an', 'de', 'du', 'des', 'la', 'le', 'les', 'edition', 'set', 'serie', 'carte']);
+
 export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
   let q = query.trim();
   if (q.length < 2) return [];
   // "Dracaufeu 4/102", "dracaufeu 4" or "dracaufeu #4": the trailing number narrows the search.
   const m = q.match(/^(.*\S)\s+#?(\d{1,3})(?:\s*\/\s*\d{1,3})?$/);
   if (m && m[1].length >= 2 && !number) { q = m[1]; number = m[2]; }
-  const [list, sets] = await Promise.all([
-    searchPages(lang, q),
-    getSets(lang).catch(() => []),
-  ]);
+  const setsP = getSets(lang).catch(() => []);
+  let list = await searchNames(lang, q);
+  // No card with that whole name: the last words may name the set ("Métalosse 30 ans", "Dracaufeu 151").
+  let setWords = [];
+  const words = q.split(/\s+/);
+  for (let k = words.length - 1; !list.length && k >= 1; k--) {
+    const name = words.slice(0, k).join(' ');
+    if (name.length < 2) break;
+    list = await searchNames(lang, name);
+    setWords = words.slice(k).map(fold).filter((w) => w && !SET_NOISE.has(w));
+  }
+  const sets = await setsP;
   const setIdx = new Map(sets.map((s) => [s.id, s]));
   let out = list.map((c) => {
     const setId = c.id.slice(0, c.id.length - String(c.localId).length - 1);
     const set = setIdx.get(setId);
     return { ...c, setId, setName: set?.name || setId, setTotal: set?.cardCount?.official, order: set ? set.idx : -1 };
   });
+  if (setWords.length) {
+    const inSet = out.filter((c) => setWords.every((w) => fold(c.setName + ' ' + c.setId).includes(w)));
+    if (inSet.length) out = inSet;
+  }
   const n = normNum(number);
   if (n) {
     const exact = out.filter((c) => normNum(c.localId) === n);

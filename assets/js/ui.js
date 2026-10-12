@@ -2,7 +2,7 @@
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-import { lang } from './i18n.js?v=2.4.3';
+import { lang } from './i18n.js?v=2.4.4';
 
 const LOCALE = lang() === 'en' ? 'en-IE' : 'fr-FR';
 const eur = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
