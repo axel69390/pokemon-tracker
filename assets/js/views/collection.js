@@ -1,9 +1,9 @@
-import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.8';
-import { settings } from '../settings.js?v=2.4.8';
-import { IS_STORE } from '../edition.js?v=2.4.8';
-import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.8';
-import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.8';
-import { getSets, setLogo, parentSetId } from '../api.js?v=2.4.8';
+import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.8-202610121947';
+import { settings } from '../settings.js?v=2.4.8-202610121947';
+import { IS_STORE } from '../edition.js?v=2.4.8-202610121947';
+import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.8-202610121947';
+import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.8-202610121947';
+import { getSets, setLogo, parentSetId } from '../api.js?v=2.4.8-202610121947';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },

@@ -1,19 +1,19 @@
 // Pokédex Invest / CardVault — entry point & router.
-import { startAutoTranslate } from './i18n.js?v=2.4.8';
-import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.8';
-import { checkPurchases, trialStart } from './billing.js?v=2.4.8';
-import { store, load, refreshLocalPrices, refreshSealedPrices } from './store.js?v=2.4.8';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.8';
-import { settings } from './settings.js?v=2.4.8';
-import { avatarHtml } from './profile.js?v=2.4.8';
-import { openForm } from './sheets.js?v=2.4.8';
-import * as portfolio from './views/portfolio.js?v=2.4.8';
-import * as collection from './views/collection.js?v=2.4.8';
-import * as scanner from './views/scanner.js?v=2.4.8';
-import * as catalogue from './views/catalogue.js?v=2.4.8';
-import * as settingsView from './views/settings.js?v=2.4.8';
-import * as invest from './views/invest.js?v=2.4.8';
-import { VERSION } from './views/settings.js?v=2.4.8';
+import { startAutoTranslate } from './i18n.js?v=2.4.8-202610121947';
+import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.8-202610121947';
+import { checkPurchases, trialStart } from './billing.js?v=2.4.8-202610121947';
+import { store, load, refreshLocalPrices, refreshSealedPrices } from './store.js?v=2.4.8-202610121947';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.8-202610121947';
+import { settings } from './settings.js?v=2.4.8-202610121947';
+import { avatarHtml } from './profile.js?v=2.4.8-202610121947';
+import { openForm } from './sheets.js?v=2.4.8-202610121947';
+import * as portfolio from './views/portfolio.js?v=2.4.8-202610121947';
+import * as collection from './views/collection.js?v=2.4.8-202610121947';
+import * as scanner from './views/scanner.js?v=2.4.8-202610121947';
+import * as catalogue from './views/catalogue.js?v=2.4.8-202610121947';
+import * as settingsView from './views/settings.js?v=2.4.8-202610121947';
+import * as invest from './views/invest.js?v=2.4.8-202610121947';
+import { BUILD } from './views/settings.js?v=2.4.8-202610121947';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
@@ -123,14 +123,14 @@ load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).ca
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load(); });
 
 // Always run the latest published version: the service worker revalidates every file,
-// and a newer version.json triggers one reload (guarded against loops).
+// and a newer build in version.json triggers one reload (guarded against loops).
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(asset('sw.js'), { updateViaCache: 'none' }).catch(() => {});
 async function checkVersion() {
   try {
     const { version } = await (await fetch(asset('version.json'), { cache: 'no-store' })).json();
     // Reload under a new URL (?v=…) so iOS cannot hand back the cached page; every module
-    // URL carries the version too (tools/release.py). Only one attempt per version.
-    if (version && version !== VERSION && new URLSearchParams(location.search).get('v') !== version) {
+    // URL carries the build too (tools/release.py). Only one attempt per build.
+    if (version && version !== BUILD && new URLSearchParams(location.search).get('v') !== version) {
       location.replace(location.pathname + '?v=' + encodeURIComponent(version) + location.hash);
     }
   } catch { /* offline */ }
