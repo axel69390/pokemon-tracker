@@ -1,9 +1,9 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.8-202610122007';
-import { IS_STORE, asset } from './edition.js?v=2.4.8-202610122007';
-import { server, ServerError, getCard } from './api.js?v=2.4.8-202610122007';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.8-202610122007';
-import { hasAccess } from './billing.js?v=2.4.8-202610122007';
+import { settings } from './settings.js?v=2.4.8-202610122059';
+import { IS_STORE, asset } from './edition.js?v=2.4.8-202610122059';
+import { server, ServerError, getCard } from './api.js?v=2.4.8-202610122059';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.8-202610122059';
+import { hasAccess } from './billing.js?v=2.4.8-202610122059';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -190,9 +190,14 @@ export async function savePhoto(dataUrl) {
   return id;
 }
 export const photoUrl = (p) => (!p ? null : p.startsWith('data:') || p.startsWith('http') ? p : server.photoUrl(p));
+// Items added before hand-made products had their own picture point at a TCGplayer image that does not exist.
+const handMade = (u) => {
+  const m = /tcgplayer-cdn\.tcgplayer\.com\/product\/(9\d{6})_\d+w\.jpg$/.exec(u || '');
+  return m ? asset(`assets/img/sealed/${m[1]}.jpg`) : u;
+};
 const thumbUrl = (u) => (u && u.includes('assets.tcgdex.net') ? u.replace(/\/high\.webp$/, '/low.webp') : u);
-export const imageOf = (a, { thumb = false } = {}) => photoUrl(a.photo) || (thumb ? thumbUrl(a.image) : a.image) || null;
-export const officialImage = (a, { thumb = false } = {}) => (thumb ? thumbUrl(a.image) : a.image) || null;
+export const imageOf = (a, { thumb = false } = {}) => photoUrl(a.photo) || handMade(thumb ? thumbUrl(a.image) : a.image) || null;
+export const officialImage = (a, { thumb = false } = {}) => handMade(thumb ? thumbUrl(a.image) : a.image) || null;
 
 /* ---------- Mutations ---------- */
 const listOf = (kind) => (kind === 'card' ? state.cards : state.items);

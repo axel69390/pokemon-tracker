@@ -3,17 +3,17 @@ import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
   refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow,
-} from './store.js?v=2.4.8-202610122007';
-import { EBAY_API } from './edition.js?v=2.4.8-202610122007';
+} from './store.js?v=2.4.8-202610122059';
+import { EBAY_API } from './edition.js?v=2.4.8-202610122059';
 import {
   esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.4.8-202610122007';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.8-202610122007';
-import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.8-202610122007';
-import { settings } from './settings.js?v=2.4.8-202610122007';
-import { requireAccess } from './billing.js?v=2.4.8-202610122007';
-import { renderChart } from './chart.js?v=2.4.8-202610122007';
+} from './ui.js?v=2.4.8-202610122059';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.8-202610122059';
+import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.8-202610122059';
+import { settings } from './settings.js?v=2.4.8-202610122059';
+import { requireAccess } from './billing.js?v=2.4.8-202610122059';
+import { renderChart } from './chart.js?v=2.4.8-202610122059';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -379,7 +379,7 @@ export function openDetail(kind, id) {
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
     if (t.dataset.mode) { updateAsset(kind, id, { priceMode: t.dataset.mode }); toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle'); }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.8-202610122007').then((mod) => mod.openInvest(kind, id));
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.8-202610122059').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
@@ -812,7 +812,7 @@ export function openSales(initial = 'all') {
       <div class="kv" style="margin-bottom:14px"><div><small>Encaissé</small><b class="num">${money(revenue)}</b></div>
         <div><small>Résultat</small><b class="num ${trend(pnl)}">${signed(pnl)}</b></div></div>
       ${list.length ? `<div class="list">${[...list].sort((a, b) => String(b.date).localeCompare(String(a.date))).map((s) => {
-        const img = photoUrl(s.photo) || (s.image ? s.image.replace('/high.webp', '/low.webp') : null);
+        const img = photoUrl(s.photo) || officialImage(s, { thumb: true });
         return `<button class="row" data-sale="${s.id}">
           ${img ? `<img class="thumb ${s.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb ${s.kind === 'item' ? 'sq' : ''}"></span>`}
           <span class="main"><b>${esc(s.name)}${s.qty > 1 ? ' ×' + s.qty : ''}</b><small>${dateFr(s.date)}${s.platform ? ' · ' + esc(s.platform) : ''}</small></span>

@@ -1,4 +1,4 @@
-import { asset } from './edition.js?v=2.4.8-202610122007';
+import { asset } from './edition.js?v=2.4.8-202610122059';
 
 // French catalogue of sealed products (built by tools/build_sealed.py from TCGplayer data).
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -6,7 +6,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 let cache = null;
 export function loadSealed() {
   if (!cache) {
-    cache = fetch(asset('assets/data/sealed.json?v=2.4.8-202610122007'))
+    cache = fetch(asset('assets/data/sealed.json?v=2.4.8-202610122059'))
       .then((r) => { if (!r.ok) throw new Error('Catalogue indisponible'); return r.json(); })
       .then((d) => d.products.filter((p) => !/Pokémon Center/i.test(p.n)).map((p) => ({ ...p, key: fold(`${p.n} ${p.c}`) })))
       .catch((e) => { cache = null; throw e; });
@@ -14,7 +14,11 @@ export function loadSealed() {
   return cache;
 }
 
-export const sealedImage = (id, size = 400) => `https://tcgplayer-cdn.tcgplayer.com/product/${id}_${size}w.jpg`;
+// Products added by hand (tools/sealed-extra.json, ids from 9000000) are not on TCGplayer: their picture is
+// assets/img/sealed/<id>.jpg.
+export const sealedImage = (id, size = 400) => (+id >= 9000000
+  ? asset(`assets/img/sealed/${id}.jpg`)
+  : `https://tcgplayer-cdn.tcgplayer.com/product/${id}_${size}w.jpg`);
 
 // Every typed word must appear (accents and case ignored); newest products first.
 export async function searchSealed(query = '', category = '') {
