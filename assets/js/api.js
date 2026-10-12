@@ -1,6 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.8-202610122107';
-import { asset } from './edition.js?v=2.4.8-202610122107';
+import { settings } from './settings.js?v=2.4.8-202610122117';
+import { asset } from './edition.js?v=2.4.8-202610122117';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -193,7 +193,7 @@ const CLASSIC_NUMBERS = {
     ['41/122', 'Rupture TURBO'], ['43/146', 'Éveil des Légendes'], ['47/127', 'Platine'], ['50/185', 'Voltage Éclatant'],
     ['57/111', 'Invasion Carmin'], ['58/102', 'Set de Base'], ['69/132', 'Gym Challenge'], ['85/124', 'Dragons Exaltés'],
     ['89/149', 'Soleil et Lune'], ['94/102', 'Triomphe'], ['99/102', 'Triomphe'], ['100/102', 'Triomphe'],
-    ['101/101', 'Nobles Victoires'], ['106/160', 'Primo-Choc'], ['106/106', 'Duels au Sommet'], ['106/105', 'Neo Destiny'],
+    ['101/101', 'Nobles Victoires'], ['106/106', 'Duels au Sommet'], ['106/160', 'Primo-Choc'], ['106/105', 'Neo Destiny'],
     ['108/115', 'EX Forces Cachées'], ['114/264', 'Poing de Fusion'], ['123/172', 'Stars Étincelantes'], ['138/202', 'Épée et Bouclier'],
     ['149/147', 'Aquapolis'], ['203/193', 'Évolutions à Paldea'],
   ],
