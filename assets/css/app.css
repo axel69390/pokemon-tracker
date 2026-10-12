@@ -628,3 +628,14 @@ a.row { color: inherit; }
 .split-leg { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--text-2); margin-bottom: 14px; }
 .split-leg i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 .split-leg .d1 { background: var(--gold); } .split-leg .d2 { background: #5b7cff; }
+
+/* ---------- Profile ---------- */
+.avatar { width: var(--av, 44px); height: var(--av, 44px); border-radius: 50%; background: var(--surface-2) center / cover no-repeat; border: 1px solid var(--line-2); flex: none; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; color: var(--text-3); }
+.avatar img { width: 100%; height: 100%; object-fit: contain; }
+.avatar.photo img { object-fit: cover; }
+.profile-head { display: flex; gap: 16px; align-items: center; }
+.profile-head .btns { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.mon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; margin-top: 12px; }
+.mon-grid button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 14px; background: var(--surface-2); font-size: 11px; color: var(--text-2); }
+.mon-grid button.on, .mon-grid button:hover { outline: 2px solid var(--gold); }
+.mon-grid img { width: 56px; height: 56px; object-fit: contain; }
