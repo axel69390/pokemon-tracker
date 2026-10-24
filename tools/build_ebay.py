@@ -61,6 +61,9 @@ def fetch(q):
 def one(p):
     name = p['n']
     nw = words(name)
+    anniv30 = '30ᵉ' in (p.get('s') or '')
+    if anniv30:
+        nw = [w for w in nw if not w.startswith('anniv')]   # sellers write "30 ans", "30e", "30th"
     if not nw:
         return None
     sw = [w for w in words(p.get('s') or '') if w not in nw and w not in GENERIC]
@@ -76,6 +79,8 @@ def one(p):
         if OTHER.get(p.get('c')) and re.search(r'\b(' + OTHER[p['c']] + r')\b', t):
             continue
         if 'Célébrations' in (p.get('s') or '') and ANNIV30.search(t):
+            continue
+        if anniv30 and not ANNIV30.search(t):
             continue
         if BAD.search(t) or not all(stem(w) in t for w in nw + words(' '.join(re.findall(r'\(([^)]*)\)', name)))):
             continue

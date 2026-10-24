@@ -30,7 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'assets/data'
-HALF_LIFE = 21.0
+HALF_LIFE = 10.0
 MAX_DAILY_MOVE = 0.10
 
 
@@ -90,6 +90,9 @@ def gcc_estimate(sales, today):
     m = wmedian([p for _, _, p in pts], [w(a) for a, _, _ in pts])
     kept = [(a, d, p) for a, d, p in pts if m / 3 <= p <= m * 3]
     v = wmedian([p for _, _, p in kept], [w(a) for a, _, _ in kept])
+    recent = [p for _, _, p in sorted(kept, key=lambda x: x[1], reverse=True)[:5]]
+    if len(recent) >= 3:
+        v = min(v, median(recent))   # prices of new products fall after launch: never above the latest sales
     kept_desc = sorted(kept, key=lambda x: x[1], reverse=True)
     return {'v': v, 'n': len(kept), 'n30': sum(1 for a, _, _ in kept if a <= 30),
             'last': [kept_desc[0][1], r2(kept_desc[0][2])], 'kept': kept}
@@ -139,9 +142,11 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
         cm_ok = False   # trend 3x above the cheapest offer: the Cardmarket match is a mix of products (e.g. "Mini")
     if cm_ok:
         srcs['c'] = (float(cm[0]), 1.0)
-    if 'g' in srcs and 'c' in srcs:
-        # Launch-hype sales and French premium: GCC may sit at most 25 % above Cardmarket (trend of every language)
-        srcs['g'] = (min(srcs['g'][0], srcs['c'][0] * 1.25), srcs['g'][1])
+    if 'g' in srcs:
+        # Launch-hype sales and French premium: GCC may sit at most 25 % above Cardmarket and eBay France asking prices.
+        others = [srcs[k][0] for k in ('c', 'e') if k in srcs]
+        if others:
+            srcs['g'] = (min(srcs['g'][0], min(others) * 1.25), srcs['g'][1])
     if tcg_usd:
         srcs['e'] = (tcg_usd * fx, 0.5)
     srcs = {k: v for k, v in srcs.items() if v[0] > 0 and v[1] > 0}
@@ -167,7 +172,7 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
     n_g = est['n'] if est else 0
     both = 'g' in srcs and 'c' in srcs
     agree = both and max(srcs['g'][0], srcs['c'][0]) / min(srcs['g'][0], srcs['c'][0]) <= 1.25
-    strong = ('c' in srcs) or ('g' in srcs and n_g >= 5)
+    strong = ('c' in srcs) or ('e' in srcs) or ('g' in srcs and n_g >= 8)
     if both and agree and n_g >= 5:
         conf = 3
     elif strong:
