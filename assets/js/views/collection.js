@@ -1,9 +1,9 @@
-import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.8-202610122144';
-import { settings } from '../settings.js?v=2.4.8-202610122144';
-import { IS_STORE } from '../edition.js?v=2.4.8-202610122144';
-import { money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.8-202610122144';
-import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.8-202610122144';
-import { getSets, setLogo, parentSetId } from '../api.js?v=2.4.8-202610122144';
+import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.9-202610241707';
+import { settings } from '../settings.js?v=2.4.9-202610241707';
+import { IS_STORE } from '../edition.js?v=2.4.9-202610241707';
+import { phCard, money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.9-202610241707';
+import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.9-202610241707';
+import { getSets, setLogo, parentSetId } from '../api.js?v=2.4.9-202610241707';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },
@@ -137,7 +137,7 @@ export function cardTile(a) {
   const img = imageOf(a, { thumb: true });
   const g = gradeLabel(a);
   return `<button class="tile" data-open="card:${a.id}">
-    <div class="art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${icon('image', 'lg')}</span>`}
+    <div class="art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : phCard(a.name, a.num)}
       <span class="tl"><span class="chip">${flag(a.lang)}</span></span>
       ${g ? `<span class="tr"><span class="chip grade">${esc(g)}</span></span>` : ''}
       ${qtyOf(a) > 1 ? `<span class="br"><span class="chip qty">×${qtyOf(a)}</span></span>` : ''}

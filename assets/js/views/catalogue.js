@@ -1,9 +1,9 @@
-import { settings } from '../settings.js?v=2.4.8-202610122144';
-import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.8-202610122144';
-import { esc, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.8-202610122144';
-import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.8-202610122144';
-import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.8-202610122144';
-import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.8-202610122144';
+import { settings } from '../settings.js?v=2.4.9-202610241707';
+import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.9-202610241707';
+import { esc, phCard, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.9-202610241707';
+import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.9-202610241707';
+import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.9-202610241707';
+import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.9-202610241707';
 
 const LANG_OPTIONS = [['fr', 'FR'], ['en', 'EN'], ['ja', 'JP']];
 let q = '';
@@ -64,7 +64,7 @@ export function render(main, { tab, query }) {
 }
 
 const cardGrid = (cards) => `<div class="grid" style="--cols:3">${cards.map((c) => `<button class="tile" data-card="${esc(c.id)}">
-  <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : `<span class="ph">${icon('image')}</span>`}</div>
+  <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : phCard(c.name, c.printed || c.localId)}</div>
   <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName ? c.setName + ' · ' : '')}${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>`;
 
 const loading = '<div class="loading"><div class="spinner"></div></div>';
