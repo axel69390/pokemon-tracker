@@ -1,10 +1,10 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.10-202610241907';
-import { IS_STORE, asset } from './edition.js?v=2.4.10-202610241907';
-import { server, ServerError, getCard } from './api.js?v=2.4.10-202610241907';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610241907';
-import { hasAccess } from './billing.js?v=2.4.10-202610241907';
-import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610241907';
+import { settings } from './settings.js?v=2.4.10-202610242038';
+import { IS_STORE, asset } from './edition.js?v=2.4.10-202610242038';
+import { server, ServerError, getCard } from './api.js?v=2.4.10-202610242038';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610242038';
+import { hasAccess } from './billing.js?v=2.4.10-202610242038';
+import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610242038';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -274,9 +274,9 @@ const MODERN = /^(me\d|me0|mep|30th|sv|swsh|sm\d|sm1|smp|xy|bw|svp)/i;
 const isFrRaw = (a) => (!a.grader || a.grader === 'raw') && a.lang === 'fr' && !!a.tcgdexId;
 export function priceModeOf(kind, a) {
   if (kind !== 'card') return a.priceMode || 'manual';
-  if (a.priceMode) return a.priceMode === 'fr' && !isFrRaw(a) ? 'auto' : a.priceMode;
+  if (a.priceMode) return a.priceMode === 'fr' ? 'auto' : a.priceMode;   // Cote France (eBay) retired: Cardmarket average
   if (a.grader && a.grader !== 'raw') return 'auto';
-  if (isFrRaw(a) && (!hasValue(a) || a.valueSource)) return 'fr';
+  if (isFrRaw(a) && (!hasValue(a) || a.valueSource)) return 'auto';
   return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && MODERN.test(a.tcgdexId) ? 'auto' : 'manual';
 }
 export const pendingPrices = () => state.cards.filter((c) => c.pendingValue);
@@ -378,14 +378,15 @@ export function removeSet(id) {
    Same rules as the server's nightly job, Cardmarket only (GCC and TCGplayer are not reachable from a
    browser): once a day, every card linked to the catalogue gets its day / 30-day average and trend; cards in
    automatic mode take the trend as their value (swings > 40 % are proposed for review instead). */
-const LOCAL_RUN_KEY = NS + '.localPriceRun';
+const LOCAL_RUN_KEY = NS + '.localPriceRun.avg';   // renamed: the switch to the average price runs at once
 export async function refreshLocalPrices({ force = false, only = null } = {}) {
-  if (settings.isServer() || !hasAccess()) return null;
+  if (!hasAccess()) return null;
   const day = today();
   let last = null;
   try { last = localStorage.getItem(LOCAL_RUN_KEY); } catch { /* private mode */ }
   if (!only && !force && last === day) return null;
-  const cards = state.cards.filter((c) => c.tcgdexId && (!only || only.includes(c.id)));
+  // Raw cards only: Cardmarket prices are for ungraded cards (graded cards keep their GCC price).
+  const cards = state.cards.filter((c) => c.tcgdexId && (!c.grader || c.grader === 'raw') && (!only || only.includes(c.id)));
   if (!cards.length) return null;
   const res = {};
   let errors = 0;
@@ -407,7 +408,7 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
   state.cards.forEach((c) => {
     const cm = res[c.id];
     if (!cm || (only && !only.includes(c.id))) return;
-    const trend = r2(cm.trend || cm.avg), d30 = r2(cm.avg30);
+    const trend = r2(cm.avg != null ? cm.avg : cm.trend), d30 = r2(cm.avg30);   // chart follows the value (average price)
     c.market = { src: 'Cardmarket', d1: r2(cm.avg1 != null ? cm.avg1 : cm.avg), d1At: day, d30, at: day };
     if (trend != null) {
       let h = (c.hist || []).filter((x) => x.d !== day);
@@ -415,12 +416,16 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
       h.push({ d: day, p: trend, a30: d30 });
       c.hist = h.slice(-400);
     }
-    // Manual cards are never touched, except when no value was ever entered (nothing of the user's to overwrite).
-    if (trend == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
+    // Value = Cardmarket average sale price ("Prix moyen"), the most reliable figure; manual cards are never touched,
+    // except when no value was ever entered (nothing of the user's to overwrite).
+    const avg = r2(cm.avg != null ? cm.avg : (cm.trend != null ? cm.trend : null));
+    if (avg == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
+    const SRC = 'Cardmarket · prix moyen';
     const old = hasValue(c) ? +c.value : null;
-    if (old && c.valueSource && Math.abs(trend - old) / old > 0.4) { c.pendingValue = { v: trend, src: 'Cardmarket · tendance', d: day }; pending++; return; }
+    if (old && c.valueSource === SRC && Math.abs(avg - old) / old > 0.4) { c.pendingValue = { v: avg, src: SRC, d: day }; pending++; return; }
     delete c.pendingValue;
-    c.value = trend; c.valueSource = 'Cardmarket · tendance'; logValue(c, trend);
+    if (c.priceMode === 'fr') c.priceMode = 'auto';
+    c.value = avg; c.valueSource = SRC; logValue(c, avg);
     updated++;
   });
   if (only) { commit(); return { updated, pending, errors }; }   // single-card refresh: keep the daily run untouched
