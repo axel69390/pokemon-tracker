@@ -1,10 +1,10 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.10-202610242038';
-import { IS_STORE, asset } from './edition.js?v=2.4.10-202610242038';
-import { server, ServerError, getCard } from './api.js?v=2.4.10-202610242038';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610242038';
-import { hasAccess } from './billing.js?v=2.4.10-202610242038';
-import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610242038';
+import { settings } from './settings.js?v=2.4.10-202610242054';
+import { IS_STORE, asset } from './edition.js?v=2.4.10-202610242054';
+import { server, ServerError, getCard } from './api.js?v=2.4.10-202610242054';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610242054';
+import { hasAccess } from './billing.js?v=2.4.10-202610242054';
+import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610242054';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -274,9 +274,10 @@ const MODERN = /^(me\d|me0|mep|30th|sv|swsh|sm\d|sm1|smp|xy|bw|svp)/i;
 const isFrRaw = (a) => (!a.grader || a.grader === 'raw') && a.lang === 'fr' && !!a.tcgdexId;
 export function priceModeOf(kind, a) {
   if (kind !== 'card') return a.priceMode || 'manual';
-  if (a.priceMode) return a.priceMode === 'fr' ? 'auto' : a.priceMode;   // Cote France (eBay) retired: Cardmarket average
+  const modern = !!a.tcgdexId && MODERN.test(a.tcgdexId);
+  // Cote France (eBay) retired: recent sets follow the Cardmarket average, vintage sets stay manual.
+  if (a.priceMode) return a.priceMode === 'fr' ? (modern ? 'auto' : 'manual') : a.priceMode;
   if (a.grader && a.grader !== 'raw') return 'auto';
-  if (isFrRaw(a) && (!hasValue(a) || a.valueSource)) return 'auto';
   return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && MODERN.test(a.tcgdexId) ? 'auto' : 'manual';
 }
 export const pendingPrices = () => state.cards.filter((c) => c.pendingValue);
@@ -381,6 +382,17 @@ export function removeSet(id) {
 const LOCAL_RUN_KEY = NS + '.localPriceRun.avg';   // renamed: the switch to the average price runs at once
 export async function refreshLocalPrices({ force = false, only = null } = {}) {
   if (!hasAccess()) return null;
+  let vm = null;
+  try { vm = localStorage.getItem(NS + '.vintageManual'); } catch { /* private mode */ }
+  if (!vm && state.cards.length) {
+    // One-off: vintage cards switched to the average price on 24 Oct 2026 (end of Cote France) go back to manual.
+    state.cards.forEach((c) => {
+      if (c.tcgdexId && !MODERN.test(c.tcgdexId) && (!c.grader || c.grader === 'raw') && c.priceMode === 'auto'
+        && c.valueSource === 'Cardmarket · prix moyen') c.priceMode = 'manual';
+    });
+    try { localStorage.setItem(NS + '.vintageManual', '1'); } catch { /* private mode */ }
+    commit();
+  }
   const day = today();
   let last = null;
   try { last = localStorage.getItem(LOCAL_RUN_KEY); } catch { /* private mode */ }
