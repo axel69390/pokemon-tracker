@@ -1,8 +1,10 @@
 // Shared UI helpers: escaping, formatting, icons, sheets, toasts, images.
 
+// Stand-in for a card with no illustration yet: name + number instead of an empty grey box.
+export const phCard = (name, num) => `<span class="ph txt"><b>${esc(name)}</b>${num ? `<small>n° ${esc(num)}</small>` : ''}</span>`;
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-import { lang } from './i18n.js?v=2.4.8-202610122144';
+import { lang } from './i18n.js?v=2.4.9-202610241707';
 
 const LOCALE = lang() === 'en' ? 'en-IE' : 'fr-FR';
 const eur = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });

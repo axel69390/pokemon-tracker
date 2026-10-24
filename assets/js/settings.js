@@ -9,7 +9,7 @@ const DEFAULTS = {
   itemCols: 3,
 };
 
-import { IS_STORE } from './edition.js?v=2.4.8-202610122144';
+import { IS_STORE } from './edition.js?v=2.4.9-202610241707';
 
 let current = { ...DEFAULTS };
 try { current = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { /* private mode */ }

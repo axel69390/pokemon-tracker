@@ -3,18 +3,18 @@ import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
   refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow, setFrValue,
-} from './store.js?v=2.4.8-202610122144';
-import { EBAY_API } from './edition.js?v=2.4.8-202610122144';
-import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.8-202610122144';
+} from './store.js?v=2.4.9-202610241707';
+import { EBAY_API } from './edition.js?v=2.4.9-202610241707';
+import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.9-202610241707';
 import {
-  esc, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
+  esc, phCard, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.4.8-202610122144';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.8-202610122144';
-import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.8-202610122144';
-import { settings } from './settings.js?v=2.4.8-202610122144';
-import { requireAccess } from './billing.js?v=2.4.8-202610122144';
-import { renderChart } from './chart.js?v=2.4.8-202610122144';
+} from './ui.js?v=2.4.9-202610241707';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.9-202610241707';
+import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.9-202610241707';
+import { settings } from './settings.js?v=2.4.9-202610241707';
+import { requireAccess } from './billing.js?v=2.4.9-202610241707';
+import { renderChart } from './chart.js?v=2.4.9-202610241707';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -356,7 +356,7 @@ export function openDetail(kind, id) {
       if (t.dataset.mode === 'fr' && ebay && ebay.est != null) setFrValue(id, ebay.est, ebay.estCount);
       toast(t.dataset.mode === 'fr' ? 'Cote France : mise à jour le lundi et le jeudi' : t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
     }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.8-202610122144').then((mod) => mod.openInvest(kind, id));
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.9-202610241707').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
@@ -929,7 +929,7 @@ export function openCataloguePicker({ query = '', number = '', lang = 'fr', onPi
       const res = await searchCards(q.value, { lang: l.value, number: nEl.value });
       if (my !== seq) return;
       out.innerHTML = res.length ? `<div class="grid" style="--cols:3">${res.slice(0, 90).map((c) => `<button class="tile" data-id="${esc(c.id)}">
-        <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : `<span class="ph">${icon('image')}</span>`}</div>
+        <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : `${phCard(c.name, c.printed || c.localId)}`}</div>
         <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>`
         : '<div class="empty"><h3>Aucune carte trouvée</h3><p>Essayez une autre langue ou orthographe.</p></div>';
     } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
@@ -1063,7 +1063,7 @@ export function openSetSheet(setId, { getSetCards: loadSet = getSetCards } = {})
         const own = pr.owned.get(id);
         const img = own ? imageOf(own[0], { thumb: true }) : b.image ? cardImage(b.image) : null;
         return `<button class="tile ${own ? '' : 'missing'}" data-card="${esc(id)}">
-          <div class="art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${icon('image')}</span>`}
+          <div class="art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `${phCard(b.name, b.localId)}`}
             ${own ? `<span class="own">${icon('check')}</span>` : ''}</div>
           <div class="meta"><b>${esc(b.name)}</b><small>n° ${esc(b.localId)}${own && costOf(own[0]) ? ' · ' + money(costOf(own[0])) : ''}</small></div></button>`;
       }).join('')}</div>
