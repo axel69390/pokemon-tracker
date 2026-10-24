@@ -1,10 +1,10 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.9-202610241707';
-import { IS_STORE, asset } from './edition.js?v=2.4.9-202610241707';
-import { server, ServerError, getCard } from './api.js?v=2.4.9-202610241707';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.9-202610241707';
-import { hasAccess } from './billing.js?v=2.4.9-202610241707';
-import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.9-202610241707';
+import { settings } from './settings.js?v=2.4.10-202610241804';
+import { IS_STORE, asset } from './edition.js?v=2.4.10-202610241804';
+import { server, ServerError, getCard } from './api.js?v=2.4.10-202610241804';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610241804';
+import { hasAccess } from './billing.js?v=2.4.10-202610241804';
+import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610241804';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -478,9 +478,9 @@ export async function refreshSealedPrices({ only = null, force = false } = {}) {
   if (!only && !force) { try { if (localStorage.getItem(SEALED_RUN_KEY) === day) return null; } catch { /* ignore */ } }
   const items = state.items.filter((i) => i.tcgplayerId && (!only || only.includes(i.id)));
   if (!items.length) return null;
-  let data = null, fx = 1, mk = null;
+  let mk = null;
   try { mk = await loadSealedMarket(); } catch { /* index not built yet: TCGplayer only */ }
-  if (!mk) { try { [data, fx] = await Promise.all([loadSealedPrices(), usdToEur()]); } catch { return { updated: 0, error: true }; } }
+  if (!mk) return { updated: 0, error: true };
   let updated = 0;
   items.forEach((i) => {
     const r = mk && mk.p && mk.p[i.tcgplayerId];
@@ -491,12 +491,11 @@ export async function refreshSealedPrices({ only = null, force = false } = {}) {
       i.market = { src: 'Index', conf: r.c, srcs: r.s || {}, drop: r.x || [], n30: r.n || 0, d1: r.v, d1At: day, last: r.l || null,
         t30: r.t != null ? r.t : null, h: r.h || [], at: day };
       if ((r.h || []).length > 1) i.hist = r.h.map(([d, p]) => ({ d, p }));
-    } else if (data) {
-      const row = data.p && data.p[i.tcgplayerId];
-      if (!row || !row[0] || i.category === 'Blister') return;
-      eur = Math.round(row[0] * fx * 100) / 100; src = 'TCGplayer';
-      i.market = { src: 'TCGplayer (US)', d1: eur, d1At: data.built || day, d30: null, at: day, low: row[1] ? Math.round(row[1] * fx * 100) / 100 : null };
-    } else return;
+    } else {
+      // No reliable French/European source: no cote rather than a US TCGplayer price (it overstated French products).
+      if (i.valueSource === 'TCGplayer' && (i.priceMode || 'manual') === 'auto') { i.value = null; i.valueSource = null; i.market = null; updated++; }
+      return;
+    }
     if (hasValue(i) && (i.priceMode || 'manual') !== 'auto' && !['TCGplayer', 'GCC', 'Index'].includes(i.valueSource)) return;   // typed by hand: keep
     i.value = eur; i.valueSource = src; i.priceMode = 'auto'; logValue(i, eur);
     updated++;

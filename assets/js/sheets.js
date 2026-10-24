@@ -3,18 +3,18 @@ import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
   refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow, setFrValue,
-} from './store.js?v=2.4.9-202610241707';
-import { EBAY_API } from './edition.js?v=2.4.9-202610241707';
-import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.9-202610241707';
+} from './store.js?v=2.4.10-202610241804';
+import { EBAY_API } from './edition.js?v=2.4.10-202610241804';
+import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610241804';
 import {
   esc, phCard, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.4.9-202610241707';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.9-202610241707';
-import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.9-202610241707';
-import { settings } from './settings.js?v=2.4.9-202610241707';
-import { requireAccess } from './billing.js?v=2.4.9-202610241707';
-import { renderChart } from './chart.js?v=2.4.9-202610241707';
+} from './ui.js?v=2.4.10-202610241804';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.10-202610241804';
+import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.10-202610241804';
+import { settings } from './settings.js?v=2.4.10-202610241804';
+import { requireAccess } from './billing.js?v=2.4.10-202610241804';
+import { renderChart } from './chart.js?v=2.4.10-202610241804';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -356,7 +356,7 @@ export function openDetail(kind, id) {
       if (t.dataset.mode === 'fr' && ebay && ebay.est != null) setFrValue(id, ebay.est, ebay.estCount);
       toast(t.dataset.mode === 'fr' ? 'Cote France : mise à jour le lundi et le jeudi' : t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
     }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.9-202610241707').then((mod) => mod.openInvest(kind, id));
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.10-202610241804').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
