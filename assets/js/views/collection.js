@@ -1,9 +1,9 @@
-import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.10-202610241804';
-import { settings } from '../settings.js?v=2.4.10-202610241804';
-import { IS_STORE } from '../edition.js?v=2.4.10-202610241804';
-import { phCard, money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.10-202610241804';
-import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.10-202610241804';
-import { getSets, setLogo, parentSetId } from '../api.js?v=2.4.10-202610241804';
+import { store, totals, worthOf, gainOf, gainPct, costOf, imageOf, qtyOf, setProgress } from '../store.js?v=2.4.10-202610241858';
+import { settings } from '../settings.js?v=2.4.10-202610241858';
+import { IS_STORE } from '../edition.js?v=2.4.10-202610241858';
+import { phCard, money, signed, pct, pill, icon, esc, flag, gradeLabel, LANGS, CATEGORIES, CATEGORY_ICON, openSheet, trend } from '../ui.js?v=2.4.10-202610241858';
+import { openDetail, openForm, openSetSheet } from '../sheets.js?v=2.4.10-202610241858';
+import { getSets, setLogo, parentSetId } from '../api.js?v=2.4.10-202610241858';
 
 const SORTS = {
   value: { label: 'Valeur', fn: (a, b) => worthOf(b) - worthOf(a) },
@@ -116,7 +116,7 @@ function itemRow(a) {
   const img = imageOf(a, { thumb: true });
   const m = a.market && a.market.src === 'Index' && a.market.d1 != null ? `<small class="mkt-chip num">Marché ${money(a.market.d1)}</small>` : '';
   return `<button class="irow" data-open="item:${a.id}">
-    <span class="ith">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : icon(CATEGORY_ICON[a.category] || 'box')}</span>
+    <span class="ith">${img ? `<img src="${esc(img)}" alt="" decoding="async">` : icon(CATEGORY_ICON[a.category] || 'box')}</span>
     <span class="imain"><b>${esc(a.name)}</b><small>${esc(a.set || a.category)} · ×${qtyOf(a)}</small>${m}</span>
     <span class="iend"><b class="num">${money(worthOf(a))}</b>${gainBadge(a)}</span>
   </button>`;
@@ -137,7 +137,7 @@ export function cardTile(a) {
   const img = imageOf(a, { thumb: true });
   const g = gradeLabel(a);
   return `<button class="tile" data-open="card:${a.id}">
-    <div class="art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : phCard(a.name, a.num)}
+    <div class="art">${img ? `<img src="${esc(img)}" alt="" decoding="async">` : phCard(a.name, a.num)}
       <span class="tl"><span class="chip">${flag(a.lang)}</span></span>
       ${g ? `<span class="tr"><span class="chip grade">${esc(g)}</span></span>` : ''}
       ${qtyOf(a) > 1 ? `<span class="br"><span class="chip qty">×${qtyOf(a)}</span></span>` : ''}
@@ -191,7 +191,7 @@ function cardsHtml(cols) {
     const open = searching || openSeries.has(se.key);
     return `<section class="serie-block ${open ? 'open' : ''}">
       <button class="serie-head" data-serie="${esc(se.key)}" aria-expanded="${open}">
-        <span class="serie-logo">${se.logo ? `<img src="${esc(setLogo(se.logo))}" alt="${esc(se.name)}" loading="lazy">` : icon('layers')}</span>
+        <span class="serie-logo">${se.logo ? `<img src="${esc(setLogo(se.logo))}" alt="${esc(se.name)}" decoding="async">` : icon('layers')}</span>
         <span class="gt"><b>${esc(se.name)}</b><small>${se.groups.length} extension${se.groups.length > 1 ? 's' : ''} · ${t.count} carte${t.count > 1 ? 's' : ''}</small></span>
         <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span>
         <span class="chev">${icon('chev', 'sm')}</span>
@@ -224,7 +224,7 @@ function toggleSerie(key) {
 function itemTile(a) {
   const img = imageOf(a, { thumb: true });
   return `<button class="tile" data-open="item:${a.id}">
-    <div class="art item-art ${!a.photo && a.image ? 'cat' : ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${icon(CATEGORY_ICON[a.category] || 'box')}</span>`}
+    <div class="art item-art ${!a.photo && a.image ? 'cat' : ''}">${img ? `<img src="${esc(img)}" alt="" decoding="async">` : `<span class="ph">${icon(CATEGORY_ICON[a.category] || 'box')}</span>`}
       <span class="tl"><span class="chip">${flag(a.lang)}</span></span>
       <span class="tr"><span class="chip qty">×${qtyOf(a)}</span></span>
       ${a.status === 'opened' ? '<span class="br"><span class="chip">Ouvert</span></span>' : ''}

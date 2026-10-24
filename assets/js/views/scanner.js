@@ -1,8 +1,8 @@
-import { settings } from '../settings.js?v=2.4.10-202610241804';
-import { server, searchCards, findByNumber, tcgLang, cardImage } from '../api.js?v=2.4.10-202610241804';
-import { readCard, similar } from '../ocr.js?v=2.4.10-202610241804';
-import { esc, phCard, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js?v=2.4.10-202610241804';
-import { openCatalogueCard, openForm } from '../sheets.js?v=2.4.10-202610241804';
+import { settings } from '../settings.js?v=2.4.10-202610241858';
+import { server, searchCards, findByNumber, tcgLang, cardImage } from '../api.js?v=2.4.10-202610241858';
+import { readCard, similar } from '../ocr.js?v=2.4.10-202610241858';
+import { esc, phCard, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js?v=2.4.10-202610241858';
+import { openCatalogueCard, openForm } from '../sheets.js?v=2.4.10-202610241858';
 
 // Two engines: the personal server's AI when one is configured, otherwise the text printed on the card is read on
 // the device (ocr.js) and matched against the catalogue, number first.
@@ -184,14 +184,14 @@ function resultHtml() {
       <h3 style="margin:4px 0 2px">${esc(title)}</h3><div class="muted" style="font-size:13px">${esc(sub)}</div></div></div>
     <div class="section"><div class="section-head"><h2>${m.length ? 'Choisissez la bonne version' : 'Aucune correspondance catalogue'}</h2></div>
       ${m.length ? `<div class="grid" style="--cols:3">${m.map((c) => `<button class="tile" data-match="${esc(c.id)}" data-lang="${esc(c.lang)}">
-        <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : phCard(c.name, c.printed || c.localId)}</div>
+        <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" decoding="async">` : phCard(c.name, c.printed || c.localId)}</div>
         <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>` : ''}
       <button class="btn block" style="margin-top:12px" data-add-card>${icon('edit')}Ajouter sans fiche catalogue</button>
     </div>`;
 }
 
 const matchGrid = (m) => `<div class="grid" style="--cols:3">${m.map((c) => `<button class="tile" data-match="${esc(c.id)}" data-lang="${esc(c.lang)}">
-  <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : phCard(c.name, c.printed || c.localId)}</div>
+  <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" decoding="async">` : phCard(c.name, c.printed || c.localId)}</div>
   <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId)}${c.lang !== 'fr' ? ' · ' + esc(c.lang.toUpperCase()) : ''}</small></div></button>`).join('')}</div>`;
 
 // Device reading: what was read (editable, in case a letter or a digit was misread) and the catalogue matches.

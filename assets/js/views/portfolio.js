@@ -1,10 +1,10 @@
-import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.10-202610241804';
-import { settings } from '../settings.js?v=2.4.10-202610241804';
-import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.10-202610241804';
-import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.10-202610241804';
-import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.4.10-202610241804';
-import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610241804';
-import { openDetail, openSales } from '../sheets.js?v=2.4.10-202610241804';
+import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.10-202610241858';
+import { settings } from '../settings.js?v=2.4.10-202610241858';
+import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.10-202610241858';
+import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.10-202610241858';
+import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.4.10-202610241858';
+import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610241858';
+import { openDetail, openSales } from '../sheets.js?v=2.4.10-202610241858';
 
 let period = '1m';   // the home chart always opens on the last month (Max flattens the recent evolution)
 let perfMode = 'eur';
@@ -138,7 +138,7 @@ function perfList() {
     const img = imageOf(x.a, { thumb: true });
     return `<button class="row" data-open="${x.kind}:${x.a.id}">
       <span class="rank">${i + 1}</span>
-      ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb ${x.kind === 'item' ? 'sq' : ''}"></span>`}
+      ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" decoding="async">` : `<span class="thumb ${x.kind === 'item' ? 'sq' : ''}"></span>`}
       <span class="main"><b>${esc(x.a.name)}</b><small>${esc(x.a.set || x.a.category || '')}</small></span>
       <span class="end"><b class="num">${money(x.a.value * (x.a.qty || 1))}</b>
         ${pill(x.delta, perfMode === 'pct' ? pct(x.pct) : signed(x.delta))}</span>
@@ -156,7 +156,7 @@ function priceRunHtml() {
     </div>
     ${pend.length ? `<div class="section" style="margin-top:14px"><div class="section-head"><h2>Cotes à valider</h2><span class="pill gold">${pend.length}</span></div>
       <div class="list">${pend.slice(0, 8).map((c) => `<button class="row" data-open="card:${c.id}">
-        ${imageOf(c, { thumb: true }) ? `<img class="thumb" src="${esc(imageOf(c, { thumb: true }))}" alt="" loading="lazy">` : '<span class="thumb"></span>'}
+        ${imageOf(c, { thumb: true }) ? `<img class="thumb" src="${esc(imageOf(c, { thumb: true }))}" alt="" decoding="async">` : '<span class="thumb"></span>'}
         <span class="main"><b>${esc(c.name)}</b><small>${money(c.value)} → ${money(c.pendingValue.v)} · ${esc(c.pendingValue.src)}</small></span>
         <span class="end">${pill(c.pendingValue.v - c.value, pct(((c.pendingValue.v - c.value) / c.value) * 100))}</span></button>`).join('')}</div></div>` : ''}`;
 }

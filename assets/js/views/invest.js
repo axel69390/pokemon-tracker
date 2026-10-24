@@ -1,9 +1,9 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.10-202610241804';
-import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.10-202610241804';
-import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610241804';
-import { openDetail, openSell } from '../sheets.js?v=2.4.10-202610241804';
-import { hasAccess, openPaywall } from '../billing.js?v=2.4.10-202610241804';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.10-202610241858';
+import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.10-202610241858';
+import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610241858';
+import { openDetail, openSell } from '../sheets.js?v=2.4.10-202610241858';
+import { hasAccess, openPaywall } from '../billing.js?v=2.4.10-202610241858';
 
 const DAY = 864e5;
 const STATUS = {
@@ -173,7 +173,7 @@ export function render(main) {
       <div class="list">${rises.slice(0, 10).map((r) => {
         const img = imageOf(r.a, { thumb: true });
         return `<button class="row" data-inv="${r.kind}:${r.a.id}">
-          ${img ? `<img class="thumb ${r.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb"></span>`}
+          ${img ? `<img class="thumb ${r.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" decoding="async">` : `<span class="thumb"></span>`}
           <span class="main"><b>${esc(r.a.name)}${fresh.has(r.key) ? ' <span class="pill gold" style="margin-left:4px">Nouveau</span>' : ''}</b><small>${money(r.from)} → ${money(r.to)} en 7 jours${r.a.watch && r.a.watch.on ? ' · en veille' : ''}</small></span>
           <span class="end">${pill(r.ch, pct(r.ch * 100))}</span></button>`;
       }).join('')}</div>
@@ -226,7 +226,7 @@ function rowHtml(x, suggestion = false) {
   const tr = TREND[x.dir];
   const color = x.ch30 == null ? '#e9b949' : x.ch30 >= 0 ? '#34d399' : '#f87171';
   return `<button class="row inv-row" data-inv="${x.kind}:${x.a.id}">
-    ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb ${x.kind === 'item' ? 'sq' : ''}"></span>`}
+    ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" decoding="async">` : `<span class="thumb ${x.kind === 'item' ? 'sq' : ''}"></span>`}
     <span class="main"><b>${esc(x.a.name)}</b><small>${esc(x.reasons[0] ? x.reasons[0][1] : x.a.set || x.a.category || '')}</small></span>
     <span class="spark-wrap">${sparkline(x.pts.map((p) => p.p), { color })}</span>
     <span class="end"><b class="num">${money(x.price)}</b>${suggestion
@@ -338,7 +338,7 @@ export function openPicker() {
       const on = x.a.watch && x.a.watch.on;
       const img = imageOf(x.a, { thumb: true });
       return `<button class="row" data-w="${x.kind}:${x.a.id}">
-        ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb"></span>`}
+        ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" decoding="async">` : `<span class="thumb"></span>`}
         <span class="main"><b>${esc(x.a.name)}</b><small>${esc([x.a.set || x.a.category, x.a.num].filter(Boolean).join(' · '))} · ${money(x.price)}</small></span>
         <span class="end"><span class="pill ${on ? 'up' : 'flat'}">${on ? '✓ En veille' : '+ Veille'}</span></span></button>`;
     }).join('')}</div>`;

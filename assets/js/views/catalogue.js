@@ -1,9 +1,9 @@
-import { settings } from '../settings.js?v=2.4.10-202610241804';
-import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.10-202610241804';
-import { esc, phCard, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.10-202610241804';
-import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.10-202610241804';
-import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.10-202610241804';
-import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.10-202610241804';
+import { settings } from '../settings.js?v=2.4.10-202610241858';
+import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.10-202610241858';
+import { esc, phCard, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.10-202610241858';
+import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.10-202610241858';
+import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.10-202610241858';
+import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.10-202610241858';
 
 const LANG_OPTIONS = [['fr', 'FR'], ['en', 'EN'], ['ja', 'JP']];
 let q = '';
@@ -64,7 +64,7 @@ export function render(main, { tab, query }) {
 }
 
 const cardGrid = (cards) => `<div class="grid" style="--cols:3">${cards.map((c) => `<button class="tile" data-card="${esc(c.id)}">
-  <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : phCard(c.name, c.printed || c.localId)}</div>
+  <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" decoding="async">` : phCard(c.name, c.printed || c.localId)}</div>
   <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName ? c.setName + ' · ' : '')}${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>`;
 
 const loading = '<div class="loading"><div class="spinner"></div></div>';
@@ -95,7 +95,7 @@ async function showSets(out, lang) {
     out.innerHTML = [...bySerie.entries()].map(([serie, list]) => `<details class="serie-acc" data-serie="${esc(serie)}"${openSeries.has(serie) ? ' open' : ''}>
       <summary><span>${esc(serie)}<small>${list.length} extension${list.length > 1 ? 's' : ''}</small></span><span class="chev">${icon('chev')}</span></summary>
       <div class="set-list">${list.map((s) => `<button class="set-card" data-set="${esc(s.id)}">
-        <span class="logo">${s.logo ? `<img src="${esc(setLogo(s.logo))}" alt="" loading="lazy">` : `<b>${esc(s.name)}</b>`}</span>
+        <span class="logo">${s.logo ? `<img src="${esc(setLogo(s.logo))}" alt="" decoding="async">` : `<b>${esc(s.name)}</b>`}</span>
         <span><b>${esc(s.name)}</b><br><small>${s.cardCount?.official || s.cardCount?.total || '?'} cartes</small></span></button>`).join('')}</div></details>`).join('');
     out.querySelectorAll('details.serie-acc').forEach((d) => d.addEventListener('toggle', () => { d.open ? openSeries.add(d.dataset.serie) : openSeries.delete(d.dataset.serie); }));
   } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
@@ -134,7 +134,7 @@ async function showSealed(out) {
       const r = mk[p.id];
       const t = r && r.t != null ? r.t : null;
       const tr = t == null ? '' : `<span class="trend-tag ${t > 0.03 ? 'up' : t < -0.03 ? 'down' : 'flat'}">${t > 0.03 ? '↗' : t < -0.03 ? '↘' : '→'} ${(t * 100 > 0 ? '+' : '') + (t * 100).toFixed(1).replace('.', ',')} %</span>`;
-      return `<div class="pcard"><button class="pimg" data-sinfo="${p.id}"><img src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"></button>
+      return `<div class="pcard"><button class="pimg" data-sinfo="${p.id}"><img src="${esc(sealedImage(p.id, 200))}" alt="" decoding="async"></button>
         <b>${esc(p.n)}</b><small>${esc(p.c)}</small>
         <div class="pprice">${r ? `<span class="num">${money(r.v)}</span>${tr}` : '<span class="faint">Pas de cote</span>'}</div>
         <div class="pbtns"><button data-sealed="${p.id}">+ Portefeuille</button><button data-sinfo="${p.id}">Détails ›</button></div></div>`;
