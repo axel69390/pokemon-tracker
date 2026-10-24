@@ -639,3 +639,8 @@ a.row { color: inherit; }
 .mon-grid button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 14px; background: var(--surface-2); font-size: 11px; color: var(--text-2); }
 .mon-grid button.on, .mon-grid button:hover { outline: 2px solid var(--gold); }
 .mon-grid img { width: 56px; height: 56px; object-fit: contain; }
+
+/* Card without illustration: name + number */
+.tile .art .ph.txt { align-content: center; justify-items: center; gap: 4px; padding: 10px; text-align: center; }
+.tile .art .ph.txt b { font-size: 13px; line-height: 1.2; color: var(--text-2); word-break: break-word; }
+.tile .art .ph.txt small { font-size: 11px; color: var(--text-3); }
