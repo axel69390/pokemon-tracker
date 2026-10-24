@@ -132,9 +132,16 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
     srcs = {}                                     # key -> (value, weight)
     if est:
         n = est['n']
-        srcs['g'] = (est['v'], 0.0 if n < 1 else min(1.0, n / 8) if n >= 3 else 0.15)
-    if cm and cm[0] and cm[0] > 0:
+        n14 = sum(1 for a, _, _ in est['kept'] if a <= 14)
+        srcs['g'] = (est['v'], 0.0 if n < 1 else (min(1.0, n / 8) if n >= 3 else 0.15) * (1.0 if n14 >= 3 else 0.5))
+    cm_ok = bool(cm and cm[0] and cm[0] > 0)
+    if cm_ok and len(cm) > 3 and cm[3] and cm[0] > 3 * cm[3]:
+        cm_ok = False   # trend 3x above the cheapest offer: the Cardmarket match is a mix of products (e.g. "Mini")
+    if cm_ok:
         srcs['c'] = (float(cm[0]), 1.0)
+    if 'g' in srcs and 'c' in srcs:
+        # Launch-hype sales and French premium: GCC may sit at most 25 % above Cardmarket (trend of every language)
+        srcs['g'] = (min(srcs['g'][0], srcs['c'][0] * 1.25), srcs['g'][1])
     if tcg_usd:
         srcs['e'] = (tcg_usd * fx, 0.5)
     srcs = {k: v for k, v in srcs.items() if v[0] > 0 and v[1] > 0}
@@ -172,7 +179,7 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
     row = {'v': r2(index), 'c': conf, 's': {}}
     if est:
         row['s']['g'] = r2(est['v'])
-    if cm and cm[0]:
+    if cm_ok:
         row['s']['c'] = r2(float(cm[0]))
     if tcg_usd:
         row['s']['e'] = r2(tcg_usd * fx)
