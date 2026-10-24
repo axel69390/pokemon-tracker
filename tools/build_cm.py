@@ -102,7 +102,7 @@ def main():
         trend, avg7, avg30, low = (pr.get(k) for k in ('trend', 'avg7', 'avg30', 'low'))
         if not (trend or avg30 or pr.get('avg')):
             continue
-        rows[str(p['id'])] = [trend or pr.get('avg'), avg7, avg30, low, cands[0].get('idProduct')]
+        rows[str(p['id'])] = [trend or pr.get('avg'), avg7, avg30, low, cands[0].get('idProduct'), pr.get('avg')]
     print(f'{len(rows)} produits cotés Cardmarket / {len(products)}, {ambiguous} ambigus')
     if not rows:
         raise SystemExit('Aucun produit apparié, on garde le fichier précédent')

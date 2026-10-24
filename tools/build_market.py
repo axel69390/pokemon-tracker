@@ -132,6 +132,21 @@ def history(est, today_str, index, prev_h=None):
 def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
     today_str = today.isoformat()
     est = gcc_estimate(g_sales, today) if g_sales else None
+    cm_avg = cm[5] if cm and len(cm) > 5 and cm[5] and cm[5] > 0 else None
+    if cm_avg and not (len(cm) > 3 and cm[3] and cm_avg > 3 * cm[3]):
+        # Cardmarket average sale price ("Prix moyen") is the reference whenever Cardmarket has the product: no blend.
+        row = {'v': r2(cm_avg), 'c': 3, 's': {'c': r2(cm_avg)}}
+        if est:
+            row['s']['g'] = r2(est['v'])
+            row['n'] = est['n30']
+            row['l'] = est['last']
+        if tcg_usd:
+            row['s']['e'] = r2(tcg_usd * fx)
+        ch = change30(est, cm)
+        if ch is not None and abs(ch) < 5:
+            row['t'] = round(ch, 4)
+        row['h'] = history(None, today_str, cm_avg, prev.get('h') if prev else None)
+        return row
     srcs = {}                                     # key -> (value, weight)
     if est:
         n = est['n']
