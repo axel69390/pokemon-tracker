@@ -3,18 +3,18 @@ import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
   refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow, setFrValue,
-} from './store.js?v=2.4.10-202610241804';
-import { EBAY_API } from './edition.js?v=2.4.10-202610241804';
-import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610241804';
+} from './store.js?v=2.4.10-202610241858';
+import { EBAY_API } from './edition.js?v=2.4.10-202610241858';
+import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610241858';
 import {
   esc, phCard, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
-} from './ui.js?v=2.4.10-202610241804';
-import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.10-202610241804';
-import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.10-202610241804';
-import { settings } from './settings.js?v=2.4.10-202610241804';
-import { requireAccess } from './billing.js?v=2.4.10-202610241804';
-import { renderChart } from './chart.js?v=2.4.10-202610241804';
+} from './ui.js?v=2.4.10-202610241858';
+import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.10-202610241858';
+import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.10-202610241858';
+import { settings } from './settings.js?v=2.4.10-202610241858';
+import { requireAccess } from './billing.js?v=2.4.10-202610241858';
+import { renderChart } from './chart.js?v=2.4.10-202610241858';
 
 const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', 'Autre'];
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
@@ -217,7 +217,7 @@ export function openDetail(kind, id) {
             <div class="m"><span><small>Fourchette</small><b class="num" style="font-size:13px">${money(st.min)} – ${money(st.max)}</b></span></div>
           </div>
           <div class="list" style="margin-top:10px">${list.slice(0, 8).map((x) => `<a class="row" href="https://gradedcardcenter.com/item/${esc(x.id)}" target="_blank" rel="noopener">
-            ${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="" loading="lazy">` : '<span class="thumb"></span>'}
+            ${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="" decoding="async">` : '<span class="thumb"></span>'}
             <span class="main"><b>${esc(x.title)}</b><small>${esc([x.set, editionFr(x.edition), dateFr(x.soldAt)].filter(Boolean).join(' · '))}</small></span>
             <span class="end"><b class="num">${money(x.price)}</b></span></a>`).join('')}</div>
           <div class="note">Ventes réalisées sur Graded Card Center (${list.length} correspondance${list.length > 1 ? 's' : ''}, même numéro et même langue).</div>`;
@@ -264,7 +264,7 @@ export function openDetail(kind, id) {
           <div class="m"><span><small>Fourchette</small><b class="num" style="font-size:13px">${money(v[0])} – ${money(v[v.length - 1])}</b></span></div>
         </div>
         <div class="list" style="margin-top:10px">${ebay.items.slice(0, 6).map((x) => `<a class="row" href="${esc(x.url)}" target="_blank" rel="noopener">
-          ${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="" loading="lazy">` : '<span class="thumb"></span>'}
+          ${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="" decoding="async">` : '<span class="thumb"></span>'}
           <span class="main"><b>${esc(x.title)}</b><small>${esc([x.buying === 'auction' ? 'Enchère' : 'Prix fixe', x.condition].filter(Boolean).join(' · '))}</small></span>
           <span class="end"><b class="num">${money(x.price)}</b></span></a>`).join('')}</div>
         <div class="note">Prix demandés par les vendeurs eBay (annonces en cours), pas des ventes réalisées : un repère, à croiser avec les ventes réussies.</div>`;
@@ -356,7 +356,7 @@ export function openDetail(kind, id) {
       if (t.dataset.mode === 'fr' && ebay && ebay.est != null) setFrValue(id, ebay.est, ebay.estCount);
       toast(t.dataset.mode === 'fr' ? 'Cote France : mise à jour le lundi et le jeudi' : t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
     }
-    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.10-202610241804').then((mod) => mod.openInvest(kind, id));
+    if ('invest' in t.dataset) import('./views/invest.js?v=2.4.10-202610241858').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
       const pv = a.pendingValue;
       if (t.dataset.pending === 'apply') updateAsset(kind, id, { value: pv.v, valueSource: pv.src, pendingValue: null });
@@ -585,7 +585,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
     if (isCard) {
       attachSuggest(nameInput, {
         search: (q) => searchCards(q, { lang: 'fr' }),
-        render: (c) => `${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : '<img alt="">'}<span class="main"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId + (c.setTotal ? '/' + c.setTotal : ''))}</small></span>`,
+        render: (c) => `${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" decoding="async">` : '<img alt="">'}<span class="main"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId + (c.setTotal ? '/' + c.setTotal : ''))}</small></span>`,
         onPick: async (c) => {
           readForm();
           try { Object.assign(a, await prefillFromCatalogue('fr', c.id)); } catch { toast('Carte indisponible', { error: true }); }
@@ -596,7 +596,7 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
       attachSuggest(nameInput, {
         search: (q) => searchSealed(q),
         max: 40,      // every illustration of a product must be reachable (a blister can have 4+)
-        render: (p) => `<img class="sq" src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"><span class="main"><b>${esc(p.n)}</b><small>${esc(p.c)} · ${esc(p.s)}</small></span>`,
+        render: (p) => `<img class="sq" src="${esc(sealedImage(p.id, 200))}" alt="" decoding="async"><span class="main"><b>${esc(p.n)}</b><small>${esc(p.c)} · ${esc(p.s)}</small></span>`,
         onPick: (p) => { readForm(); Object.assign(a, sealedPrefill(p)); draw(); },
       });
     }
@@ -774,7 +774,7 @@ export function openSales(initial = 'all') {
       ${list.length ? `<div class="list">${[...list].sort((a, b) => String(b.date).localeCompare(String(a.date))).map((s) => {
         const img = photoUrl(s.photo) || officialImage(s, { thumb: true });
         return `<button class="row" data-sale="${s.id}">
-          ${img ? `<img class="thumb ${s.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" loading="lazy">` : `<span class="thumb ${s.kind === 'item' ? 'sq' : ''}"></span>`}
+          ${img ? `<img class="thumb ${s.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" decoding="async">` : `<span class="thumb ${s.kind === 'item' ? 'sq' : ''}"></span>`}
           <span class="main"><b>${esc(s.name)}${s.qty > 1 ? ' ×' + s.qty : ''}</b><small>${dateFr(s.date)}${s.platform ? ' · ' + esc(s.platform) : ''}</small></span>
           <span class="end"><b class="num">${money(saleRevenue(s))}</b>${pill(salePnl(s))}</span></button>`;
       }).join('')}</div>`
@@ -929,7 +929,7 @@ export function openCataloguePicker({ query = '', number = '', lang = 'fr', onPi
       const res = await searchCards(q.value, { lang: l.value, number: nEl.value });
       if (my !== seq) return;
       out.innerHTML = res.length ? `<div class="grid" style="--cols:3">${res.slice(0, 90).map((c) => `<button class="tile" data-id="${esc(c.id)}">
-        <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" loading="lazy">` : `${phCard(c.name, c.printed || c.localId)}`}</div>
+        <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" decoding="async">` : `${phCard(c.name, c.printed || c.localId)}`}</div>
         <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>`
         : '<div class="empty"><h3>Aucune carte trouvée</h3><p>Essayez une autre langue ou orthographe.</p></div>';
     } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
@@ -993,7 +993,7 @@ export function openSealedPicker({ onPick, onManual = null, category = '', lang 
         ? `<div class="grid" style="--cols:3">${res.slice(0, 150).map((p) => {
           const variant = p.n.replace(p.c + ' ', '').replace(p.s, '').replace(/^\s*\(|\)\s*$/g, '').trim();
           return `<button type="button" class="tile" data-id="${p.id}">
-            <div class="art item-art cat"><img src="${esc(sealedImage(p.id, 200))}" alt="" loading="lazy"></div>
+            <div class="art item-art cat"><img src="${esc(sealedImage(p.id, 200))}" alt="" decoding="async"></div>
             <div class="meta"><b>${esc(p.s)}</b><small>${esc(variant || p.c)}</small></div></button>`;
         }).join('')}</div>
           ${res.length > 150 ? '<p class="note" style="text-align:center">Affinez la recherche pour voir plus de produits.</p>' : ''}`
@@ -1063,7 +1063,7 @@ export function openSetSheet(setId, { getSetCards: loadSet = getSetCards } = {})
         const own = pr.owned.get(id);
         const img = own ? imageOf(own[0], { thumb: true }) : b.image ? cardImage(b.image) : null;
         return `<button class="tile ${own ? '' : 'missing'}" data-card="${esc(id)}">
-          <div class="art">${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `${phCard(b.name, b.localId)}`}
+          <div class="art">${img ? `<img src="${esc(img)}" alt="" decoding="async">` : `${phCard(b.name, b.localId)}`}
             ${own ? `<span class="own">${icon('check')}</span>` : ''}</div>
           <div class="meta"><b>${esc(b.name)}</b><small>n° ${esc(b.localId)}${own && costOf(own[0]) ? ' · ' + money(costOf(own[0])) : ''}</small></div></button>`;
       }).join('')}</div>

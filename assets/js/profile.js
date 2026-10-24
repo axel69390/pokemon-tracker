@@ -1,9 +1,9 @@
 // User profile: photo (picked from the device) or a Pokémon as avatar, nickname, member-since date.
 // Everything stays on the device (settings). Pokémon artwork is loaded from the PokéAPI sprites repository.
-import { settings } from './settings.js?v=2.4.10-202610241804';
-import { asset, IS_STORE } from './edition.js?v=2.4.10-202610241804';
-import { esc, icon, toast, openSheet, pickImage, today, dateFr } from './ui.js?v=2.4.10-202610241804';
-import { trialStart } from './billing.js?v=2.4.10-202610241804';
+import { settings } from './settings.js?v=2.4.10-202610241858';
+import { asset, IS_STORE } from './edition.js?v=2.4.10-202610241858';
+import { esc, icon, toast, openSheet, pickImage, today, dateFr } from './ui.js?v=2.4.10-202610241858';
+import { trialStart } from './billing.js?v=2.4.10-202610241858';
 
 const MAX_FILE = 2 * 1024 * 1024;
 const sprite = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
@@ -11,7 +11,7 @@ const sprite = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master
 export function avatarHtml(size = 44) {
   const s = settings.get();
   const inner = s.avatar ? `<img src="${esc(s.avatar)}" alt="">`
-    : s.avatarMon ? `<img src="${sprite(Number(s.avatarMon))}" alt="" loading="lazy">`
+    : s.avatarMon ? `<img src="${sprite(Number(s.avatarMon))}" alt="" decoding="async">`
     : icon('user');
   return `<span class="avatar ${s.avatar ? 'photo' : ''}" style="--av:${size}px">${inner}</span>`;
 }
@@ -62,7 +62,7 @@ function openPicker(onDone) {
       const b = document.createElement('button');
       b.className = id === cur ? 'on' : '';
       b.dataset.id = id;
-      b.innerHTML = `<img src="${sprite(id)}" alt="" loading="lazy"><span>${esc(fr)}</span>`;
+      b.innerHTML = `<img src="${sprite(id)}" alt="" decoding="async"><span>${esc(fr)}</span>`;
       grid.append(b);
     });
     shown = Math.min(list.length, shown + 60);
