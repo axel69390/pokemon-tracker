@@ -1,9 +1,9 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.10-202610251937';
-import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.10-202610251937';
-import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610251937';
-import { openDetail, openSell } from '../sheets.js?v=2.4.10-202610251937';
-import { hasAccess, openPaywall } from '../billing.js?v=2.4.10-202610251937';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.10-202610252309';
+import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.10-202610252309';
+import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610252309';
+import { openDetail, openSell } from '../sheets.js?v=2.4.10-202610252309';
+import { hasAccess, openPaywall } from '../billing.js?v=2.4.10-202610252309';
 
 const DAY = 864e5;
 const STATUS = {
