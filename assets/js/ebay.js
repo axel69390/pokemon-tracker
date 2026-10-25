@@ -1,6 +1,6 @@
 // Active eBay France listings of a card or a product (through the proxy, tools/ebay-proxy/worker.js) and the French
 // market estimate drawn from them. Shared by the detail sheet and the Monday / Thursday price update.
-import { EBAY_API } from './edition.js?v=2.4.10-202610251833';
+import { EBAY_API } from './edition.js?v=2.4.10-202610251937';
 
 /* ---------- Classic-collection reprints ----------
    A 30th anniversary or Celebrations reprint carries the number of the original card (Metalosse 11/113 exists in

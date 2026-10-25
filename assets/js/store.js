@@ -1,10 +1,10 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.10-202610251833';
-import { IS_STORE, asset } from './edition.js?v=2.4.10-202610251833';
-import { server, ServerError, getCard } from './api.js?v=2.4.10-202610251833';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610251833';
-import { hasAccess } from './billing.js?v=2.4.10-202610251833';
-import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610251833';
+import { settings } from './settings.js?v=2.4.10-202610251937';
+import { IS_STORE, asset } from './edition.js?v=2.4.10-202610251937';
+import { server, ServerError, getCard } from './api.js?v=2.4.10-202610251937';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610251937';
+import { hasAccess } from './billing.js?v=2.4.10-202610251937';
+import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610251937';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -434,7 +434,7 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
     const avg = whole(r2(cm.avg != null ? cm.avg : (cm.trend != null ? cm.trend : null)));
     if (avg == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
     const SRC = 'Cardmarket · prix moyen';
-    const old = hasValue(c) ? +c.value : null;
+    const old = hasValue(c) ? whole(+c.value) : null;   // compare with the old cote truncated like the new one
     if (old && c.valueSource === SRC && Math.abs(avg - old) / old > 0.4) { c.pendingValue = { v: avg, src: SRC, d: day }; pending++; return; }
     delete c.pendingValue;
     if (c.priceMode === 'fr') c.priceMode = 'auto';
