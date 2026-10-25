@@ -1,10 +1,10 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.10-202610242054';
-import { IS_STORE, asset } from './edition.js?v=2.4.10-202610242054';
-import { server, ServerError, getCard } from './api.js?v=2.4.10-202610242054';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610242054';
-import { hasAccess } from './billing.js?v=2.4.10-202610242054';
-import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610242054';
+import { settings } from './settings.js?v=2.4.10-202610251833';
+import { IS_STORE, asset } from './edition.js?v=2.4.10-202610251833';
+import { server, ServerError, getCard } from './api.js?v=2.4.10-202610251833';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610251833';
+import { hasAccess } from './billing.js?v=2.4.10-202610251833';
+import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610251833';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -415,6 +415,7 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
     }));
   }
   const r2 = (v) => (v == null || !isFinite(v) ? null : Math.round(v * 100) / 100);
+  const whole = (v) => (v == null ? null : v >= 1 ? Math.floor(v) : v);   // cote in whole euros, truncated (never overstated)
   const minus = (n) => { const d = new Date(Date.now() - n * 864e5); return d.toISOString().slice(0, 10); };
   let updated = 0, pending = 0;
   state.cards.forEach((c) => {
@@ -430,7 +431,7 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
     }
     // Value = Cardmarket average sale price ("Prix moyen"), the most reliable figure; manual cards are never touched,
     // except when no value was ever entered (nothing of the user's to overwrite).
-    const avg = r2(cm.avg != null ? cm.avg : (cm.trend != null ? cm.trend : null));
+    const avg = whole(r2(cm.avg != null ? cm.avg : (cm.trend != null ? cm.trend : null)));
     if (avg == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
     const SRC = 'Cardmarket · prix moyen';
     const old = hasValue(c) ? +c.value : null;
@@ -504,7 +505,7 @@ export async function refreshSealedPrices({ only = null, force = false } = {}) {
     let eur, src;
     if (r) {
       // Price index: French sales (GCC) + Cardmarket + TCGplayer, outliers dropped, smoothed, with a confidence level.
-      eur = r.v; src = 'Index';
+      eur = r.v >= 1 ? Math.floor(r.v) : r.v; src = 'Index';
       i.market = { src: 'Index', conf: r.c, srcs: r.s || {}, drop: r.x || [], n30: r.n || 0, d1: r.v, d1At: day, last: r.l || null,
         t30: r.t != null ? r.t : null, h: r.h || [], at: day };
       if ((r.h || []).length > 1) i.hist = r.h.map(([d, p]) => ({ d, p }));
