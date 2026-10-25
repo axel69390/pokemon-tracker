@@ -74,6 +74,13 @@ def r2(v):
     return None if v is None else round(v * 100) / 100
 
 
+def whole(v):
+    """Cote in whole euros (no cents): truncated, never rounded up; under 1 EUR keep cents."""
+    if v is None:
+        return None
+    return float(int(v)) if v >= 1 else round(v * 100) / 100
+
+
 def gcc_estimate(sales, today):
     """sales: [[date, price], ...]. Returns None or a dict with the weighted value, counts and kept sales."""
     pts = []
@@ -135,7 +142,7 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
     cm_avg = cm[5] if cm and len(cm) > 5 and cm[5] and cm[5] > 0 else None
     if cm_avg and not (len(cm) > 3 and cm[3] and cm_avg > 3 * cm[3]):
         # Cardmarket average sale price ("Prix moyen") is the reference whenever Cardmarket has the product: no blend.
-        row = {'v': r2(cm_avg), 'c': 3, 's': {'c': r2(cm_avg)}}
+        row = {'v': whole(cm_avg), 'c': 3, 's': {'c': r2(cm_avg)}}
         if est:
             row['s']['g'] = r2(est['v'])
             row['n'] = est['n30']
@@ -196,7 +203,7 @@ def build_row(p, g_sales, cm, tcg_usd, fx, prev, today):
         conf = 1
     else:
         conf = 0
-    row = {'v': r2(index), 'c': conf, 's': {}}
+    row = {'v': whole(index), 'c': conf, 's': {}}
     if est:
         row['s']['g'] = r2(est['v'])
     if cm_ok:
