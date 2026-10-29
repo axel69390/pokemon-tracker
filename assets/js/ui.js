@@ -4,7 +4,7 @@
 export const phCard = (name, num) => `<span class="ph txt"><b>${esc(name)}</b>${num ? `<small>n° ${esc(num)}</small>` : ''}</span>`;
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-import { lang } from './i18n.js?v=2.4.10-202610252309';
+import { lang } from './i18n.js?v=2.4.10-202610291017';
 
 const LOCALE = lang() === 'en' ? 'en-IE' : 'fr-FR';
 const eur = new Intl.NumberFormat(LOCALE, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });

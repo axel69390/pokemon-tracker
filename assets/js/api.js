@@ -1,6 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.10-202610252309';
-import { asset } from './edition.js?v=2.4.10-202610252309';
+import { settings } from './settings.js?v=2.4.10-202610291017';
+import { asset } from './edition.js?v=2.4.10-202610291017';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -154,6 +154,14 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
     list = await searchNames(lang, name);
     setWords = words.slice(k).map(fold).filter((w) => w && !SET_NOISE.has(w));
   }
+  if (lang === 'fr') {
+    // Promo cards missing from TCGdex in French (see loadExtras): match on the accent-free name.
+    const f = fold(q);
+    const ex = await loadExtras();
+    Object.entries(ex).forEach(([setId, arr]) => arr.forEach((e) => {
+      if (f.length >= 3 && fold(e.name).includes(f) && !list.some((c) => c.id === `${setId}-${e.localId}`)) list.push(extraCard(setId, e));
+    }));
+  }
   const sets = await setsP;
   const setIdx = new Map(sets.map((s) => [s.id, s]));
   let out = list.map((c) => {
@@ -180,8 +188,34 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
   return out.sort((a, b) => (rank(b) - rank(a)) || (b.order - a.order));
 }
 
-export const getSetCards = (lang, setId) => tcg(`/${lang}/sets/${encodeURIComponent(setId)}`, 24);
-export const getCard = (lang, id) => tcg(`/${lang}/cards/${encodeURIComponent(id)}`);
+// TCGdex is incomplete in French for some promo sets (MEP: 80 cards in French, 112 in English). The missing cards
+// are listed in assets/data/promo-extra.json (French name, no artwork) so they can still be found and collected.
+let extras = null;
+const loadExtras = () => (extras ||= fetch(asset('assets/data/promo-extra.json')).then((r) => r.json()).catch(() => { extras = null; return {}; }));
+const extraCard = (setId, e) => ({ id: `${setId}-${e.localId}`, localId: e.localId, name: e.name, image: null, extra: true });
+
+export async function getSetCards(lang, setId) {
+  const set = await tcg(`/${lang}/sets/${encodeURIComponent(setId)}`, 24);
+  const add = lang === 'fr' ? (await loadExtras())[setId] : null;
+  if (!add || !set?.cards) return set;
+  const have = new Set(set.cards.map((c) => String(c.localId)));
+  const more = add.filter((e) => !have.has(e.localId)).map((e) => extraCard(setId, e));
+  return more.length ? { ...set, cards: [...set.cards, ...more].sort((a, b) => String(a.localId).localeCompare(String(b.localId), 'en', { numeric: true })) } : set;
+}
+
+export async function getCard(lang, id) {
+  try { return await tcg(`/${lang}/cards/${encodeURIComponent(id)}`); } catch (err) {
+    if (lang === 'fr') {
+      const m = String(id).match(/^(.+)-(\d+)$/);
+      const hit = m && ((await loadExtras())[m[1]] || []).find((e) => e.localId === m[2]);
+      if (hit) {
+        const set = await tcg(`/fr/sets/${encodeURIComponent(m[1])}`, 24).catch(() => ({}));
+        return { ...extraCard(m[1], hit), set: { id: m[1], name: set.name || m[1], cardCount: set.cardCount }, category: 'Pokémon' };
+      }
+    }
+    throw err;
+  }
+}
 
 // Classic collections (30th anniversary, Celebrations) reprint old cards with their ORIGINAL printed number
 // (the 30th Metalosse reads 11/113, from EX Espèces Delta) while TCGdex numbers them in the small set (003/30).
