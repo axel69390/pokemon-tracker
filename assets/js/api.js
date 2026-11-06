@@ -72,7 +72,7 @@ async function tcg(path, ttlHours = 0) {
 // The app stores "jp"; TCGdex uses "ja".
 export const tcgLang = (l) => (l === 'jp' ? 'ja' : ['fr', 'en', 'de', 'it', 'es', 'ja'].includes(l) ? l : 'en');
 
-export const cardImage = (base, size = 'low') => (base ? `${base}/${size}.webp` : null);
+export const cardImage = (base, size = 'low') => (base ? (/\.(jpe?g|png|webp)$/i.test(base) ? base : `${base}/${size}.webp`) : null);
 export const setLogo = (base) => (base ? `${base}.webp` : null);
 
 export async function getSets(lang = 'fr') {
@@ -81,6 +81,15 @@ export async function getSets(lang = 'fr') {
   const details = await Promise.all(series.map((s) => tcg(`/${lang}/series/${encodeURIComponent(s.id)}`, 168).catch(() => null)));
   const serieOf = new Map();
   details.forEach((d, i) => (d?.sets || []).forEach((st) => serieOf.set(st.id, { id: series[i].id, name: series[i].name, order: i, logo: series[i].logo })));
+  // Sets released but not yet published by TCGdex (see LOCAL_SETS): listed from the local file until TCGdex has them.
+  const serieIdx = new Map(series.map((x, i) => [x.id, i]));
+  Object.entries(LOCAL_SETS).forEach(([id, ls]) => {
+    if (sets.some((x) => x.id === id) || lang !== 'fr') return;
+    const i = serieIdx.get(ls.serie);
+    if (i == null) return;
+    serieOf.set(id, { id: ls.serie, name: series[i].name, order: i, logo: series[i].logo });
+    sets.push({ id, name: ls.name, logo: null, cardCount: { total: ls.total, official: ls.official }, releaseDate: ls.date });
+  });
   return sets
     .map((s, idx) => {
       const se = serieOf.get(s.id) || { id: 'misc', name: 'Autres', order: -1 };
@@ -192,10 +201,24 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
 // are listed in assets/data/promo-extra.json (French name, no artwork) so they can still be found and collected.
 let extras = null;
 const loadExtras = () => (extras ||= fetch(asset('assets/data/promo-extra.json')).then((r) => r.json()).catch(() => { extras = null; return {}; }));
-const extraCard = (setId, e) => ({ id: `${setId}-${e.localId}`, localId: e.localId, name: e.name, image: null, extra: true });
+// Whole sets TCGdex does not have yet (cards in promo-extra.json with picture id `pid` and first French Cardmarket price `fr`).
+const LOCAL_SETS = { me06: { name: 'Règne Delta', serie: 'me', total: 141, official: 103, date: '2026-11-06' } };
+const RARITY_FR = { C: 'Commune', U: 'Peu commune', R: 'Rare', RR: 'Double rare', IR: 'Illustration rare', UR: 'Ultra rare', SIR: 'Illustration spéciale rare', MHR: 'Méga Hyper rare' };
+const extraCard = (setId, e) => ({
+  id: `${setId}-${e.localId}`, localId: e.localId, name: e.name, extra: true,
+  image: e.pid ? `https://tcgplayer-cdn.tcgplayer.com/product/${e.pid}_400w.jpg` : null,
+  ...(e.rar ? { rarity: RARITY_FR[e.rar] || e.rar } : {}),
+  // Same shape as TCGdex so the daily cote refresh works unchanged; it is labelled as the first French price.
+  ...(e.fr ? { pricing: { cardmarket: { avg: e.fr, srcLabel: 'Cardmarket · 1er prix français' } } } : {}),
+});
 
 export async function getSetCards(lang, setId) {
-  const set = await tcg(`/${lang}/sets/${encodeURIComponent(setId)}`, 24);
+  const local = LOCAL_SETS[setId];
+  const set = await tcg(`/${lang}/sets/${encodeURIComponent(setId)}`, 24).catch(async (err) => {
+    const cards = local && (await loadExtras())[setId];
+    if (!cards) throw err;
+    return { id: setId, name: local.name, logo: null, cardCount: { total: local.total, official: local.official }, releaseDate: local.date, cards: cards.map((e) => extraCard(setId, e)) };
+  });
   const add = lang === 'fr' ? (await loadExtras())[setId] : null;
   if (!add || !set?.cards) return set;
   const have = new Set(set.cards.map((c) => String(c.localId)));
@@ -210,7 +233,7 @@ export async function getCard(lang, id) {
       const hit = m && ((await loadExtras())[m[1]] || []).find((e) => e.localId === m[2]);
       if (hit) {
         const set = await tcg(`/fr/sets/${encodeURIComponent(m[1])}`, 24).catch(() => ({}));
-        return { ...extraCard(m[1], hit), set: { id: m[1], name: set.name || m[1], cardCount: set.cardCount }, category: 'Pokémon' };
+        return { ...extraCard(m[1], hit), set: { id: m[1], name: set.name || (LOCAL_SETS[m[1]] || {}).name || m[1], cardCount: set.cardCount || (LOCAL_SETS[m[1]] && { total: LOCAL_SETS[m[1]].total, official: LOCAL_SETS[m[1]].official }) }, category: 'Pokémon' };
       }
     }
     throw err;

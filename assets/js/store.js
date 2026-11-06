@@ -433,7 +433,7 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
     // except when no value was ever entered (nothing of the user's to overwrite).
     const avg = whole(r2(cm.avg != null ? cm.avg : (cm.trend != null ? cm.trend : null)));
     if (avg == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
-    const SRC = 'Cardmarket · prix moyen';
+    const SRC = cm.srcLabel || 'Cardmarket · prix moyen';
     const old = hasValue(c) ? whole(+c.value) : null;   // compare with the old cote truncated like the new one
     if (old && c.valueSource === SRC && Math.abs(avg - old) / old > 0.4) { c.pendingValue = { v: avg, src: SRC, d: day }; pending++; return; }
     delete c.pendingValue;
