@@ -246,6 +246,9 @@ def main():
         prev['_age'] = old_age if old_age > 0 else 99      # same-day rerun: no smoothing against itself
         t = tcg.get(pid)
         row = build_row(p, g[1] if g else None, cm.get(pid), t[0] if t else None, fx, prev, today)
+        if p.get('fr'):   # hand-added product (set not yet in TCGdex): first French Cardmarket price, until the automatic cote exists
+            fr = float(p['fr'])
+            row = {'v': whole(fr), 'c': 3, 's': {'c': r2(fr)}, 'h': [[today.isoformat(), r2(fr)]]}
         if row:
             rows[pid] = row
     if not rows:
