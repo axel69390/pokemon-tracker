@@ -19,6 +19,9 @@ const ACK_URL = '';
 
 const K_FIRST = 'cv.firstRun';
 const K_PREMIUM = 'cv.premium';
+const K_VIP = 'cv.vip';
+// Free-for-life access codes (given by hand to friends). Only SHA-256 fingerprints are stored here.
+const VIP_HASHES = ['27ea27640d0e725606f2596b0ad37cc39dadcd18fb9f2c11aef14dd0f8140d51'];
 const ls = {
   get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
@@ -34,8 +37,21 @@ export function trialDaysLeft() {
   const elapsed = Math.floor((Date.now() - start.getTime()) / 864e5);
   return Math.max(0, TRIAL_DAYS - elapsed);
 }
-let premium = ls.get(K_PREMIUM) === '1';
+let vip = ls.get(K_VIP) === '1';
+let premium = vip || ls.get(K_PREMIUM) === '1';
 export const isPremium = () => premium;
+export const isVip = () => vip;
+
+export async function unlockWithCode(code) {
+  const c = String(code || '').trim().toUpperCase();
+  if (!c || !(window.crypto && crypto.subtle)) return false;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(c));
+  const hex = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  if (!VIP_HASHES.includes(hex)) return false;
+  vip = true; premium = true;
+  ls.set(K_VIP, '1'); ls.set(K_PREMIUM, '1');
+  return true;
+}
 export const hasAccess = () => !IS_STORE || premium || trialDaysLeft() > 0;
 
 async function playService() {
@@ -46,6 +62,7 @@ export const canBuy = async () => !!(await playService()) && 'PaymentRequest' in
 
 export async function checkPurchases() {
   if (!IS_STORE) return true;
+  if (vip) return true;
   const svc = await playService();
   if (!svc) return premium;
   try {
@@ -89,6 +106,7 @@ export async function buy(sku) {
 const T = (fr, en) => (isEn() ? en : fr);
 
 export function statusLabel() {
+  if (vip) return T('Accès gratuit illimité', 'Free unlimited access');
   if (premium) return T('CardVault Premium actif', 'CardVault Premium active');
   const d = trialDaysLeft();
   return d > 0 ? T(`Essai gratuit : ${d} jour${d > 1 ? 's' : ''} restant${d > 1 ? 's' : ''}`, `Free trial: ${d} day${d > 1 ? 's' : ''} left`)
@@ -129,14 +147,21 @@ export function openPaywall({ reason = '' } = {}) {
       ${buyable ? `<button class="btn primary block pw-cta" data-buy="${plan}">${d > 0 ? T(`Essayer gratuitement · ${d} jour${d > 1 ? 's' : ''}`, `Try free · ${d} day${d > 1 ? 's' : ''}`) : T('S’abonner', 'Subscribe')}</button>
         <button class="btn ghost block" data-restore>${T('Restaurer mes achats', 'Restore purchases')}</button>`
         : `<a class="btn primary block pw-cta" href="${STORE_URL}" target="_blank" rel="noopener">${icon('ext')}${T('S’abonner dans l’application Android', 'Subscribe in the Android app')}</a>`}
+      <div class="pw-code" style="display:flex;gap:8px;margin:12px 0"><input id="pw-code" placeholder="${T('J’ai un code d’accès', 'I have an access code')}" autocomplete="off" autocapitalize="characters" style="flex:1;min-width:0"><button class="btn ghost" data-code>${T('Valider', 'Apply')}</button></div>
       <p class="note" style="text-align:center">${d > 0 ? T('Aucun paiement avant la fin de l’essai.', 'Nothing is charged before the trial ends.') : T('Vos données restent consultables et exportables dans Réglages.', 'Your data stays viewable and exportable in Settings.')}
         ${T(' Abonnement géré par Google Play, résiliable à tout moment.', ' Subscription managed by Google Play, cancel anytime.')}</p>
       <p class="pw-legal"><a href="privacy.html" target="_blank" rel="noopener">${T('Confidentialité', 'Privacy')}</a> · <a href="https://play.google.com/intl/fr_fr/about/play-terms/" target="_blank" rel="noopener">${T('Conditions', 'Terms')}</a></p>
     </div>`);
   };
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-buy],[data-restore],[data-plan]');
+    const t = e.target.closest('[data-buy],[data-restore],[data-plan],[data-code]');
     if (!t) return;
+    if ('code' in t.dataset) {
+      const ok = await unlockWithCode(sheet.body.querySelector('#pw-code')?.value);
+      toast(ok ? T('Accès gratuit illimité activé', 'Free unlimited access enabled') : T('Code incorrect', 'Wrong code'), { error: !ok });
+      if (ok) { sheet.close(); location.reload(); }
+      return;
+    }
     if (t.dataset.plan) { plan = t.dataset.plan; draw(); return; }
     try {
       if (t.dataset.buy) { await buy(t.dataset.buy); toast(T('Merci ! CardVault Premium est activé', 'Thank you! CardVault Premium is active')); sheet.close(); location.reload(); }
