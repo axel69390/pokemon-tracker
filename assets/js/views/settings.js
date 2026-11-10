@@ -5,7 +5,7 @@ import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from 
 import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.10-202610291017';
 import { langSetting, setLang } from '../i18n.js?v=2.4.10-202610291017';
 import { profileSection, bindProfile } from '../profile.js?v=2.4.10-202610291017';
-import { statusLabel, openPaywall, isPremium } from '../billing.js?v=2.4.10-202610291017';
+import { statusLabel, openPaywall, isPremium, isVip } from '../billing.js?v=2.4.10-202610291017';
 
 // VERSION is the one shown to users; BUILD changes with every release (tools/release.py) and drives the reload.
 export const VERSION = '2.4.10';
@@ -28,7 +28,7 @@ export function render(main) {
     </section>
     ${IS_STORE ? `<section class="section"><div class="section-head"><h2>CardVault Premium</h2></div>
       <button class="panel set-track" data-paywall style="width:100%"><div class="top"><b>${esc(statusLabel())}</b>${icon('chev', 'sm faint')}</div>
-      <span class="muted" style="font-size:13px">${isPremium() ? 'Gérer dans Google Play › Abonnements' : '2,99 € / mois ou 24,90 € / an'}</span></button></section>` : ''}
+      <span class="muted" style="font-size:13px">${isVip() ? 'Aucun abonnement requis' : isPremium() ? 'Gérer dans Google Play › Abonnements' : '2,99 € / mois ou 24,90 € / an'}</span></button></section>` : ''}
     ${IS_STORE ? '' : `<section class="section">
       <div class="section-head"><h2>Stockage des données</h2>
         <span style="display:flex;align-items:center;gap:8px;font-size:12px" class="muted">
