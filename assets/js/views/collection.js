@@ -103,13 +103,27 @@ function gainBadge(a) {
   return pill(g, pct(gainPct(a)));
 }
 
-// Big summary card on top of the sealed list: total value, gain, count.
+// Right-hand figures of a group header: what was paid (white), the gain (green/red) and the resulting value.
+function gvHtml(t) {
+  if (!t.cost) return `<span class="gv"><b class="num">${money(t.value)}</b></span>`;
+  return `<span class="gv gv3"><small class="gv-paid num">Acheté ${money(t.cost)}</small>
+    <small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small>
+    <b class="num">= ${money(t.value)}</b></span>`;
+}
+
+// Big summary card: amount paid, gain, and the total value they add up to.
 function heroHtml(list, unit) {
   const t = totals(list);
-  return `<div class="hero-sum"><div class="hs-label">Valeur de la collection</div>
+  if (!t.cost) {
+    return `<div class="hero-sum"><div class="hs-label">Valeur de la collection</div>
     <div class="hs-big num">${money(t.value)}</div>
-    <div class="hs-row"><span class="hs-count">${t.count} ${unit}${t.count > 1 ? 's' : ''}</span>
-      ${t.cost ? `<span class="hs-gain num ${trend(t.gain)}">${signed(t.gain)}${t.pct != null ? ' · ' + pct(t.pct) : ''}</span>` : ''}</div></div>`;
+    <div class="hs-row"><span class="hs-count">${t.count} ${unit}${t.count > 1 ? 's' : ''}</span></div></div>`;
+  }
+  return `<div class="hero-sum"><div class="hs-label">Ce que j’ai acheté</div>
+    <div class="hs-big num" style="color:var(--text);margin-bottom:6px">${money(t.cost)}</div>
+    <div class="hs-line"><span>Plus-value${t.pct != null ? ' · ' + pct(t.pct) : ''}</span><b class="num ${trend(t.gain)}">${signed(t.gain)}</b></div>
+    <div class="hs-line hs-total"><span>Valeur actuelle</span><b class="num">${money(t.value)}</b></div>
+    <div class="hs-count" style="margin-top:8px">${t.count} ${unit}${t.count > 1 ? 's' : ''}</div></div>`;
 }
 
 function itemRow(a) {
@@ -193,7 +207,7 @@ function cardsHtml(cols) {
       <button class="serie-head" data-serie="${esc(se.key)}" aria-expanded="${open}">
         <span class="serie-logo">${se.logo ? `<img src="${esc(setLogo(se.logo))}" alt="${esc(se.name)}" decoding="async">` : icon('layers')}</span>
         <span class="gt"><b>${esc(se.name)}</b><small>${se.groups.length} extension${se.groups.length > 1 ? 's' : ''} · ${t.count} carte${t.count > 1 ? 's' : ''}</small></span>
-        <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span>
+        ${gvHtml(t)}
         <span class="chev">${icon('chev', 'sm')}</span>
       </button>
       ${open ? `<div class="serie-body">${se.groups.map(groupHtml).join('')}</div>` : ''}
@@ -207,7 +221,7 @@ function cardsHtml(cols) {
     return `<section class="group">
       <div class="group-head"><span class="gi" ${g.meta && g.meta.logo ? 'style="background:none"' : ''}>${logo}</span>
         <span class="gt"><b>${esc(g.name)}</b><small>${t.count} carte${t.count > 1 ? 's' : ''}</small></span>
-        <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span></div>
+        ${gvHtml(t)}</div>
       ${grid(g.cards)}
     </section>`;
   }
@@ -249,7 +263,7 @@ function itemsHtml(cols) {
     return `<section class="group">
       <div class="group-head"><span class="gi">${icon(CATEGORY_ICON[cat] || 'box')}</span>
         <span class="gt"><b>${esc(cat)}</b><small>${t.count} item${t.count > 1 ? 's' : ''}</small></span>
-        <span class="gv"><b class="num">${money(t.value)}</b><small class="num ${trend(t.gain)}" style="font-weight:700">${signed(t.gain)}</small></span></div>
+        ${gvHtml(t)}</div>
       ${itemView === 'list' ? `<div class="ilist">${arr.map(itemRow).join('')}</div>` : `<div class="grid ${cols >= 4 ? 'dense' : ''}" style="--cols:${cols}">${arr.map(itemTile).join('')}</div>`}
     </section>`;
   }).join('');
