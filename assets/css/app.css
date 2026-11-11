@@ -647,3 +647,15 @@ a.row { color: inherit; }
 
 /* iOS Safari: images inside a scrolling sheet stayed unpainted until a pinch; force their own layer */
 .sheet .art img, .sheet .tile img { transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+
+/* Collection totals: paid (white) + gain (green/red) = value */
+.hs-line { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 15px; padding: 5px 0; }
+.hs-line span { color: var(--text-2); font-weight: 600; }
+.hs-line b { font-weight: 800; font-size: 17px; }
+.hs-line b.up { color: var(--up); } .hs-line b.down { color: var(--down); }
+.hs-total { border-top: 1px solid var(--line, rgba(255,255,255,.14)); margin-top: 4px; padding-top: 9px; }
+.hs-total span { color: var(--text); }
+.hs-total b { font-size: 20px; }
+.group-head .gv3 small { display: block; font-size: 12px; line-height: 1.35; }
+.group-head .gv3 .gv-paid { color: var(--text); font-weight: 600; }
+.group-head .gv3 b { margin-top: 1px; }
