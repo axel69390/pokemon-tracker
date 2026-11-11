@@ -1,4 +1,4 @@
-import { store, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.10-202610291017';
+import { store, costOf, worthOf, gainOf, qtyOf, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.10-202610291017';
 import { settings } from '../settings.js?v=2.4.10-202610291017';
 import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.10-202610291017';
 import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.10-202610291017';
@@ -9,6 +9,8 @@ import { openDetail, openSales } from '../sheets.js?v=2.4.10-202610291017';
 let period = '1m';   // the home chart always opens on the last month (Max flattens the recent evolution)
 let perfMode = 'eur';
 let refreshing = false;
+let collQ = '';
+let collOpen = '';
 
 export function render(main) {
   const p = portfolio();
@@ -45,6 +47,12 @@ export function render(main) {
           ${statTile('cards', 'Cartes', icon('cards'), p.cards, 'carte')}
         </div>
       </section>
+
+      ${empty ? '' : `<section class="section">
+        <div class="section-head"><h2>Par collection</h2></div>
+        <input id="coll-q" type="search" value="${esc(collQ)}" placeholder="Chercher une collection (30 ans, Nuit noire…)" autocomplete="off" style="width:100%;margin-bottom:10px">
+        <div id="coll-list">${collectionsHtml()}</div>
+      </section>`}
     </div>
 
     <div>
@@ -69,10 +77,13 @@ export function render(main) {
   </div>`;
 
   drawChart(main);
+  const cq = main.querySelector('#coll-q');
+  if (cq) cq.oninput = () => { collQ = cq.value; main.querySelector('#coll-list').innerHTML = collectionsHtml(); };
 
   main.onclick = (e) => {
-    const t = e.target.closest('[data-period],[data-perf],[data-open],[data-sales],[data-go],[data-refresh],[data-paywall]');
+    const t = e.target.closest('[data-period],[data-perf],[data-open],[data-sales],[data-go],[data-refresh],[data-paywall],[data-coll]');
     if (!t) return;
+    if (t.dataset.coll != null) { collOpen = collOpen === t.dataset.coll ? '' : t.dataset.coll; main.querySelector('#coll-list').innerHTML = collectionsHtml(); return; }
     if ('paywall' in t.dataset) { openPaywall(); return; }
     if (t.dataset.period) { period = t.dataset.period; main.querySelectorAll('[data-period]').forEach((b) => b.classList.toggle('on', b === t)); drawChart(main); }
     if (t.dataset.perf) { perfMode = t.dataset.perf; main.querySelectorAll('[data-perf]').forEach((b) => b.classList.toggle('on', b === t)); main.querySelector('#perf').innerHTML = perfList(); }
@@ -159,4 +170,35 @@ function priceRunHtml() {
         ${imageOf(c, { thumb: true }) ? `<img class="thumb" src="${esc(imageOf(c, { thumb: true }))}" alt="" decoding="async">` : '<span class="thumb"></span>'}
         <span class="main"><b>${esc(c.name)}</b><small>${money(c.value)} → ${money(c.pendingValue.v)} · ${esc(c.pendingValue.src)}</small></span>
         <span class="end">${pill(c.pendingValue.v - c.value, pct(((c.pendingValue.v - c.value) / c.value) * 100))}</span></button>`).join('')}</div></div>` : ''}`;
+}
+
+
+// Spending / value / gain grouped by collection (the "set" of each card or sealed item).
+function collectionsHtml() {
+  const fold = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const groups = new Map();
+  const add = (kind, a) => {
+    const name = (a.set || '').trim() || 'Sans collection';
+    const k = fold(name);
+    if (!groups.has(k)) groups.set(k, { name, cost: 0, value: 0, count: 0, rows: [] });
+    const g = groups.get(k);
+    g.cost += costOf(a); g.value += worthOf(a); g.count += qtyOf(a); g.rows.push({ kind, a });
+  };
+  store.get().cards.forEach((a) => add('card', a));
+  store.get().items.forEach((a) => add('item', a));
+  const q = fold(collQ);
+  const list = [...groups.values()].filter((g) => !q || fold(g.name).includes(q)).sort((a, b) => b.cost - a.cost);
+  if (!list.length) return '<div class="empty" style="padding:18px"><p style="margin:0">Aucune collection trouvée.</p></div>';
+  const total = list.reduce((t, g) => ({ cost: t.cost + g.cost, value: t.value + g.value }), { cost: 0, value: 0 });
+  const head = q ? `<div class="muted" style="margin:0 0 8px">Total des collections affichées : dépensé <b class="num">${money(total.cost)}</b> · valeur <b class="num">${money(total.value)}</b></div>` : '';
+  return head + `<div class="list">${list.map((g) => {
+    const open = collOpen === g.name;
+    const gain = g.value - g.cost;
+    return `<button class="row" data-coll="${esc(g.name)}">
+      <span class="main"><b>${esc(g.name)}</b><small>${g.count} article${g.count > 1 ? 's' : ''} · dépensé ${money(g.cost)}</small></span>
+      <span class="end"><b class="num">${money(g.value)}</b><span class="num ${trend(gain)}" style="font-size:12px">${signed(gain)}</span></span></button>
+      ${open ? g.rows.sort((x, y) => costOf(y.a) - costOf(x.a)).map((r) => `<button class="row" data-open="${r.kind}:${r.a.id}" style="padding-left:28px">
+        <span class="main"><b>${esc(r.a.name)}</b><small>${qtyOf(r.a)} × · acheté ${money(costOf(r.a))}</small></span>
+        <span class="end"><b class="num">${money(worthOf(r.a))}</b></span></button>`).join('') : ''}`;
+  }).join('')}</div>`;
 }
