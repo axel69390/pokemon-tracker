@@ -86,7 +86,7 @@ def main():
 
     rows, unmatched, ambiguous = {}, [], 0
     for p in products:
-        name = en_name.get(p['id'])
+        name = en_name.get(p['id']) or p.get('cm')   # 'cm' = exact Cardmarket English name for FR-only products
         if not name:
             continue
         cands = by_name.get(norm(name), [])
