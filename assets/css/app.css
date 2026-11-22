@@ -659,3 +659,10 @@ a.row { color: inherit; }
 .group-head .gv3 small { display: block; font-size: 12px; line-height: 1.35; }
 .group-head .gv3 .gv-paid { color: var(--text); font-weight: 600; }
 .group-head .gv3 b { margin-top: 1px; }
+
+/* Catalogue quick price under each search result */
+.tile .meta .px { display: block; margin-top: 3px; font-size: 12px; color: var(--text-2); min-height: 16px; }
+.tile .meta .px b { color: var(--gold); font-size: 14px; }
+.tile .meta .px i { font-style: normal; font-size: 10px; color: var(--text-2); }
+.tile .meta .px small { font-size: 10px; color: var(--text-2); }
+.tile .meta .px.none { opacity: .6; }
