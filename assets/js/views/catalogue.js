@@ -1,5 +1,5 @@
 import { settings } from '../settings.js?v=2.4.10-202610291017';
-import { getSets, getSetCards, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.10-202610291017';
+import { getSets, getSetCards, getCard, priceVariants, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.10-202610291017';
 import { esc, phCard, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.10-202610291017';
 import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.10-202610291017';
 import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.10-202610291017';
@@ -65,7 +65,7 @@ export function render(main, { tab, query }) {
 
 const cardGrid = (cards) => `<div class="grid" style="--cols:3">${cards.map((c) => `<button class="tile" data-card="${esc(c.id)}">
   <div class="art">${c.image ? `<img src="${esc(cardImage(c.image))}" alt="" decoding="async">` : phCard(c.name, c.printed || c.localId)}</div>
-  <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName ? c.setName + ' · ' : '')}${esc(c.printed || c.localId)}</small></div></button>`).join('')}</div>`;
+  <div class="meta"><b>${esc(c.name)}</b><small>${esc(c.setName ? c.setName + ' · ' : '')}${esc(c.printed || c.localId)}</small><span class="px" data-px="${esc(c.id)}"></span></div></button>`).join('')}</div>`;
 
 const loading = '<div class="loading"><div class="spinner"></div></div>';
 
@@ -78,7 +78,37 @@ async function showSearch(out, lang) {
     out.innerHTML = res.length
       ? `<div class="summary-bar"><span><b>${res.length}</b> carte${res.length > 1 ? 's' : ''}</span></div>${cardGrid(res.slice(0, 120))}`
       : '<div class="empty"><h3>Aucune carte trouvée</h3><p>Vérifiez l’orthographe ou changez de langue.</p></div>';
+    if (res.length) fillPrices(out, res.slice(0, 30), lang, my);
   } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
+}
+
+// Quick price check: Cardmarket price under each result (average price, whole euros truncated), loaded a few cards at a time.
+// Tap a card for the full sheet (variants, eBay listings, links).
+async function fillPrices(out, cards, lang, my) {
+  const eur = (v) => (v == null || !isFinite(v) ? null : Math.floor(v));
+  const queue = [...cards];
+  const work = async () => {
+    while (queue.length) {
+      const c = queue.shift();
+      if (my !== seq) return;
+      const slot = [...out.querySelectorAll('[data-px]')].find((el) => el.dataset.px === c.id);
+      if (!slot) continue;
+      slot.textContent = '…';
+      try {
+        const card = await getCard(lang, c.id);
+        if (my !== seq) return;
+        const vs = priceVariants(card).filter((v) => v.cm && (v.cm.avg != null || v.cm.trend != null));
+        if (!vs.length) { slot.textContent = 'Pas de cote'; slot.className = 'px none'; continue; }
+        const avg = (v) => v.cm.avg != null ? v.cm.avg : v.cm.trend;
+        const best = vs.reduce((a, b) => (avg(b) < avg(a) ? b : a));
+        const low = eur(best.cm.low);
+        slot.className = 'px';
+        slot.innerHTML = `<b class="num">${eur(avg(best))} €</b>${vs.length > 1 ? ' <i>dès</i>' : ''}${low != null ? ` <small>mini ${low} €</small>` : ''}`;
+        slot.title = 'Cardmarket · prix moyen' + (vs.length > 1 ? ' (plusieurs versions, la moins chère affichée)' : '');
+      } catch { if (my === seq) { slot.textContent = ''; } }
+    }
+  };
+  await Promise.all([work(), work(), work(), work()]);
 }
 
 async function showSets(out, lang) {

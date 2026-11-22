@@ -1,9 +1,12 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf } from '../store.js?v=2.4.10-202610291017';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf, watchlist, inWatchlist, addToWatchlist, removeFromWatchlist, setWatchlistTarget, refreshWatchlist } from '../store.js?v=2.4.10-202610291017';
 import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.10-202610291017';
 import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610291017';
 import { openDetail, openSell } from '../sheets.js?v=2.4.10-202610291017';
 import { hasAccess, openPaywall } from '../billing.js?v=2.4.10-202610291017';
+import { searchCards, cardImage } from '../api.js?v=2.4.10-202610291017';
+import { searchSealed, sealedImage } from '../sealed.js?v=2.4.10-202610291017';
+import { settings } from '../settings.js?v=2.4.10-202610291017';
 
 const DAY = 864e5;
 const STATUS = {
@@ -114,7 +117,7 @@ const allAssets = () => [...store.get().cards.map((a) => ['card', a]), ...store.
 export function riseAlerts() {
   const out = [];
   allAssets().forEach(([kind, a]) => {
-    if (!tracked(kind, a)) return;
+    if (!(a.watch && a.watch.on) || !tracked(kind, a)) return;   // only what I chose to follow
     const gcc = hasGccSales(a);
     const pts = (gcc ? dailyPts(a) : pointsOf(a).filter((p) => !p.est && p.p > 0));
     if (pts.length < 2) return;
@@ -151,7 +154,6 @@ export function render(main) {
   const gain = all.reduce((s, x) => s + x.gain, 0);
   const counts = { sell: 0, buy: 0, hold: 0 };
   all.forEach((x) => { counts[x.status]++; });
-  const ideas = suggestions(all);
   const rises = riseAlerts();
   const fresh = new Set(unseenRises().map((x) => x.key));
 
@@ -190,37 +192,27 @@ export function render(main) {
           <button class="btn primary" data-add>${icon('plus')}Choisir dans ma collection</button></div>`}
     </section>
 
-    ${ideas.length ? `<section class="section">
-      <div class="section-head"><h2>Tendances dans ma collection</h2><span class="faint" style="font-size:12px">cartes possédées, hors veille</span></div>
-      <div class="list">${ideas.map((x) => rowHtml(x, true)).join('')}</div>
-    </section>` : ''}
+    ${watchlistHtml()}
 
-    <p class="note" style="text-align:center;margin-top:18px">Une pastille apparaît sur l’onglet Invest dès qu’une carte ou un item de votre collection (achetée, hors communes et peu communes, d’une valeur d’au moins 1 €) prend au moins 10 % en 7 jours.<br>Signaux calculés chaque nuit à partir du prix du marché (Cardmarket, GCC, TCGplayer) et de votre prix d’achat. Ce ne sont pas des conseils financiers.</p>`;
+    <p class="note" style="text-align:center;margin-top:18px">Une pastille apparaît sur l’onglet Invest dès qu’une carte ou un item que vous avez mis en veille prend au moins 10 % en 7 jours.<br>Signaux calculés chaque nuit à partir du prix du marché (Cardmarket, GCC, TCGplayer) et de votre prix d’achat. Ce ne sont pas des conseils financiers.</p>`;
 
+  refreshWatchlist().catch(() => {});   // one price point per day for the cards I follow without owning them
   // Opening the tab acknowledges the current rises (the badge clears).
   markRisesSeen(rises);
   window.dispatchEvent(new Event('pdx:badge'));
 
   main.onclick = (e) => {
-    const t = e.target.closest('[data-add],[data-inv],[data-quickwatch],[data-tf]');
+    const t = e.target.closest('[data-add],[data-inv],[data-tf],[data-wadd],[data-wopen]');
     if (!t) return;
     if (t.dataset.tf) { trendFilter = t.dataset.tf; render(main); return; }
     if ('add' in t.dataset) openPicker();
-    if (t.dataset.quickwatch) { const [k, id] = t.dataset.quickwatch.split(':'); setWatch(k, id, { on: true }); toast('Mis en veille'); }
+    if ('wadd' in t.dataset) openWatchAdd();
+    else if (t.dataset.wopen) openWatchDetail(t.dataset.wopen);
     else if (t.dataset.inv) { const [k, id] = t.dataset.inv.split(':'); openInvest(k, id); }
   };
 }
 
-// Owned assets not yet watched whose signal looks good.
-function suggestions(list) {
-  const watchedIds = new Set(list.map((x) => x.a.id));
-  const all = [...store.get().cards.map((a) => ['card', a]), ...store.get().items.map((a) => ['item', a])];
-  return all.filter(([k, a]) => !watchedIds.has(a.id) && (a.hist || a.market) && tracked(k, a))
-    .map(([k, a]) => analyse(k, a)).filter((x) => x.score >= 2 && x.price >= 2)
-    .sort((x, y) => y.score - x.score || y.gain - x.gain).slice(0, 5);
-}
-
-function rowHtml(x, suggestion = false) {
+function rowHtml(x) {
   const img = imageOf(x.a, { thumb: true });
   const st = STATUS[x.status];
   const tr = TREND[x.dir];
@@ -229,9 +221,7 @@ function rowHtml(x, suggestion = false) {
     ${img ? `<img class="thumb ${x.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" decoding="async">` : `<span class="thumb ${x.kind === 'item' ? 'sq' : ''}"></span>`}
     <span class="main"><b>${esc(x.a.name)}</b><small>${esc(x.reasons[0] ? x.reasons[0][1] : x.a.set || x.a.category || '')}</small></span>
     <span class="spark-wrap">${sparkline(x.pts.map((p) => p.p), { color })}</span>
-    <span class="end"><b class="num">${money(x.price)}</b>${suggestion
-      ? `<span class="pill gold" data-quickwatch="${x.kind}:${x.a.id}">+ Veille</span>`
-      : `<span class="pill ${st.cls}"><i class="st-ic">${st.icon}</i>${st.label}</span>`}<span class="trend-tag ${tr.cls}"><i class="st-ic">${tr.arrow}</i>${tr.label}</span></span>
+    <span class="end"><b class="num">${money(x.price)}</b><span class="pill ${st.cls}"><i class="st-ic">${st.icon}</i>${st.label}</span><span class="trend-tag ${tr.cls}"><i class="st-ic">${tr.arrow}</i>${tr.label}</span></span>
   </button>`;
 }
 
@@ -350,6 +340,153 @@ export function openPicker() {
     const [k, id] = b.dataset.w.split(':');
     const a = (k === 'card' ? store.get().cards : store.get().items).find((x) => x.id === id);
     setWatch(k, id, { on: !(a.watch && a.watch.on) });
+  });
+  draw();
+}
+
+
+/* ---------- Watchlist: cards / products I do not own ---------- */
+const sinceOf = (w) => (w.start != null && w.price != null && w.start > 0 ? (w.price - w.start) / w.start : null);
+function wTrend(w) {
+  const pts = w.hist || [];
+  if (pts.length < 2 || w.price == null) return 'flat';
+  const lim = new Date(Date.now() - 30 * DAY).toISOString().slice(0, 10);
+  const before = pts.filter((x) => x.d <= lim);
+  const ref = before.length ? before[before.length - 1].p : pts[0].p;
+  return ref > 0 ? trendOf(null, (w.price - ref) / ref) : 'flat';
+}
+function watchlistHtml() {
+  const list = watchlist();
+  const rows = list.map((w) => {
+    const ch = sinceOf(w);
+    const tr = TREND[wTrend(w)];
+    const hit = w.target && w.price != null && w.price <= w.target;
+    const img = w.image ? (w.kind === 'card' ? cardImage(w.image) : w.image) : null;
+    return `<button class="row inv-row" data-wopen="${esc(w.id)}">
+      ${img ? `<img class="thumb ${w.kind === 'item' ? 'sq' : ''}" src="${esc(img)}" alt="" decoding="async" ${w.kind === 'item' ? 'style="background:#fff;object-fit:contain"' : ''}>` : `<span class="thumb ${w.kind === 'item' ? 'sq' : ''}"></span>`}
+      <span class="main"><b>${esc(w.name)}</b><small>${esc([w.set, w.num].filter(Boolean).join(' · '))}${ch != null ? ` · ${pct(ch * 100)} depuis le ${dateFr(w.startAt || w.added)}` : ''}</small></span>
+      <span class="spark-wrap">${sparkline((w.hist || []).map((p) => p.p), { color: ch == null ? '#e9b949' : ch >= 0 ? '#34d399' : '#f87171' })}</span>
+      <span class="end"><b class="num">${w.price != null ? money(w.price) : '…'}</b>${hit ? '<span class="pill up">Objectif atteint</span>' : ''}<span class="trend-tag ${tr.cls}"><i class="st-ic">${tr.arrow}</i>${tr.label}</span></span>
+    </button>`;
+  }).join('');
+  return `<section class="section">
+    <div class="section-head"><h2>Cartes et produits que je surveille</h2><button class="btn sm primary" data-wadd>${icon('plus', 'sm')}Ajouter</button></div>
+    ${list.length ? `<div class="list">${rows}</div>`
+      : `<div class="empty"><div class="ico">${icon('search', 'lg')}</div><h3>Rien à surveiller</h3>
+        <p>Ajoutez une carte ou un produit scellé que vous ne possédez pas : l’appli garde son prix chaque jour pour voir comment il évolue avant d’acheter. Il n’entre pas dans votre portefeuille.</p>
+        <button class="btn primary" data-wadd>${icon('plus')}Ajouter une carte</button></div>`}
+    ${list.length ? '<p class="note">Ces cartes ne comptent pas dans votre portefeuille. Suivi enregistré sur cet appareil, un prix par jour (Cardmarket, prix moyen).</p>' : ''}
+  </section>`;
+}
+
+function openWatchAdd() {
+  const sheet = openSheet({ title: 'Surveiller une carte', full: true });
+  let q = '', mode = 'cards', seq = 0, t;
+  const lang = settings.get().catalogLang === 'en' || settings.get().catalogLang === 'ja' ? settings.get().catalogLang : 'fr';
+  sheet.render(`<div class="seg" style="margin:4px 0 10px"><button data-wm="cards" class="on">Cartes</button><button data-wm="sealed">Produits scellés</button></div>
+    <label class="search" style="margin-bottom:12px">${icon('search', 'sm')}<input id="wq" type="search" placeholder="Dracaufeu 4/102, ETB Règne Delta…" autocomplete="off"></label><div id="wr"></div>`);
+  const out = sheet.body.querySelector('#wr');
+  const input = sheet.body.querySelector('#wq');
+  const hint = '<div class="empty"><p>Tapez le nom de la carte ou du produit à surveiller.</p></div>';
+  out.innerHTML = hint;
+  const cardKey = (c) => 'card:' + lang + ':' + c.id;
+  const sealKey = (p) => 'item:' + p.id;
+  async function run() {
+    const my = ++seq;
+    if (q.trim().length < 2) { out.innerHTML = hint; return; }
+    out.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    try {
+      if (mode === 'cards') {
+        const res = (await searchCards(q, { lang })).slice(0, 40);
+        if (my !== seq) return;
+        out.innerHTML = res.length ? `<div class="list">${res.map((c) => `<button class="row" data-wc="${esc(c.id)}">
+          ${c.image ? `<img class="thumb" src="${esc(cardImage(c.image))}" alt="" decoding="async">` : '<span class="thumb"></span>'}
+          <span class="main"><b>${esc(c.name)}</b><small>${esc(c.setName)} · ${esc(c.printed || c.localId)}</small></span>
+          <span class="end"><span class="pill ${inWatchlist(cardKey(c)) ? 'up' : 'flat'}">${inWatchlist(cardKey(c)) ? '✓ Surveillée' : '+ Surveiller'}</span></span></button>`).join('')}</div>` : '<div class="empty"><p>Aucune carte trouvée.</p></div>';
+        out._cards = res;
+      } else {
+        const res = (await searchSealed(q)).slice(0, 40);
+        if (my !== seq) return;
+        out.innerHTML = res.length ? `<div class="list">${res.map((p) => `<button class="row" data-ws="${esc(p.id)}">
+          <img class="thumb sq" src="${esc(sealedImage(p.id, 200))}" alt="" style="background:#fff;object-fit:contain" decoding="async">
+          <span class="main"><b>${esc(p.n)}</b><small>${esc(p.s || p.c)}</small></span>
+          <span class="end"><span class="pill ${inWatchlist(sealKey(p)) ? 'up' : 'flat'}">${inWatchlist(sealKey(p)) ? '✓ Surveillé' : '+ Surveiller'}</span></span></button>`).join('')}</div>` : '<div class="empty"><p>Aucun produit trouvé.</p></div>';
+        out._sealed = res;
+      }
+    } catch (e) { if (my === seq) out.innerHTML = `<div class="empty"><p>${esc(e.message)}</p></div>`; }
+  }
+  input.addEventListener('input', () => { q = input.value; clearTimeout(t); t = setTimeout(run, 350); });
+  sheet.body.addEventListener('click', (e) => {
+    const m = e.target.closest('[data-wm]');
+    if (m) { mode = m.dataset.wm; sheet.body.querySelectorAll('[data-wm]').forEach((b) => b.classList.toggle('on', b === m)); run(); return; }
+    const c = e.target.closest('[data-wc]');
+    if (c) {
+      const card = (out._cards || []).find((x) => x.id === c.dataset.wc);
+      if (!card) return;
+      if (inWatchlist(cardKey(card))) { toast('Déjà surveillée'); return; }
+      addToWatchlist({ key: cardKey(card), kind: 'card', name: card.name, set: card.setName, num: card.printed || card.localId, image: card.image || null, tcgdexId: card.id, tcgLang: lang });
+      toast('Ajoutée à la surveillance'); run(); return;
+    }
+    const s = e.target.closest('[data-ws]');
+    if (s) {
+      const p = (out._sealed || []).find((x) => String(x.id) === s.dataset.ws);
+      if (!p) return;
+      if (inWatchlist(sealKey(p))) { toast('Déjà surveillé'); return; }
+      addToWatchlist({ key: sealKey(p), kind: 'item', name: p.n, set: p.s || '', num: '', image: sealedImage(p.id, 400), tcgplayerId: p.id, category: p.c });
+      toast('Ajouté à la surveillance'); run();
+    }
+  });
+  input.focus();
+}
+
+function openWatchDetail(id) {
+  const sheet = openSheet({ title: 'Surveillance', full: true, onClose: () => off() });
+  let per = 'max';
+  const off = store.on(() => draw());
+  function draw() {
+    const w = watchlist().find((x) => x.id === id);
+    if (!w) { sheet.close(); return; }
+    const ch = sinceOf(w);
+    const pts = (w.hist || []).map((p) => ({ d: p.d, price: p.p, target: w.target || null }));
+    const lo = pts.length ? Math.min(...pts.map((p) => p.price)) : null;
+    const hi = pts.length ? Math.max(...pts.map((p) => p.price)) : null;
+    sheet.setTitle(w.name);
+    sheet.render(`
+      <div class="inv-head"><div><div class="faint" style="font-size:12px;font-weight:800">PRIX ACTUEL · CARDMARKET (PRIX MOYEN)</div>
+        <div class="v num">${w.price != null ? money(w.price) : '—'}</div>
+        <div class="kpis">${ch != null ? pill(ch, pct(ch * 100) + ' depuis le ' + dateFr(w.startAt || w.added)) : ''}</div></div></div>
+      <div class="panel" style="padding:10px 12px;margin-top:14px">
+        <div class="chart" id="w-chart" style="height:220px"></div>
+        <div class="chart-legend"><span>Prix</span>${w.target ? '<span class="tgt">Prix visé</span>' : ''}</div>
+        <div class="periods">${PERIODS.map((p) => `<button data-period="${p.id}" class="${p.id === per ? 'on' : ''}">${p.label}</button>`).join('')}</div>
+      </div>
+      ${pts.length < 2 ? '<p class="note">La courbe se construit jour après jour : un point par jour à partir d’aujourd’hui.</p>' : ''}
+      <div class="section" style="margin-top:16px"><div class="kv">
+        <div><small>Suivi depuis le</small><b class="num">${dateFr(w.added)}</b></div>
+        <div><small>Prix au départ</small><b class="num">${w.start != null ? money(w.start) : '—'}</b></div>
+        <div><small>Plus bas / haut suivi</small><b class="num">${lo != null ? `${money(lo)} / ${money(hi)}` : '—'}</b></div>
+        <div><small>Points de prix</small><b class="num">${pts.length}</b></div>
+      </div></div>
+      <div class="section"><div class="section-head"><h2>Prix d’achat visé</h2></div>
+        <form class="quick-value" data-wt>
+          <label class="field"><div class="suffix" data-suffix="€"><input name="target" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Je l’achète à partir de…" value="${w.target != null ? w.target : ''}"></div></label>
+          <button class="btn primary" type="submit">${icon('check')}Enregistrer</button></form>
+        <p class="note">Quand le prix passe sous ce montant, la carte affiche « Objectif atteint » dans la liste.</p></div>
+      <div class="sticky-actions"><div class="btn-row"><button class="btn danger" data-wdel>Ne plus surveiller</button></div></div>`);
+    renderChart(sheet.body.querySelector('#w-chart'), filterPeriod(pts, per), [
+      ...(w.target ? [{ key: 'target', label: 'Prix visé', color: '#34d399', dashed: true, width: 1.4 }] : []),
+      { key: 'price', label: 'Prix', color: '#e9b949', area: true, dot: true },
+    ], { height: 220 });
+  }
+  sheet.body.addEventListener('click', (e) => {
+    const p = e.target.closest('[data-period]');
+    if (p) { per = p.dataset.period; draw(); return; }
+    if (e.target.closest('[data-wdel]')) { removeFromWatchlist(id); toast('Retirée de la surveillance'); sheet.close(); }
+  });
+  sheet.body.addEventListener('submit', (e) => {
+    e.preventDefault();
+    setWatchlistTarget(id, e.target.target.value);
+    toast('Prix visé enregistré');
   });
   draw();
 }
