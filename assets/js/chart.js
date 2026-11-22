@@ -73,7 +73,7 @@ export function renderChart(el, points, series, { height = 190 } = {}) {
       ? `<path d="${d}L${last[0].toFixed(1)},${H}L${pts[0][0].toFixed(1)},${H}Z" fill="url(#g-${s.key})" stroke="none"/>`
       : '';
     return `${area}<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2.2}" ${s.dashed ? 'stroke-dasharray="4 5"' : ''} stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-      ${s.dot ? `<circle cx="${last[0]}" cy="${last[1]}" r="4" fill="${s.color}" stroke="#0b0c10" stroke-width="2"/>` : ''}`;
+      ${s.dot ? `<circle cx="${last[0]}" cy="${last[1]}" r="4" fill="${s.color}" stroke="#050505" stroke-width="2"/>` : ''}`;
   }).join('');
 
   const defs = series.filter((s) => s.area).map((s) => `<linearGradient id="g-${s.key}" x1="0" x2="0" y1="0" y2="1">
