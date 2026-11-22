@@ -52,7 +52,29 @@ export const server = {
 const TCGDEX = 'https://api.tcgdex.net/v2';
 const memo = new Map();
 
+// TCGdex has no picture for the 30th-anniversary Classic Collection reprints: each one shows the picture of the
+// original card it reprints (same artwork). Keys are the card numbers in the set (001..030).
+const CLASSIC_IMAGES = {
+  '30th-c': ['fr/base/base1/4', 'fr/ex/ex1/5', 'fr/ex/ex11/11', 'fr/bw/bw10/11', 'en/gym/gym1/18', 'en/ex/ex7/19', 'fr/neo/neo1/25', 'fr/sm/sm9/33', 'fr/xy/xy9/41', 'en/dp/dp6/43',
+    'fr/pl/pl1/47', 'fr/swsh/swsh4/50', 'fr/sm/sm4/57', 'fr/base/base1/58', 'en/gym/gym2/69', 'fr/bw/bw6/85', 'fr/sm/sm1/89', 'fr/hgss/hgss4/94', 'fr/hgss/hgss4/99', 'fr/hgss/hgss4/100',
+    'fr/bw/bw3/101', 'en/dp/dp4/106', 'fr/xy/xy5/106', 'fr/neo/neo4/106', 'fr/ex/ex10/108', 'fr/swsh/swsh8/114', 'fr/swsh/swsh9/123', 'fr/swsh/swsh1/138', 'fr/ecard/ecard2/149', 'fr/sv/sv02/203'],
+};
+export const classicImage = (id) => { const m = typeof id === 'string' && id.match(/^(30th-c)-0*(\d+)$/); const u = m && CLASSIC_IMAGES[m[1]][+m[2] - 1]; return u ? 'https://assets.tcgdex.net/' + u + '/high.webp' : null; };
+function fillClassicImages(v) {
+  if (Array.isArray(v)) { v.forEach(fillClassicImages); return v; }
+  if (v && typeof v === 'object') {
+    const m = typeof v.id === 'string' && v.id.match(/^(30th-c)-0*(\d+)$/);
+    if (m && !v.image) { const u = CLASSIC_IMAGES[m[1]][+m[2] - 1]; if (u) v.image = 'https://assets.tcgdex.net/' + u; }
+    if (Array.isArray(v.cards)) fillClassicImages(v.cards);
+  }
+  return v;
+}
+
 async function tcg(path, ttlHours = 0) {
+  return fillClassicImages(await tcgRaw(path, ttlHours));
+}
+
+async function tcgRaw(path, ttlHours = 0) {
   const cacheKey = 'pdx.tcg.' + path;
   if (memo.has(path)) return memo.get(path);
   if (ttlHours) {

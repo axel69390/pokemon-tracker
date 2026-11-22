@@ -1,7 +1,7 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
 import { settings } from './settings.js?v=2.4.10-202610291017';
 import { IS_STORE, asset } from './edition.js?v=2.4.10-202610291017';
-import { server, ServerError, getCard, priceVariants } from './api.js?v=2.4.10-202610291017';
+import { server, ServerError, getCard, priceVariants, classicImage } from './api.js?v=2.4.10-202610291017';
 import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610291017';
 import { hasAccess } from './billing.js?v=2.4.10-202610291017';
 import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610291017';
@@ -197,8 +197,8 @@ const handMade = (u) => {
   return m ? asset(`assets/img/sealed/${m[1]}.jpg`) : u;
 };
 const thumbUrl = (u) => (u && u.includes('assets.tcgdex.net') ? u.replace(/\/high\.webp$/, '/low.webp') : u);
-export const imageOf = (a, { thumb = false } = {}) => photoUrl(a.photo) || handMade(thumb ? thumbUrl(a.image) : a.image) || null;
-export const officialImage = (a, { thumb = false } = {}) => handMade(thumb ? thumbUrl(a.image) : a.image) || null;
+export const imageOf = (a, { thumb = false } = {}) => photoUrl(a.photo) || handMade(thumb ? thumbUrl(a.image || classicImage(a.tcgdexId)) : a.image || classicImage(a.tcgdexId)) || null;
+export const officialImage = (a, { thumb = false } = {}) => handMade(thumb ? thumbUrl(a.image || classicImage(a.tcgdexId)) : a.image || classicImage(a.tcgdexId)) || null;
 
 /* ---------- Mutations ---------- */
 const listOf = (kind) => (kind === 'card' ? state.cards : state.items);
