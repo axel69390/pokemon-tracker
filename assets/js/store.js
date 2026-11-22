@@ -1,7 +1,7 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
 import { settings } from './settings.js?v=2.4.10-202610291017';
 import { IS_STORE, asset } from './edition.js?v=2.4.10-202610291017';
-import { server, ServerError, getCard } from './api.js?v=2.4.10-202610291017';
+import { server, ServerError, getCard, priceVariants } from './api.js?v=2.4.10-202610291017';
 import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610291017';
 import { hasAccess } from './billing.js?v=2.4.10-202610291017';
 import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610291017';
@@ -532,3 +532,68 @@ let sig = '';
 const connSig = (c) => [c.mode, c.server, c.key].join('|');
 sig = connSig(settings.get());
 settings.on((c) => { if (connSig(c) !== sig) { sig = connSig(c); load(); } });
+
+
+/* ---------- Watchlist: cards / products I do NOT own, followed over the years ----------
+   Kept on this device (own storage key, never mixed with the portfolio or its totals). One price point per day
+   (Cardmarket average price for cards, the market index for sealed products), up to ~10 years of history. */
+const WL_KEY = NS + '.watchlist';
+const WL_RUN = NS + '.watchlistRun';
+const readWl = () => { try { const v = JSON.parse(localStorage.getItem(WL_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+let wl = readWl();
+const saveWl = () => { try { localStorage.setItem(WL_KEY, JSON.stringify(wl)); } catch { /* private mode */ } emit(); };
+export const watchlist = () => wl;
+export const inWatchlist = (key) => wl.some((w) => w.key === key);
+
+const wholeEur = (v) => (v == null || !isFinite(v) ? null : v >= 1 ? Math.floor(v) : v);
+export function addToWatchlist(entry) {
+  if (!entry || !entry.key || inWatchlist(entry.key)) return null;
+  const w = { id: uid('w'), added: today(), target: null, hist: [], ...entry };
+  wl.unshift(w);
+  saveWl();
+  refreshWatchlist({ only: w.id, force: true });
+  return w;
+}
+export function removeFromWatchlist(id) { wl = wl.filter((w) => w.id !== id); saveWl(); }
+export function setWatchlistTarget(id, target) {
+  const w = wl.find((x) => x.id === id);
+  if (!w) return;
+  w.target = target == null || target === '' || !(+target > 0) ? null : +(+target).toFixed(2);
+  saveWl();
+}
+async function priceOfWatch(w) {
+  if (w.kind === 'card') {
+    const card = await getCard(w.tcgLang || 'fr', w.tcgdexId);
+    const vs = priceVariants(card).filter((v) => v.cm && (v.cm.avg != null || v.cm.trend != null));
+    if (!vs.length) return null;
+    const av = (v) => (v.cm.avg != null ? v.cm.avg : v.cm.trend);
+    const cheapest = vs.reduce((a, b) => (av(b) < av(a) ? b : a));
+    return { p: wholeEur(av(cheapest)) };
+  }
+  const mk = await loadSealedMarket();
+  const r = mk && mk.p && mk.p[w.tcgplayerId];
+  if (!r || r.v == null) return null;
+  return { p: wholeEur(r.v), h: (r.h || []).map(([d, p]) => ({ d, p })) };
+}
+export async function refreshWatchlist({ force = false, only = null } = {}) {
+  if (!wl.length || !hasAccess()) return;
+  const day = today();
+  if (!force && !only) { try { if (localStorage.getItem(WL_RUN) === day) return; } catch { /* ignore */ } }
+  const list = wl.filter((w) => !only || w.id === only);
+  for (let i = 0; i < list.length; i += 4) {
+    await Promise.all(list.slice(i, i + 4).map(async (w) => {
+      try {
+        const r = await priceOfWatch(w);
+        if (!r || r.p == null) return;
+        const have = new Map((w.hist || []).map((x) => [x.d, x.p]));
+        (r.h || []).forEach((x) => { if (!have.has(x.d)) have.set(x.d, x.p); });   // market history of sealed products
+        have.set(day, r.p);
+        w.hist = [...have.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).slice(-3700).map(([d, p]) => ({ d, p }));
+        w.price = r.p; w.priceAt = day;
+        if (w.start == null) { w.start = r.p; w.startAt = day; }
+      } catch { /* offline: try again next time */ }
+    }));
+  }
+  if (!only) { try { localStorage.setItem(WL_RUN, day); } catch { /* ignore */ } }
+  saveWl();
+}
