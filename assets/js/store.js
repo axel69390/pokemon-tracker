@@ -193,6 +193,8 @@ export async function savePhoto(dataUrl) {
 export const photoUrl = (p) => (!p ? null : p.startsWith('data:') || p.startsWith('http') ? p : server.photoUrl(p));
 // Items added before hand-made products had their own picture point at a TCGplayer image that does not exist.
 const handMade = (u) => {
+  // Half display added before it had a picture of its own: its stored image points to a file that never existed.
+  if (/assets\/img\/sealed\/9000010\.jpg/.test(u || '')) return 'https://tcgplayer-cdn.tcgplayer.com/product/712095_400w.jpg';
   const m = /tcgplayer-cdn\.tcgplayer\.com\/product\/(9\d{6})_\d+w\.jpg$/.exec(u || '');
   return m ? asset(`assets/img/sealed/${m[1]}.jpg`) : u;
 };

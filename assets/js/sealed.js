@@ -16,7 +16,11 @@ export function loadSealed() {
 
 // Products added by hand (tools/sealed-extra.json, ids from 9000000) are not on TCGplayer: their picture is
 // assets/img/sealed/<id>.jpg.
-export const sealedImage = (id, size = 400) => (+id >= 9000000
+// Hand-added products that have an official TCGplayer picture (the half display is TCGplayer's "Half Booster Box").
+const IMAGE_ALIAS = { 9000010: 712095 };
+export const sealedImage = (id, size = 400) => (IMAGE_ALIAS[id]
+  ? `https://tcgplayer-cdn.tcgplayer.com/product/${IMAGE_ALIAS[id]}_${size}w.jpg`
+  : +id >= 9000000
   ? asset(`assets/img/sealed/${id}.jpg`)
   : `https://tcgplayer-cdn.tcgplayer.com/product/${id}_${size}w.jpg`);
 
