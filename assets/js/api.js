@@ -64,7 +64,10 @@ export const classicImage = (id) => { const m = typeof id === 'string' && id.mat
 // built daily by tools/build_promo_img.py: set id → card number → TCGplayer product id).
 let promoImg = {};
 const promoImgReady = fetch(asset('assets/data/promo-img.json')).then((r) => (r.ok ? r.json() : {})).then((d) => { promoImg = d || {}; }).catch(() => {});
-const promoUrl = (setId, localId) => { const pid = (promoImg[setId] || {})[String(localId).replace(/\D/g, '').padStart(3, '0')]; return pid ? `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_400w.jpg` : null; };
+// Pictures shipped with the app for promos TCGplayer does not list yet (30th-anniversary UPCs: Pikachu-ex, Mentali-ex, Noctali-ex).
+const LOCAL_PROMO = { 'mep-107': 'assets/img/promo/mep-107.jpg', 'mep-108': 'assets/img/promo/mep-108.jpg', 'mep-109': 'assets/img/promo/mep-109.jpg', 'mep-110': 'assets/img/promo/mep-110.jpg' };
+const promoUrl = (setId, localId) => { const lp = LOCAL_PROMO[`${setId}-${String(localId).replace(/\D/g, '').padStart(3, '0')}`]; if (lp) return asset(lp); return promoUrlRemote(setId, localId); };
+const promoUrlRemote = (setId, localId) => { const pid = (promoImg[setId] || {})[String(localId).replace(/\D/g, '').padStart(3, '0')]; return pid ? `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_400w.jpg` : null; };
 export const promoImage = (id) => { const m = typeof id === 'string' && id.match(/^([a-z0-9]+)-(\d+)$/i); return m ? promoUrl(m[1], m[2]) : null; };
 function fillClassicImages(v) {
   if (Array.isArray(v)) { v.forEach(fillClassicImages); return v; }
