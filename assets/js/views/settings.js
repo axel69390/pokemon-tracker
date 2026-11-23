@@ -1,15 +1,15 @@
-import { settings, parseConnect } from '../settings.js?v=2.4.10-202611232333';
-import { server } from '../api.js?v=2.4.10-202611232333';
-import { store, replaceAll, replaceWatchlist, backupData, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.10-202611232333';
-import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.10-202611232333';
-import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.10-202611232333';
-import { langSetting, setLang } from '../i18n.js?v=2.4.10-202611232333';
-import { profileSection, bindProfile } from '../profile.js?v=2.4.10-202611232333';
-import { statusLabel, openPaywall, isPremium, isVip } from '../billing.js?v=2.4.10-202611232333';
+import { settings, parseConnect } from '../settings.js?v=2.4.10-202611232339';
+import { server } from '../api.js?v=2.4.10-202611232339';
+import { store, replaceAll, replaceWatchlist, backupData, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.10-202611232339';
+import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.10-202611232339';
+import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.10-202611232339';
+import { langSetting, setLang } from '../i18n.js?v=2.4.10-202611232339';
+import { profileSection, bindProfile } from '../profile.js?v=2.4.10-202611232339';
+import { statusLabel, openPaywall, isPremium, isVip } from '../billing.js?v=2.4.10-202611232339';
 
 // VERSION is the one shown to users; BUILD changes with every release (tools/release.py) and drives the reload.
 export const VERSION = '2.4.10';
-export const BUILD = '2.4.10-202611232333';
+export const BUILD = '2.4.10-202611232339';
 
 export function render(main) {
   const s = settings.get();
