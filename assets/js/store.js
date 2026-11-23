@@ -4,6 +4,7 @@ import { IS_STORE, asset } from './edition.js?v=2.4.10-202611232339';
 import { server, ServerError, getCard, priceVariants, classicImage, promoImage, cmCote, CM_SRC } from './api.js?v=2.4.10-202611232339';
 import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202611232339';
 import { hasAccess } from './billing.js?v=2.4.10-202611232339';
+import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202611232339';
 import { take, put } from './db.js?v=2.4.10-202611232339';
 
 // Each edition keeps its own data, even in the same browser.
@@ -277,19 +278,73 @@ export function deleteSale(id) {
 }
 
 /* ---------- Automatic prices ----------
-   Modes: 'auto' (Cardmarket average price, or GCC for a graded card) and 'manual'. Without a chosen mode: graded →
-   auto; recent French cards linked to the catalogue → auto; everything else → manual. The old 'fr' mode (Cote France,
-   eBay France, retired in Oct 2026) still found on some cards maps to auto (recent sets) or manual (vintage). */
+   Stored modes: 'fr' (Cote France: French copies listed on eBay France), 'cm' (Cardmarket cote), 'auto', 'manual'.
+   priceModeOf() returns 'fr', 'auto' (Cardmarket, or GCC for a graded card) or 'manual'.
+   A French raw card linked to the catalogue follows the Cote France: by default for recent sets, on request for
+   vintage ones, unless the user picked Cardmarket ('cm') or manual. Cardmarket's price guide mixes every language
+   and French copies sell higher (Noctali-ex MEP 110: 89 € on the guide, French offers from 110 €). */
 const MODERN = /^(me\d|me0|mep|30th|sv|swsh|sm\d|sm1|smp|xy|bw|svp)/i;
+export const isFrRaw = (a) => (!a.grader || a.grader === 'raw') && a.lang === 'fr' && !!a.tcgdexId;
 export function priceModeOf(kind, a) {
-  if (kind !== 'card') return a.priceMode || 'manual';
+  if (kind !== 'card') return a.priceMode === 'cm' ? 'auto' : a.priceMode || 'manual';
   const modern = !!a.tcgdexId && MODERN.test(a.tcgdexId);
-  // Cote France (eBay) retired: recent sets follow the Cardmarket average, vintage sets stay manual.
-  if (a.priceMode) return a.priceMode === 'fr' ? (modern ? 'auto' : 'manual') : a.priceMode;
-  if (a.grader && a.grader !== 'raw') return 'auto';
-  return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && MODERN.test(a.tcgdexId) ? 'auto' : 'manual';
+  const graded = a.grader && a.grader !== 'raw';
+  if (a.priceMode === 'manual') return 'manual';
+  if (a.priceMode === 'cm') return 'auto';
+  if (isFrRaw(a)) {
+    if (a.priceMode === 'fr' || modern) return 'fr';
+    return a.priceMode === 'auto' ? 'auto' : 'manual';
+  }
+  if (a.priceMode === 'fr') return graded ? 'auto' : modern ? 'auto' : 'manual';
+  if (a.priceMode) return a.priceMode;
+  if (graded) return 'auto';
+  return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && modern ? 'auto' : 'manual';
 }
 export const pendingPrices = () => state.cards.filter((c) => c.pendingValue);
+
+// Cote France: the French market estimate (ebay.js: 30th percentile of the fixed-price listings of French copies)
+// becomes the value of a card in that mode, from EST_MIN_VALUE listings; fewer, the value stays as it is
+// (Cardmarket cote until then). Whole euros, truncated like the other cotes.
+const FR_SRC = (count) => `eBay France · ${count} annonces`;
+function applyFr(c, est, count) {
+  if (!c || priceModeOf('card', c) !== 'fr' || est == null || count < EST_MIN_VALUE) return false;
+  const v = est >= 1 ? Math.floor(est) : est;
+  if (+c.value === v && c.valueSource === FR_SRC(count)) return false;
+  delete c.pendingValue;
+  if (+c.value !== v) logValue(c, v);
+  c.value = v;
+  c.valueSource = FR_SRC(count);
+  return true;
+}
+export function setFrValue(id, est, count) {
+  if (applyFr(find('card', id), est, count)) commit();
+}
+
+// Every card in Cote France mode, once a day (at the first opening of the app that day).
+const FR_RUN_KEY = NS + '.frPriceRun';
+let frRunning = null;
+export async function refreshFrPrices({ force = false, only = null } = {}) {
+  if (frRunning || !hasAccess()) return frRunning;
+  const day = today();
+  if (!force && !only) { try { if (localStorage.getItem(FR_RUN_KEY) === day) return null; } catch { /* private mode */ } }
+  frRunning = (async () => {
+    const cards = state.cards.filter((c) => priceModeOf('card', c) === 'fr' && (!only || only.includes(c.id)));
+    let updated = 0, errors = 0;
+    for (let i = 0; i < cards.length; i += 3) {
+      await Promise.all(cards.slice(i, i + 3).map(async (c) => {
+        try {
+          const r = await ebayListings(c, 'card');
+          if (applyFr(find('card', c.id), r.est, r.estCount)) updated++;
+        } catch { errors++; }
+      }));
+    }
+    // A run that mostly failed (proxy down, quota reached) is tried again at the next opening.
+    if (!only && (!cards.length || errors < cards.length / 2)) { try { localStorage.setItem(FR_RUN_KEY, day); } catch { /* private mode */ } }
+    if (updated) commit();
+    return { updated, errors };
+  })();
+  try { return await frRunning; } finally { frRunning = null; }
+}
 
 export async function refreshPrices() {
   const before = state.priceRun && state.priceRun.at;
@@ -389,12 +444,14 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
     // Value = Cardmarket cote (api.js cmCote: median of the 7-day and 30-day averages and the trend); manual cards
     // are never touched, except when no value was ever entered (nothing of the user's to overwrite).
     const avg = whole(r2(cmCote(cm)));
-    if (avg == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
+    // Cote France cards keep the Cardmarket cote until eBay France has enough listings to price them.
+    const mode = priceModeOf('card', c);
+    const frWaiting = mode === 'fr' && !String(c.valueSource || '').startsWith('eBay France');
+    if (avg == null || (mode !== 'auto' && !frWaiting && hasValue(c))) return;
     const SRC = cm.srcLabel || CM_SRC;
     const old = hasValue(c) ? whole(+c.value) : null;   // compare with the old cote truncated like the new one
     if (old && c.valueSource === SRC && Math.abs(avg - old) / old > 0.4) { c.pendingValue = { v: avg, src: SRC, d: day }; pending++; return; }
     delete c.pendingValue;
-    if (c.priceMode === 'fr') c.priceMode = 'auto';
     c.value = avg; c.valueSource = SRC; logValue(c, avg);
     updated++;
   });

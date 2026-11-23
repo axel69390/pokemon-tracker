@@ -2,7 +2,7 @@
 import { startAutoTranslate } from './i18n.js?v=2.4.10-202611232339';
 import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.10-202611232339';
 import { checkPurchases, trialStart } from './billing.js?v=2.4.10-202611232339';
-import { store, load, refreshLocalPrices, refreshSealedPrices, backupData } from './store.js?v=2.4.10-202611232339';
+import { store, load, refreshLocalPrices, refreshSealedPrices, refreshFrPrices, backupData } from './store.js?v=2.4.10-202611232339';
 import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.10-202611232339';
 import { settings } from './settings.js?v=2.4.10-202611232339';
 import { avatarHtml } from './profile.js?v=2.4.10-202611232339';
@@ -117,11 +117,11 @@ window.addEventListener('hashchange', route);
 startAutoTranslate();
 if (IS_STORE) { trialStart(); checkPurchases().then(() => { if (current && current.def.live) current.def.view.render(current.main, current.r); }); }
 route();
-load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).catch(() => {});
+load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).then(() => refreshFrPrices()).catch(() => {});
 
 // Refresh when the app comes back to the foreground (another device may have edited the collection).
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load().catch(() => {});
+  if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load().then(() => refreshFrPrices()).catch(() => {});
 });
 
 // Always run the latest published version: the service worker revalidates every file,
