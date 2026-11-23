@@ -8,6 +8,8 @@ a set that exists in French are kept, and they get a French name
 
 Usage: python3 tools/build_sealed.py
 """
+import csv
+import io
 import json
 import re
 import time
@@ -80,14 +82,15 @@ SUFFIXES = {'ex', 'v', 'vmax', 'vstar', 'gx', 'lv.x', 'break', 'prime'}
 
 
 def load_pokemon_names():
-    q = '{ pokemon_v2_pokemonspeciesname(where:{language_id:{_in:[5,9]}}){ name language_id pokemon_species_id } }'
-    req = urllib.request.Request('https://beta.pokeapi.co/graphql/v1beta', data=json.dumps({'query': q}).encode(),
-                                 headers={**UA, 'content-type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        rows = json.load(r)['data']['pokemon_v2_pokemonspeciesname']
-    fr, en = {}, {}
-    for row in rows:
-        (fr if row['language_id'] == 5 else en)[row['pokemon_species_id']] = row['name']
+    """English -> French species names. PokéAPI's GraphQL endpoint now answers 401, so read its CSV dump
+    (one download, no key) instead. Language ids: 5 = French, 9 = English."""
+    url = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv'
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
+        rows = csv.DictReader(io.TextIOWrapper(r, encoding='utf-8'))
+        fr, en = {}, {}
+        for row in rows:
+            if row['local_language_id'] in ('5', '9'):
+                (fr if row['local_language_id'] == '5' else en)[row['pokemon_species_id']] = row['name']
     return {en[i].lower(): fr[i] for i in en if i in fr}
 
 
