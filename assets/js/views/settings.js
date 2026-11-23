@@ -1,15 +1,15 @@
-import { settings, parseConnect } from '../settings.js?v=2.4.10-202610291017';
-import { server } from '../api.js?v=2.4.10-202610291017';
-import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.10-202610291017';
-import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.10-202610291017';
-import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.10-202610291017';
-import { langSetting, setLang } from '../i18n.js?v=2.4.10-202610291017';
-import { profileSection, bindProfile } from '../profile.js?v=2.4.10-202610291017';
-import { statusLabel, openPaywall, isPremium, isVip } from '../billing.js?v=2.4.10-202610291017';
+import { settings, parseConnect } from '../settings.js?v=2.4.10-202611232339';
+import { server } from '../api.js?v=2.4.10-202611232339';
+import { store, replaceAll, replaceWatchlist, backupData, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.10-202611232339';
+import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.10-202611232339';
+import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.10-202611232339';
+import { langSetting, setLang } from '../i18n.js?v=2.4.10-202611232339';
+import { profileSection, bindProfile } from '../profile.js?v=2.4.10-202611232339';
+import { statusLabel, openPaywall, isPremium, isVip } from '../billing.js?v=2.4.10-202611232339';
 
 // VERSION is the one shown to users; BUILD changes with every release (tools/release.py) and drives the reload.
 export const VERSION = '2.4.10';
-export const BUILD = '2.4.10-202610291017';
+export const BUILD = '2.4.10-202611232339';
 
 export function render(main) {
   const s = settings.get();
@@ -28,7 +28,7 @@ export function render(main) {
     </section>
     ${IS_STORE ? `<section class="section"><div class="section-head"><h2>CardVault Premium</h2></div>
       <button class="panel set-track" data-paywall style="width:100%"><div class="top"><b>${esc(statusLabel())}</b>${icon('chev', 'sm faint')}</div>
-      <span class="muted" style="font-size:13px">${isVip() ? 'Aucun abonnement requis' : isPremium() ? 'Gérer dans Google Play › Abonnements' : '2,99 € / mois ou 24,90 € / an'}</span></button></section>` : ''}
+      <span class="muted" style="font-size:13px">${isVip() ? 'Aucun abonnement requis' : isPremium() ? 'Gérer dans Google Play › Abonnements' : '2,99 € / mois ou 24,99 € / an'}</span></button></section>` : ''}
     ${IS_STORE ? '' : `<section class="section">
       <div class="section-head"><h2>Stockage des données</h2>
         <span style="display:flex;align-items:center;gap:8px;font-size:12px" class="muted">
@@ -53,7 +53,7 @@ export function render(main) {
     <section class="section">
       <div class="section-head"><h2>Mes données</h2></div>
       <div class="list">
-        <button class="row" data-export="json"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Sauvegarde complète</b><small>Fichier JSON (cartes, items, ventes, sets, historique)</small></span>${icon('chev', 'sm faint')}</button>
+        <button class="row" data-export="json"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Sauvegarde complète</b><small>Fichier JSON (cartes, items, ventes, sets, historique, surveillance)</small></span>${icon('chev', 'sm faint')}</button>
         <button class="row" data-export="csv"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Export tableur</b><small>Fichier CSV compatible Excel</small></span>${icon('chev', 'sm faint')}</button>
         <button class="row" data-import><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('upload')}</span></span><span class="main"><b>Restaurer une sauvegarde</b><small>Remplace la collection actuelle</small></span>${icon('chev', 'sm faint')}</button>
       </div>
@@ -84,7 +84,7 @@ export function render(main) {
       render(main);
     }
     if (t.dataset.export === 'json') {
-      download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', version: VERSION, exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
+      download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', version: VERSION, exportedAt: new Date().toISOString(), ...backupData() }, null, 2));
     }
     if (t.dataset.export === 'csv') download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.csv`, toCsv(), 'text/csv;charset=utf-8');
     if ('import' in t.dataset) importBackup();
@@ -127,6 +127,7 @@ function importBackup() {
       if (!Array.isArray(data.cards) || !Array.isArray(data.items)) throw new Error('Ce fichier n’est pas une sauvegarde valide');
       if (!(await confirmSheet(`Remplacer la collection actuelle par cette sauvegarde (${data.cards.length} cartes, ${data.items.length} items) ?`, { ok: 'Restaurer', danger: true }))) return;
       replaceAll({ cards: data.cards, items: data.items, sales: data.sales || [], sets: data.sets || [], history: data.history || [] });
+      if (Array.isArray(data.watchlist)) replaceWatchlist(data.watchlist);   // older backups have none: keep the current one
       toast('Sauvegarde restaurée');
     } catch (e) { toast(e.message, { error: true }); }
   };

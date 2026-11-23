@@ -1,10 +1,10 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
-import { settings } from './settings.js?v=2.4.10-202610291017';
-import { IS_STORE, asset } from './edition.js?v=2.4.10-202610291017';
-import { server, ServerError, getCard, priceVariants, classicImage, promoImage } from './api.js?v=2.4.10-202610291017';
-import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202610291017';
-import { hasAccess } from './billing.js?v=2.4.10-202610291017';
-import { ebayListings, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610291017';
+import { settings } from './settings.js?v=2.4.10-202611232339';
+import { IS_STORE, asset } from './edition.js?v=2.4.10-202611232339';
+import { server, ServerError, getCard, priceVariants, classicImage, promoImage, cmCote, CM_SRC } from './api.js?v=2.4.10-202611232339';
+import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202611232339';
+import { hasAccess } from './billing.js?v=2.4.10-202611232339';
+import { take, put } from './db.js?v=2.4.10-202611232339';
 
 // Each edition keeps its own data, even in the same browser.
 const NS = IS_STORE ? 'cv' : 'pdx';
@@ -105,15 +105,19 @@ export function series() {
 }
 
 /* ---------- Persistence ---------- */
+// Saved in IndexedDB (db.js). Nothing is written before the data of the current mode has been read: a save made
+// while the collection is still loading would overwrite it with an empty one.
+let loadedKey = null;
 function writeCache() {
-  try {
-    localStorage.setItem(settings.isServer() ? CACHE_KEY : LOCAL_KEY, JSON.stringify(state));
-  } catch {
-    if (!settings.isServer()) toast('Stockage de l’appareil plein : passez en mode serveur ou exportez vos données', { error: true, ms: 5000 });
-  }
+  const key = settings.isServer() ? CACHE_KEY : LOCAL_KEY;
+  if (loadedKey !== key) return;
+  const local = !settings.isServer();
+  put(key, state).catch(() => {
+    if (local) toast('Stockage de l’appareil plein : passez en mode serveur ou exportez vos données', { error: true, ms: 5000 });
+  });
 }
-function readLocal(key) {
-  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+async function readLocal(key) {
+  try { return (await take(key)).value; } catch { return null; }
 }
 
 // Local mode keeps its own daily history (the server does this itself).
@@ -128,12 +132,16 @@ function localSnapshot() {
 export async function load() {
   status = { ...status, loading: true, error: null };
   if (!settings.isServer()) {
-    state = { ...EMPTY(), ...(readLocal(LOCAL_KEY) || {}) };
+    // Already read: the copy in memory is the latest (a save may still be on its way to IndexedDB).
+    if (loadedKey === LOCAL_KEY) { status = { ...status, loading: false }; emit(); return; }
+    state = { ...EMPTY(), ...((await readLocal(LOCAL_KEY)) || {}) };
+    loadedKey = LOCAL_KEY;
     status = { loading: false, online: false, saving: false, error: null, local: true };
     emit();
     return;
   }
-  const cached = readLocal(CACHE_KEY);
+  const cached = await readLocal(CACHE_KEY);
+  loadedKey = CACHE_KEY;
   if (cached) { state = { ...EMPTY(), ...cached }; emit(); }
   try {
     state = { ...EMPTY(), ...(await server.load()) };
@@ -269,11 +277,10 @@ export function deleteSale(id) {
 }
 
 /* ---------- Automatic prices ----------
-   Modes: 'fr' Cote France (eBay France, French raw cards), 'auto' (Cardmarket trend, or GCC for a graded card),
-   'manual'. Without a chosen mode: graded → GCC; French raw card linked to the catalogue → Cote France, unless its
-   value was typed by hand (no valueSource), which stays manual; recent French cards otherwise → Cardmarket. */
+   Modes: 'auto' (Cardmarket average price, or GCC for a graded card) and 'manual'. Without a chosen mode: graded →
+   auto; recent French cards linked to the catalogue → auto; everything else → manual. The old 'fr' mode (Cote France,
+   eBay France, retired in Oct 2026) still found on some cards maps to auto (recent sets) or manual (vintage). */
 const MODERN = /^(me\d|me0|mep|30th|sv|swsh|sm\d|sm1|smp|xy|bw|svp)/i;
-const isFrRaw = (a) => (!a.grader || a.grader === 'raw') && a.lang === 'fr' && !!a.tcgdexId;
 export function priceModeOf(kind, a) {
   if (kind !== 'card') return a.priceMode || 'manual';
   const modern = !!a.tcgdexId && MODERN.test(a.tcgdexId);
@@ -283,58 +290,6 @@ export function priceModeOf(kind, a) {
   return a.tcgdexId && (!a.tcgLang || a.tcgLang === 'fr') && MODERN.test(a.tcgdexId) ? 'auto' : 'manual';
 }
 export const pendingPrices = () => state.cards.filter((c) => c.pendingValue);
-
-// Cote France: the French market estimate (ebay.js) becomes the value of a card in that mode, from EST_MIN_VALUE
-// fixed-price listings. The mode is written on the card so that the nightly server job (Cardmarket) leaves it alone.
-function applyFr(c, est, count) {
-  if (!c || priceModeOf('card', c) !== 'fr' || est == null || count < EST_MIN_VALUE) return false;
-  if (c.priceMode === 'fr' && +c.value === est && c.valueSource === `eBay France · ${count} annonces`) return false;
-  c.priceMode = 'fr';
-  delete c.pendingValue;
-  if (+c.value !== est) logValue(c, est);
-  c.value = est;
-  c.valueSource = `eBay France · ${count} annonces`;
-  return true;
-}
-export function setFrValue(id, est, count) {
-  if (applyFr(find('card', id), est, count)) commit();
-}
-
-// Every card in Cote France mode, twice a week: on Mondays and Thursdays (at the first opening of the app from that
-// day on, so a missed day is caught up). Same for every user; the eBay quota is shared by all of them.
-const FR_RUN_KEY = NS + '.frPriceRun';
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-function lastFrSlot(now = new Date()) {
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-    if (d.getDay() === 1 || d.getDay() === 4) return ymd(d);
-  }
-  return ymd(now);
-}
-let frRunning = null;
-export async function refreshFrPrices({ force = false } = {}) {
-  if (frRunning || !hasAccess()) return frRunning;
-  let last = null;
-  try { last = localStorage.getItem(FR_RUN_KEY); } catch { /* private mode */ }
-  if (!force && last && last >= lastFrSlot()) return null;
-  frRunning = (async () => {
-    const cards = state.cards.filter((c) => priceModeOf('card', c) === 'fr');
-    let updated = 0, errors = 0;
-    for (let i = 0; i < cards.length; i += 3) {
-      await Promise.all(cards.slice(i, i + 3).map(async (c) => {
-        try {
-          const r = await ebayListings(c, 'card');
-          if (applyFr(find('card', c.id), r.est, r.estCount)) updated++;
-        } catch { errors++; }
-      }));
-    }
-    // A run that mostly failed (proxy down, quota reached) is tried again at the next opening.
-    if (!cards.length || errors < cards.length / 2) { try { localStorage.setItem(FR_RUN_KEY, ymd(new Date())); } catch { /* private mode */ } }
-    if (updated) commit();
-    return { updated, errors };
-  })();
-  try { return await frRunning; } finally { frRunning = null; }
-}
 
 export async function refreshPrices() {
   const before = state.priceRun && state.priceRun.at;
@@ -381,7 +336,7 @@ export function removeSet(id) {
    Same rules as the server's nightly job, Cardmarket only (GCC and TCGplayer are not reachable from a
    browser): once a day, every card linked to the catalogue gets its day / 30-day average and trend; cards in
    automatic mode take the trend as their value (swings > 40 % are proposed for review instead). */
-const LOCAL_RUN_KEY = NS + '.localPriceRun.avg';   // renamed: the switch to the average price runs at once
+const LOCAL_RUN_KEY = NS + '.localPriceRun.cote';   // renamed: the switch to the median cote (Nov 2026) runs at once
 export async function refreshLocalPrices({ force = false, only = null } = {}) {
   if (!hasAccess()) return null;
   let vm = null;
@@ -423,7 +378,7 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
   state.cards.forEach((c) => {
     const cm = res[c.id];
     if (!cm || (only && !only.includes(c.id))) return;
-    const trend = r2(cm.avg != null ? cm.avg : cm.trend), d30 = r2(cm.avg30);   // chart follows the value (average price)
+    const trend = r2(cmCote(cm)), d30 = r2(cm.avg30);   // chart follows the value (the cote)
     c.market = { src: 'Cardmarket', d1: r2(cm.avg1 != null ? cm.avg1 : cm.avg), d1At: day, d30, at: day };
     if (trend != null) {
       let h = (c.hist || []).filter((x) => x.d !== day);
@@ -431,11 +386,11 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
       h.push({ d: day, p: trend, a30: d30 });
       c.hist = h.slice(-400);
     }
-    // Value = Cardmarket average sale price ("Prix moyen"), the most reliable figure; manual cards are never touched,
-    // except when no value was ever entered (nothing of the user's to overwrite).
-    const avg = whole(r2(cm.avg != null ? cm.avg : (cm.trend != null ? cm.trend : null)));
+    // Value = Cardmarket cote (api.js cmCote: median of the 7-day and 30-day averages and the trend); manual cards
+    // are never touched, except when no value was ever entered (nothing of the user's to overwrite).
+    const avg = whole(r2(cmCote(cm)));
     if (avg == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
-    const SRC = cm.srcLabel || 'Cardmarket · prix moyen';
+    const SRC = cm.srcLabel || CM_SRC;
     const old = hasValue(c) ? whole(+c.value) : null;   // compare with the old cote truncated like the new one
     if (old && c.valueSource === SRC && Math.abs(avg - old) / old > 0.4) { c.pendingValue = { v: avg, src: SRC, d: day }; pending++; return; }
     delete c.pendingValue;
@@ -450,20 +405,11 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
   return state.priceRun;
 }
 
-/* ---------- Sealed products: TCGplayer market price (no server needed) ----------
-   assets/data/sealed-prices.json is rebuilt daily by a GitHub Action (TCGplayer, USD). A sealed item linked to
-   the catalogue gets its value from it the moment it is added, then once a day. Items whose value was typed by
-   hand are never overwritten; items left in automatic mode follow the market. */
+/* ---------- Sealed products: market index (no server needed) ----------
+   assets/data/sealed-market.json is rebuilt every night by a GitHub Action (tools/build_market.py). A sealed item
+   linked to the catalogue gets its value from it the moment it is added, then once a day. Items whose value was
+   typed by hand are never overwritten; items left in automatic mode follow the market. */
 const SEALED_RUN_KEY = NS + '.sealedPriceRun';
-let sealedPrices = null;
-async function loadSealedPrices() {
-  if (!sealedPrices) {
-    sealedPrices = fetch(asset('assets/data/sealed-prices.json?t=' + today()))
-      .then((r) => { if (!r.ok) throw new Error('prix indisponibles'); return r.json(); })
-      .catch((e) => { sealedPrices = null; throw e; });
-  }
-  return sealedPrices;
-}
 // Price index (GCC French sales + Cardmarket + TCGplayer, see tools/build_market.py), rebuilt every night.
 let sealedMarket = null;
 async function loadSealedMarket() {
@@ -482,15 +428,6 @@ export async function sealedMarketRow(id) {
 // Every index row, keyed by TCGplayer id ({} when the index is not built yet); used by the sealed catalogue.
 export async function sealedMarketMap() {
   try { const mk = await loadSealedMarket(); return (mk && mk.p) || {}; } catch { return {}; }
-}
-async function usdToEur() {
-  try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c && c.d === today()) return c.r; } catch { /* ignore */ }
-  let r = null;
-  try { r = (await (await fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR')).json()).rates.EUR; } catch { /* ignore */ }
-  if (!r) { try { r = (await (await fetch('https://open.er-api.com/v6/latest/USD')).json()).rates.EUR; } catch { /* ignore */ } }
-  if (r) { try { localStorage.setItem(NS + '.fx', JSON.stringify({ d: today(), r })); } catch { /* ignore */ } return r; }
-  try { const c = JSON.parse(localStorage.getItem(NS + '.fx') || 'null'); if (c) return c.r; } catch { /* ignore */ }
-  return 0.88;
 }
 export async function refreshSealedPrices({ only = null, force = false } = {}) {
   if (!hasAccess()) return null;
@@ -541,9 +478,10 @@ settings.on((c) => { if (connSig(c) !== sig) { sig = connSig(c); load(); } });
    (Cardmarket average price for cards, the market index for sealed products), up to ~10 years of history. */
 const WL_KEY = NS + '.watchlist';
 const WL_RUN = NS + '.watchlistRun';
-const readWl = () => { try { const v = JSON.parse(localStorage.getItem(WL_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
-let wl = readWl();
-const saveWl = () => { try { localStorage.setItem(WL_KEY, JSON.stringify(wl)); } catch { /* private mode */ } emit(); };
+// Stored in IndexedDB like the collection (up to ~10 years of daily prices per entry does not fit in localStorage).
+let wl = [];
+const wlReady = take(WL_KEY).then((r) => { if (Array.isArray(r.value)) wl = r.value; }).catch(() => {}).then(() => emit());
+const saveWl = () => { emit(); wlReady.then(() => put(WL_KEY, wl)).catch(() => toast('Stockage de l’appareil plein', { error: true })); };
 export const watchlist = () => wl;
 export const inWatchlist = (key) => wl.some((w) => w.key === key);
 
@@ -557,6 +495,14 @@ export function addToWatchlist(entry) {
   return w;
 }
 export function removeFromWatchlist(id) { wl = wl.filter((w) => w.id !== id); saveWl(); }
+// Restore from a backup file (settings.js): the watchlist is kept apart from the collection but travels with it.
+export function replaceWatchlist(list) {
+  if (!Array.isArray(list)) return;
+  wl = list.filter((w) => w && w.key && w.id);
+  saveWl();
+}
+// Full backup payload: the collection plus the watchlist (which lives only on this device).
+export const backupData = () => ({ ...state, watchlist: wl });
 export function setWatchlistTarget(id, target) {
   const w = wl.find((x) => x.id === id);
   if (!w) return;
@@ -566,9 +512,9 @@ export function setWatchlistTarget(id, target) {
 async function priceOfWatch(w) {
   if (w.kind === 'card') {
     const card = await getCard(w.tcgLang || 'fr', w.tcgdexId);
-    const vs = priceVariants(card).filter((v) => v.cm && (v.cm.avg != null || v.cm.trend != null));
+    const vs = priceVariants(card).filter((v) => cmCote(v.cm) != null);
     if (!vs.length) return null;
-    const av = (v) => (v.cm.avg != null ? v.cm.avg : v.cm.trend);
+    const av = (v) => cmCote(v.cm);
     const cheapest = vs.reduce((a, b) => (av(b) < av(a) ? b : a));
     return { p: wholeEur(av(cheapest)) };
   }
@@ -578,6 +524,7 @@ async function priceOfWatch(w) {
   return { p: wholeEur(r.v), h: (r.h || []).map(([d, p]) => ({ d, p })) };
 }
 export async function refreshWatchlist({ force = false, only = null } = {}) {
+  await wlReady;
   if (!wl.length || !hasAccess()) return;
   const day = today();
   if (!force && !only) { try { if (localStorage.getItem(WL_RUN) === day) return; } catch { /* ignore */ } }

@@ -1,6 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.10-202610291017';
-import { asset } from './edition.js?v=2.4.10-202610291017';
+import { settings } from './settings.js?v=2.4.10-202611232339';
+import { asset } from './edition.js?v=2.4.10-202611232339';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
@@ -341,6 +341,21 @@ export async function findByNumber(num, total, lang = 'fr') {
     } catch { return null; }
   }));
   return found.filter(Boolean);
+}
+
+// Cote of a raw card from the Cardmarket price guide: the median of the 7-day average, the 30-day average and the
+// trend. The guide's "avg" field alone follows a few odd sales: Pikachu-ex MEP 107 showed avg 199 € while it sold
+// around 37 € (avg7 37.85, avg30 45.55), Noctali-ex MEP 110 avg 69.99 € against 83 to 96 € everywhere else.
+// Hand-added cards (promo-extra.json) only carry "avg" (first French price): it is used when nothing else exists.
+export const CM_SRC = 'Cardmarket · cote';
+export function cmCote(cm) {
+  if (!cm) return null;
+  const ok = (v) => v != null && isFinite(v) && v > 0;
+  const vals = [cm.avg7, cm.avg30, cm.trend].filter(ok).sort((a, b) => a - b);
+  if (vals.length === 3) return vals[1];
+  if (vals.length === 2) return (vals[0] + vals[1]) / 2;
+  if (vals.length === 1) return vals[0];
+  return ok(cm.avg) ? cm.avg : null;
 }
 
 // Normalises TCGdex pricing into [{ id, label, cm:{avg,low,trend,avg7,avg30}, tp:{market,low} }]

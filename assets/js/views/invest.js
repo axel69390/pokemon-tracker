@@ -1,12 +1,12 @@
 // Invest: watchlist of cards/items to resell, trend curves and sell signals.
-import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf, watchlist, inWatchlist, addToWatchlist, removeFromWatchlist, setWatchlistTarget, refreshWatchlist } from '../store.js?v=2.4.10-202610291017';
-import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.10-202610291017';
-import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610291017';
-import { openDetail, openSell } from '../sheets.js?v=2.4.10-202610291017';
-import { hasAccess, openPaywall } from '../billing.js?v=2.4.10-202610291017';
-import { searchCards, cardImage } from '../api.js?v=2.4.10-202610291017';
-import { searchSealed, sealedImage } from '../sealed.js?v=2.4.10-202610291017';
-import { settings } from '../settings.js?v=2.4.10-202610291017';
+import { store, watched, setWatch, unitValue, unitCost, qtyOf, imageOf, priceModeOf, watchlist, inWatchlist, addToWatchlist, removeFromWatchlist, setWatchlistTarget, refreshWatchlist } from '../store.js?v=2.4.10-202611232339';
+import { money, signed, pct, pill, icon, esc, dateFr, openSheet, toast, trend } from '../ui.js?v=2.4.10-202611232339';
+import { renderChart, sparkline, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202611232339';
+import { openDetail, openSell } from '../sheets.js?v=2.4.10-202611232339';
+import { hasAccess, openPaywall } from '../billing.js?v=2.4.10-202611232339';
+import { searchCards, cardImage } from '../api.js?v=2.4.10-202611232339';
+import { searchSealed, sealedImage } from '../sealed.js?v=2.4.10-202611232339';
+import { settings } from '../settings.js?v=2.4.10-202611232339';
 
 const DAY = 864e5;
 const STATUS = {
@@ -375,7 +375,7 @@ function watchlistHtml() {
       : `<div class="empty"><div class="ico">${icon('search', 'lg')}</div><h3>Rien à surveiller</h3>
         <p>Ajoutez une carte ou un produit scellé que vous ne possédez pas : l’appli garde son prix chaque jour pour voir comment il évolue avant d’acheter. Il n’entre pas dans votre portefeuille.</p>
         <button class="btn primary" data-wadd>${icon('plus')}Ajouter une carte</button></div>`}
-    ${list.length ? '<p class="note">Ces cartes ne comptent pas dans votre portefeuille. Suivi enregistré sur cet appareil, un prix par jour (Cardmarket, prix moyen).</p>' : ''}
+    ${list.length ? '<p class="note">Ces cartes ne comptent pas dans votre portefeuille. Suivi enregistré sur cet appareil, un prix par jour (cote Cardmarket).</p>' : ''}
   </section>`;
 }
 

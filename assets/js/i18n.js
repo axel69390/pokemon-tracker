@@ -52,7 +52,7 @@ const EN = {
   'Achat unitaire': 'Unit cost', 'Coût total': 'Total cost', 'Quantité': 'Quantity', 'Date d’achat': 'Purchase date', 'Valeur mise à jour': 'Value updated',
   'Cote': 'Price', 'Auto': 'Auto', 'Manuelle': 'Manual', 'Prix du marché': 'Market price', 'Moyenne du jour': 'Daily average',
   'Moyenne 30 jours': '30-day average', 'Dernière vente': 'Last sale', 'Évolution de la valeur': 'Value history', 'Version de la carte': 'Card version',
-  'Changer de fiche': 'Change card', 'Cote du marché': 'Market price', 'Prix moyen': 'Average price', 'Tendance': 'Trend', 'Moyenne 30 j': '30-day avg',
+  'Changer de fiche': 'Change card', 'Cote du marché': 'Market price', 'Prix moyen': 'Average price', 'Tendance': 'Trend', 'Moyenne 30 j': '30-day avg', 'Moyenne 7 j': '7-day avg',
   'Plus bas': 'Lowest', 'Médiane': 'Median', 'Fourchette': 'Range', 'Ventes': 'Sales', 'Ventes GCC': 'GCC sales', 'Cartes gradées': 'Graded cards',
   'Toutes notes': 'All grades', 'Toutes éditions': 'All editions', '1ère édition': '1st edition', 'Illimitée': 'Unlimited',
   'Ventes et annonces': 'Sales & listings', 'Ventes eBay': 'eBay sales', 'Dernières ventes réussies': 'Latest sold listings',
@@ -99,7 +99,7 @@ const EN = {
   'Réessayez dans un instant.': 'Try again in a moment.', 'Choisir la carte': 'Choose the card', 'Nom de la carte': 'Card name',
   'Numéro (facultatif) : 4/102': 'Number (optional): 4/102', 'Tapez au moins 2 lettres.': 'Type at least 2 letters.', 'Ajouter un item': 'Add an item',
   'Rechercher : Display 151, ETB Évolutions…': 'Search: booster box, ETB…', 'Affinez la recherche pour voir plus de produits.': 'Refine your search to see more products.',
-  'Impossible de charger cette carte': 'Could not load this card', 'Toutes les extensions ': 'All sets', 'PRIX MOYEN CARDMARKET': 'CARDMARKET AVERAGE',
+  'Impossible de charger cette carte': 'Could not load this card', 'Toutes les extensions ': 'All sets', 'PRIX MOYEN CARDMARKET': 'CARDMARKET AVERAGE', 'COTE CARDMARKET': 'CARDMARKET PRICE',
 
   // Categories
   'Coffret': 'Collection box', 'Pokébox': 'Tin', 'Valisette': 'Collector chest', 'Tripack': '3-pack blister', 'Duo Pack': '2-pack',
@@ -146,7 +146,7 @@ const EN = {
     'The server syncs your collection across devices, keeps the daily value history and enables the scanner.',
   'Les données sont enregistrées dans ce navigateur uniquement. Exportez-les régulièrement ou connectez un serveur personnel pour les synchroniser.':
     'Your data is stored on this device only. Export it regularly to keep a backup.',
-  'Mes données': 'My data', 'Sauvegarde complète': 'Full backup', 'Fichier JSON (cartes, items, ventes, sets, historique)': 'JSON file (cards, items, sales, sets, history)',
+  'Mes données': 'My data', 'Sauvegarde complète': 'Full backup', 'Fichier JSON (cartes, items, ventes, sets, historique, surveillance)': 'JSON file (cards, items, sales, sets, history, watchlist)',
   'Export tableur': 'Spreadsheet export', 'Fichier CSV compatible Excel': 'Excel-compatible CSV file', 'Restaurer une sauvegarde': 'Restore a backup',
   'Remplace la collection actuelle': 'Replaces the current collection', 'Sauvegarde restaurée': 'Backup restored', 'Restaurer': 'Restore', 'À propos': 'About',
   'Serveur connecté': 'Server connected', 'Clé d’accès refusée': 'Access key refused', 'Lien de connexion invalide': 'Invalid connection link',
@@ -156,7 +156,7 @@ const EN = {
   'La mise à jour prend plus de temps que prévu': 'The update is taking longer than expected',
   'Mise à jour des cotes lancée (environ 1 minute)': 'Price update started (about 1 minute)', 'Ce fichier n’est pas une sauvegarde Pokédex Invest': 'This file is not a valid backup',
   'Le suivi des prix et les alertes de revente sont inclus dans CardVault Premium.': 'Price tracking and resale alerts are included in CardVault Premium.',
-  'Gérer dans Google Play › Abonnements': 'Manage in Google Play › Subscriptions', '2,99 € / mois ou 24,90 € / an': '€2.99 / month or €24.90 / year',
+  'Gérer dans Google Play › Abonnements': 'Manage in Google Play › Subscriptions', '2,99 € / mois ou 24,99 € / an': '€2.99 / month or €24.99 / year',
   'CardVault Premium : 2,99 € / mois': 'CardVault Premium: €2.99 / month', 'Ce fichier n’est pas une sauvegarde valide': 'This file is not a valid backup',
   'Mise à jour des cotes…': 'Updating prices…', 'jamais': 'never', '1A': '1Y',
   'Une pastille apparaît sur l’onglet Invest dès qu’une carte ou un item de votre collection (achetée, hors communes et peu communes, d’une valeur d’au moins 1 €) prend au moins 10 % en 7 jours.':

@@ -1,9 +1,9 @@
-import { settings } from '../settings.js?v=2.4.10-202610291017';
-import { getSets, getSetCards, getCard, priceVariants, searchCards, printedNumber, cardImage, setLogo } from '../api.js?v=2.4.10-202610291017';
-import { esc, phCard, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.10-202610291017';
-import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.10-202610291017';
-import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.10-202610291017';
-import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.10-202610291017';
+import { settings } from '../settings.js?v=2.4.10-202611232339';
+import { getSets, getSetCards, getCard, priceVariants, searchCards, printedNumber, cardImage, setLogo, cmCote } from '../api.js?v=2.4.10-202611232339';
+import { esc, phCard, icon, toast, CATEGORIES, money } from '../ui.js?v=2.4.10-202611232339';
+import { store, addSet, sealedMarketMap } from '../store.js?v=2.4.10-202611232339';
+import { searchSealed, sealedImage, sealedPrefill } from '../sealed.js?v=2.4.10-202611232339';
+import { openCatalogueCard, openForm, openSetSheet, openSealedInfo } from '../sheets.js?v=2.4.10-202611232339';
 
 const LANG_OPTIONS = [['fr', 'FR'], ['en', 'EN'], ['ja', 'JP']];
 let q = '';
@@ -97,14 +97,14 @@ async function fillPrices(out, cards, lang, my) {
       try {
         const card = await getCard(lang, c.id);
         if (my !== seq) return;
-        const vs = priceVariants(card).filter((v) => v.cm && (v.cm.avg != null || v.cm.trend != null));
+        const vs = priceVariants(card).filter((v) => cmCote(v.cm) != null);
         if (!vs.length) { slot.textContent = 'Pas de cote'; slot.className = 'px none'; continue; }
-        const avg = (v) => v.cm.avg != null ? v.cm.avg : v.cm.trend;
+        const avg = (v) => cmCote(v.cm);
         const best = vs.reduce((a, b) => (avg(b) < avg(a) ? b : a));
         const low = eur(best.cm.low);
         slot.className = 'px';
         slot.innerHTML = `<b class="num">${eur(avg(best))} €</b>${vs.length > 1 ? ' <i>dès</i>' : ''}${low != null ? ` <small>mini ${low} €</small>` : ''}`;
-        slot.title = 'Cardmarket · prix moyen' + (vs.length > 1 ? ' (plusieurs versions, la moins chère affichée)' : '');
+        slot.title = 'Cardmarket · cote (médiane 7 j, 30 j, tendance)' + (vs.length > 1 ? ' (plusieurs versions, la moins chère affichée)' : '');
       } catch { if (my === seq) { slot.textContent = ''; } }
     }
   };

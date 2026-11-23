@@ -1,19 +1,19 @@
 // Pokédex Invest / CardVault — entry point & router.
-import { startAutoTranslate } from './i18n.js?v=2.4.10-202610291017';
-import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.10-202610291017';
-import { checkPurchases, trialStart } from './billing.js?v=2.4.10-202610291017';
-import { store, load, refreshLocalPrices, refreshSealedPrices, refreshFrPrices } from './store.js?v=2.4.10-202610291017';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.10-202610291017';
-import { settings } from './settings.js?v=2.4.10-202610291017';
-import { avatarHtml } from './profile.js?v=2.4.10-202610291017';
-import { openForm } from './sheets.js?v=2.4.10-202610291017';
-import * as portfolio from './views/portfolio.js?v=2.4.10-202610291017';
-import * as collection from './views/collection.js?v=2.4.10-202610291017';
-import * as scanner from './views/scanner.js?v=2.4.10-202610291017';
-import * as catalogue from './views/catalogue.js?v=2.4.10-202610291017';
-import * as settingsView from './views/settings.js?v=2.4.10-202610291017';
-import * as invest from './views/invest.js?v=2.4.10-202610291017';
-import { BUILD } from './views/settings.js?v=2.4.10-202610291017';
+import { startAutoTranslate } from './i18n.js?v=2.4.10-202611232339';
+import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.10-202611232339';
+import { checkPurchases, trialStart } from './billing.js?v=2.4.10-202611232339';
+import { store, load, refreshLocalPrices, refreshSealedPrices, backupData } from './store.js?v=2.4.10-202611232339';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.10-202611232339';
+import { settings } from './settings.js?v=2.4.10-202611232339';
+import { avatarHtml } from './profile.js?v=2.4.10-202611232339';
+import { openForm } from './sheets.js?v=2.4.10-202611232339';
+import * as portfolio from './views/portfolio.js?v=2.4.10-202611232339';
+import * as collection from './views/collection.js?v=2.4.10-202611232339';
+import * as scanner from './views/scanner.js?v=2.4.10-202611232339';
+import * as catalogue from './views/catalogue.js?v=2.4.10-202611232339';
+import * as settingsView from './views/settings.js?v=2.4.10-202611232339';
+import * as invest from './views/invest.js?v=2.4.10-202611232339';
+import { BUILD } from './views/settings.js?v=2.4.10-202611232339';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },
@@ -96,7 +96,7 @@ app.addEventListener('click', (e) => {
   if (!t) return;
   if ('watchadd' in t.dataset) invest.openPicker();
   if (t.dataset.add) openForm(t.dataset.add);
-  if ('export' in t.dataset) download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
+  if ('export' in t.dataset) download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', exportedAt: new Date().toISOString(), ...backupData() }, null, 2));
 });
 
 // Badge on the Invest tab (and on the installed app icon) for unseen rises of 10 % or more.
@@ -117,12 +117,11 @@ window.addEventListener('hashchange', route);
 startAutoTranslate();
 if (IS_STORE) { trialStart(); checkPurchases().then(() => { if (current && current.def.live) current.def.view.render(current.main, current.r); }); }
 route();
-// Cote France (eBay France) after the daily Cardmarket / sealed updates: it runs on Mondays and Thursdays only.
-load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).then(() => refreshFrPrices()).catch(() => {});
+load().then(() => Promise.all([refreshLocalPrices(), refreshSealedPrices()])).catch(() => {});
 
 // Refresh when the app comes back to the foreground (another device may have edited the collection).
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load().then(() => refreshFrPrices()).catch(() => {});
+  if (document.visibilityState === 'visible' && !document.querySelector('.sheet')) load().catch(() => {});
 });
 
 // Always run the latest published version: the service worker revalidates every file,
