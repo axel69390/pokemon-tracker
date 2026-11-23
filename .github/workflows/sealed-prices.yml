@@ -5,31 +5,39 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - tools/build_prices.py
       - tools/build_gcc.py
       - tools/build_cm.py
       - tools/build_market.py
 permissions:
   contents: write
+# One run at a time: two runs pushing the same files would reject each other's commit.
+concurrency:
+  group: sealed-prices
+  cancel-in-progress: false
 jobs:
   prices:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Sealed catalogue
+        id: catalogue
         continue-on-error: true
         run: python3 tools/build_sealed.py
       - name: Promo pictures
+        id: promo
         continue-on-error: true
         run: python3 tools/build_promo_img.py
-      - run: python3 tools/build_prices.py
       - name: GCC (French market)
+        id: gcc
         continue-on-error: true
         run: python3 tools/build_gcc.py
       - name: Cardmarket
+        id: cardmarket
         continue-on-error: true
         run: python3 tools/build_cm.py
       - name: eBay listings
+        id: ebay
         continue-on-error: true
         run: python3 tools/build_ebay.py
       - name: Price index
@@ -38,11 +46,31 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
-          git add assets/data/sealed-prices.json
-          git add assets/data/sealed.json || true
-          git add assets/data/sealed-gcc.json || true
-          git add assets/data/promo-img.json || true
-          git add assets/data/sealed-cm.json || true
-          git add assets/data/sealed-ebay.json || true
-          git add assets/data/sealed-market.json || true
-          git diff --cached --quiet || (git commit -m "Update sealed prices" && git push)
+          for f in sealed sealed-gcc promo-img sealed-cm sealed-ebay sealed-market; do
+            git add "assets/data/$f.json" 2>/dev/null || true
+          done
+          git diff --cached --quiet && exit 0
+          git commit -m "Update sealed prices"
+          # main may have moved during the run (about 30 minutes): replay this commit on top, then push.
+          for i in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
+      # The sources above may fail without stopping the update; say which ones did, and mark the run as failed so
+      # GitHub sends its failure e-mail (the data that could be built is already committed).
+      - name: Report failed sources
+        if: always()
+        run: |
+          failed=""
+          [ "${{ steps.catalogue.outcome }}" = "failure" ] && failed="$failed catalogue-scelle"
+          [ "${{ steps.promo.outcome }}" = "failure" ] && failed="$failed illustrations-promos"
+          [ "${{ steps.gcc.outcome }}" = "failure" ] && failed="$failed GCC"
+          [ "${{ steps.cardmarket.outcome }}" = "failure" ] && failed="$failed Cardmarket"
+          [ "${{ steps.ebay.outcome }}" = "failure" ] && failed="$failed eBay"
+          if [ -n "$failed" ]; then
+            echo "Sources en échec :$failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Sources en échec :$failed"
+            exit 1
+          fi
+          echo "Toutes les sources ont été mises à jour." >> "$GITHUB_STEP_SUMMARY"

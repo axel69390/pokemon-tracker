@@ -2,10 +2,10 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-  refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow, setFrValue,
+  refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow,
 } from './store.js?v=2.4.10-202610291017';
 import { EBAY_API } from './edition.js?v=2.4.10-202610291017';
-import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202610291017';
+import { ebayListings, sameEdition } from './ebay.js?v=2.4.10-202610291017';
 import {
   esc, phCard, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
@@ -20,7 +20,6 @@ const PLATFORMS = ['Vinted', 'eBay', 'Cardmarket', 'Leboncoin', 'Main propre', '
 const VARIANTS = ['Normale', 'Holo', 'Reverse', '1ère édition', 'Shadowless', 'Promo', 'Alternative', 'Full Art', 'Gold'];
 const appLang = (l) => (l === 'ja' ? 'jp' : l);
 // A French raw card linked to the catalogue can follow the Cote France (eBay France listings).
-const frCard = () => false;   // Cote France (eBay) retired: every raw card follows the Cardmarket average price
 
 /* ======================================================================
    Detail
@@ -85,16 +84,13 @@ export function openDetail(kind, id) {
 
       <div class="section">
         <div class="section-head"><h2>Cote</h2>
-          ${kind === 'card' || (a.market && a.market.src === 'GCC') ? `<div class="seg small" style="width:${frCard(kind, a) ? 250 : 170}px">
-            ${frCard(kind, a) ? `<button data-mode="fr" class="${priceModeOf(kind, a) === 'fr' ? 'on' : ''}">France</button>` : ''}
-            <button data-mode="auto" class="${priceModeOf(kind, a) === 'auto' ? 'on' : ''}">${frCard(kind, a) ? 'Cardmarket' : 'Auto'}</button>
+          ${kind === 'card' || (a.market && a.market.src === 'GCC') ? `<div class="seg small" style="width:170px">
+            <button data-mode="auto" class="${priceModeOf(kind, a) === 'auto' ? 'on' : ''}">Auto</button>
             <button data-mode="manual" class="${priceModeOf(kind, a) === 'manual' ? 'on' : ''}">Manuelle</button></div>` : ''}</div>
         ${a.pendingValue ? `<div class="banner" style="margin:0 0 10px">${icon('info')}<div class="main"><b>Nouvelle cote proposée : ${money(a.pendingValue.v)}</b><br>
           <small class="muted">${esc(a.pendingValue.src)} · variation de ${pct(((a.pendingValue.v - a.value) / a.value) * 100)}, à valider</small></div>
           <div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm primary" data-pending="apply">Appliquer</button><button class="btn sm" data-pending="skip">Ignorer</button></div></div>` : ''}
-        <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'fr'
-          ? `Cote France : exemplaires français en vente sur eBay France (${EST_MIN_VALUE} annonces minimum, sinon tendance Cardmarket), mise à jour le lundi et le jeudi${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
-          : priceModeOf(kind, a) === 'auto'
+        <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'auto'
           ? `${kind === 'card' && (!a.grader || a.grader === 'raw') ? 'Prix moyen Cardmarket, m' : 'M'}ise à jour automatique chaque jour${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
           : 'Cote saisie par vous : elle n’est jamais modifiée automatiquement.'}</p>
         <form class="quick-value" data-quick>
@@ -156,7 +152,7 @@ export function openDetail(kind, id) {
     if (!m) return '';
     if (m.src === 'Index') return indexBlock(a, m);
     const gcc = m.src === 'GCC';
-    const box = (label, v, sub) => `<div class="m"><span><small>${label}</small><b class="num">${v != null ? money(v) : '—'}</b>${sub ? `<small style="font-weight:600">${sub}</small>` : ''}</span>${v != null ? `<button class="use" data-use="${v}">Utiliser</button>` : ''}</div>`;
+    const box = (label, v, sub) => `<div class="m"><span><small>${label}</small><b class="num">${v != null ? money(v) : '—'}</b>${sub ? `<small style="font-weight:600">${sub}</small>` : ''}</span>${v != null ? `<button class="use" title="Fixe cette cote : elle ne suivra plus le marché" data-use="${v}">Utiliser</button>` : ''}</div>`;
     return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">${esc(m.src)}</span><button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button></span></div>
       <div class="market">
         ${box(gcc ? 'Dernière vente' : 'Moyenne du jour', m.d1, gcc ? saleDate(m.d1At) : '')}
@@ -182,7 +178,7 @@ export function openDetail(kind, id) {
     else {
       const v = market.variants.find((x) => x.id === market.selected) || market.variants[0];
       const cm = v.cm || {};
-      const cell = (label, val) => `<div class="m"><span><small>${label}</small><b class="num">${val != null ? money(val) : '—'}</b></span>${val != null ? `<button class="use" data-use="${val}">Utiliser</button>` : ''}</div>`;
+      const cell = (label, val) => `<div class="m"><span><small>${label}</small><b class="num">${val != null ? money(val) : '—'}</b></span>${val != null ? `<button class="use" title="Fixe cette cote : elle ne suivra plus le marché" data-use="${val}">Utiliser</button>` : ''}</div>`;
       inner = `${market.variants.length > 1 ? `<div class="chips" style="margin-bottom:10px">${market.variants.map((x) => `<button data-variant="${esc(x.id)}" class="${x.id === v.id ? 'on' : ''}">${esc(x.label)}</button>`).join('')}</div>` : ''}
         <div class="market">${cell('Prix moyen', cm.avg)}${cell('Tendance', cm.trend)}${cell('Moyenne 30 j', cm.avg30)}${cell('Plus bas', cm.low)}</div>
         ${v.tp ? `<div class="note">TCGplayer (US) : ${v.tp.market != null ? '$' + v.tp.market.toFixed(2) : '—'} (market price)</div>` : ''}
@@ -211,8 +207,8 @@ export function openDetail(kind, id) {
       else {
         inner = `${chips}
           <div class="market">
-            <div class="m"><span><small>Prix moyen${st.recent ? ' · 12 mois' : ''}</small><b class="num">${money(st.avg)}</b></span><button class="use" data-use="${st.avg.toFixed(2)}">Utiliser</button></div>
-            <div class="m"><span><small>Médiane</small><b class="num">${money(st.median)}</b></span><button class="use" data-use="${st.median.toFixed(2)}">Utiliser</button></div>
+            <div class="m"><span><small>Prix moyen${st.recent ? ' · 12 mois' : ''}</small><b class="num">${money(st.avg)}</b></span><button class="use" title="Fixe cette cote : elle ne suivra plus le marché" data-use="${st.avg.toFixed(2)}">Utiliser</button></div>
+            <div class="m"><span><small>Médiane</small><b class="num">${money(st.median)}</b></span><button class="use" title="Fixe cette cote : elle ne suivra plus le marché" data-use="${st.median.toFixed(2)}">Utiliser</button></div>
             <div class="m"><span><small>Ventes</small><b class="num">${st.count}</b></span></div>
             <div class="m"><span><small>Fourchette</small><b class="num" style="font-size:13px">${money(st.min)} – ${money(st.max)}</b></span></div>
           </div>
@@ -253,9 +249,7 @@ export function openDetail(kind, id) {
       const med = v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
       inner = `${ebay.est != null ? `<div class="market" style="margin-bottom:10px">
           <div class="m"><span><small>Cote France estimée</small><b class="num">${money(ebay.est)}</b><small style="font-weight:600">${ebay.estCount} annonces FR</small></span>${
-            priceModeOf(kind, a) === 'fr' && ebay.estCount >= EST_MIN_VALUE ? '<span class="pill gold">Cote suivie</span>'
-            : frCard(kind, a) && ebay.estCount >= EST_MIN_VALUE ? '<button class="use" data-mode="fr">Suivre</button>'
-            : `<button class="use" data-use="${ebay.est}">Utiliser</button>`}</div>
+            `<button class="use" title="Fixe cette cote : elle ne suivra plus le marché" data-use="${ebay.est}">Utiliser</button>`}</div>
         </div>
         <div class="note" style="margin:-4px 0 10px">Exemplaires français à prix fixe sur eBay France : 30 % des annonces les moins chères, car les prix demandés dépassent les ventes réelles.</div>` : ''}
         <div class="market">
@@ -276,8 +270,6 @@ export function openDetail(kind, id) {
     ebay = { loading: true };
     try {
       ebay = await ebayListings(a, kind);
-      // Cote France: the listings just loaded refresh the value of a card priced on them (no extra eBay call).
-      if (kind === 'card') setFrValue(a.id, ebay.est, ebay.estCount);
     } catch (e) {
       ebay = { error: e.message };
     }
@@ -309,12 +301,17 @@ export function openDetail(kind, id) {
       const card = await getCard(a.tcgLang || tcgLang(a.lang), a.tcgdexId);
       const variants = priceVariants(card);
       market = { variants, selected: a.tcgdexVariant && variants.some((v) => v.id === a.tcgdexVariant) ? a.tcgdexVariant : variants[0]?.id };
-      // No value yet (the nightly job has not run, or skipped this card): take the Cardmarket trend now, same rule
-      // as the nightly job. A value the user typed is never touched.
+      // No value yet (the daily update has not run, or skipped this card): take the Cardmarket average price now,
+      // same rule as the daily update (store.js: whole euros, never overstated). Raw cards only (Cardmarket prices
+      // are for ungraded cards); a value the user typed is never touched.
       const cur = find(kind, a.id);
       const cm = variants.find((v) => v.id === market.selected)?.cm;
-      const t = cm && (cm.trend || cm.avg);
-      if (cur && t && !hasValue(cur)) updateAsset(kind, cur.id, { value: Math.round(t * 100) / 100, valueSource: 'Cardmarket · tendance' });
+      const t = cm && (cm.avg != null ? cm.avg : cm.trend);
+      const raw = !cur?.grader || cur.grader === 'raw';
+      if (cur && raw && t && !hasValue(cur)) {
+        const v = Math.round(t * 100) / 100;
+        updateAsset(kind, cur.id, { value: v >= 1 ? Math.floor(v) : v, valueSource: 'Cardmarket · prix moyen' });
+      }
       // Cards added before the classic collections got a clean name keep TCGdex's raw one: rename them once.
       const clean = cleanSetName(card.set?.id, '');
       if (cur && clean && cur.set === card.set?.name) updateAsset(kind, cur.id, { set: clean });
@@ -325,7 +322,7 @@ export function openDetail(kind, id) {
   }
 
   sheet.body.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed],[data-mode],[data-pending],[data-invest],[data-gcc-fetch]');
+    const t = e.target.closest('[data-zoom],[data-swap],[data-edit],[data-sell],[data-del],[data-link],[data-use],[data-variant],[data-gcc-scope],[data-gcc-ed],[data-mode],[data-pending],[data-invest],[data-gcc-fetch],[data-range]');
     if (!t) return;
     const a = find(kind, id);
     if ('zoom' in t.dataset) lightbox(t.src.replace('/low.webp', '/high.webp'));
@@ -352,9 +349,7 @@ export function openDetail(kind, id) {
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
     if (t.dataset.mode) {
       updateAsset(kind, id, { priceMode: t.dataset.mode });
-      // Cote France chosen: apply the estimate of the listings already on screen right away.
-      if (t.dataset.mode === 'fr' && ebay && ebay.est != null) setFrValue(id, ebay.est, ebay.estCount);
-      toast(t.dataset.mode === 'fr' ? 'Cote France : mise à jour le lundi et le jeudi' : t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
+      toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
     }
     if ('invest' in t.dataset) import('./views/invest.js?v=2.4.10-202610291017').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
@@ -651,9 +646,10 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
     const btn = sheet.body.querySelector('[type=submit]');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner" style="width:18px;height:18px"></span>Enregistrement…';
+    let photoStep = false;
     try {
       let photo = removePhoto ? null : a.photo || null;
-      if (newPhoto) photo = await savePhoto(newPhoto);
+      if (newPhoto) { photoStep = true; photo = await savePhoto(newPhoto); photoStep = false; }
       const num = (v) => (v === '' || v == null ? null : +v);
       const data = {
         name: a.name.trim(), set: (a.set || '').trim(), lang: a.lang, qty: Math.max(1, parseInt(a.qty, 10) || 1),
@@ -678,14 +674,14 @@ export function openForm(kind, existing = null, prefill = {}, { photoData = null
           else if (created.tcgplayerId) refreshSealedPrices({ only: [created.id] }).then((r) => { if (!(r && r.updated)) quickGccValue(created.id, { notify: true }); }).catch(() => quickGccValue(created.id, { notify: true })); else quickGccValue(created.id, { notify: true });
         }
         else if (isCard && created.tcgdexId) refreshLocalPrices({ only: [created.id] }).catch(() => {});
-        else if (!isCard && created.tcgplayerId && !hasValue(created)) refreshSealedPrices({ only: [created.id] }).then((r) => { if (r && r.updated) toast('Cote TCGplayer ajoutée'); }).catch(() => {});
+        else if (!isCard && created.tcgplayerId && !hasValue(created)) refreshSealedPrices({ only: [created.id] }).then((r) => { if (r && r.updated) toast('Cote du marché ajoutée'); }).catch(() => {});
         toast(isCard ? 'Carte ajoutée' : 'Item ajouté');
         sheet.close();
         if (!location.hash.startsWith('#/collection')) location.hash = '#/collection/' + (isCard ? 'cards' : 'items');
         setTimeout(() => openDetail(kind, created.id), 320);
       }
     } catch (err) {
-      toast('Photo non enregistrée : ' + err.message, { error: true });
+      toast((photoStep ? 'Photo non enregistrée : ' : 'Enregistrement impossible : ') + err.message, { error: true });
       btn.disabled = false;
       btn.innerHTML = icon('check') + 'Réessayer';
     }
@@ -825,7 +821,7 @@ function indexPanel(a, m, histRange, { withInvest = true, withUse = true } = {})
   const subj = encodeURIComponent('Erreur de prix : ' + (a.name || ''));
   const body = encodeURIComponent(`Produit : ${a.name || ''}\nCote affichée : ${money(m.d1)}\nCe que je constate :`);
   return `<div class="section"><div class="section-head"><h2>Prix du marché</h2><span style="display:flex;gap:6px;align-items:center"><span class="pill gold">Indice</span>${withInvest ? `<button class="btn sm" data-invest>${icon('up', 'sm')}${a.watch && a.watch.on ? 'En veille' : 'Invest'}</button>` : ''}</span></div>
-    <div class="market"><div class="m"><span><small>Cote du marché</small><b class="num">${money(m.d1)}</b>${trend ? `<small>${trend}</small>` : ''}</span>${withUse ? `<button class="use" data-use="${m.d1}">Utiliser</button>` : ''}</div>
+    <div class="market"><div class="m"><span><small>Cote du marché</small><b class="num">${money(m.d1)}</b>${trend ? `<small>${trend}</small>` : ''}</span>${withUse ? `<button class="use" title="Fixe cette cote : elle ne suivra plus le marché" data-use="${m.d1}">Utiliser</button>` : ''}</div>
     <div class="m"><span><small>Confiance</small><b>${CONF[m.conf] || '—'}</b><small style="font-weight:600">${m.n30 ? m.n30 + ' vente' + (m.n30 > 1 ? 's' : '') + ' FR / 30 j' : 'sans vente récente'}</small></span></div></div>
     ${chart}
     <div style="margin-top:10px">${srcRow}</div>
