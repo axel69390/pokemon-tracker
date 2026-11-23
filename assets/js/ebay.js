@@ -11,9 +11,12 @@ const GRADED = /\b(psa|pca|cgc|bgs|sgs|ccc|beckett|collect aura|gradee?|graded)\
 // Same list as tools/build_ebay.py: listings of another language version.
 const FOREIGN = /\b(japon\w*|jap|jp|anglais|english|eng|korean|coreen|chinese|chinois|allemand|deutsch|german|italien|italian|espagnol|spanish)\b/;
 export const reprintOf = (a) => (/^30th-c-/.test(a.tcgdexId || '') ? '30' : /^cel25cc-/.test(a.tcgdexId || '') ? '25' : '');
+// Black-star promos (MEP, SVP…) are sold in 30th-anniversary or event boxes: "30 ans" in the title is not a reprint.
+const PROMO = /^(mep|svp|swshp|smp|xyp|bwp|dpp|np)-/;
 export function sameEdition(a, text) {
   const t = markText(text);
   const r = reprintOf(a);
+  if (!r && PROMO.test(a.tcgdexId || '')) return true;
   if (!r) return !REPRINT_MARK.test(t) || /^(30th|cel25)/.test(a.tcgdexId || '') || /celebration|anniv/.test(markText(a.set));
   if (!REPRINT_MARK.test(t)) return false;
   return r === '30' ? !/\b25\s?(e|eme|th|ans)\b/.test(t) : !/\b30\s?(e|eme|th|ans)\b|\b30c\b/.test(t);
@@ -45,10 +48,16 @@ export async function ebayListings(a, kind = 'card') {
   const seen = new Set();
   // Keep only real matches: every word of the name, EUR prices, no empty boxes / proxies / lots.
   const bad = /\b(vide|empty|proxy|custom|reproduction|replica|fake|lot|boite seule|carte seule)\b/i;
+  // A card listing that is really a bundle or a choice between cards would skew the estimate.
+  const notSingle = /\+|&|\bau choix\b|\bcoffret|\bpokebox|\bbooster|\bdisplay\b|\betb\b|\bkit\b|\bcadre\b|\blots?\b|\bx\s?[2-9]\b|\b[2-9]\s?x\b/;
   // Same card only: the full number (11/113, not 11/107), the same edition (original vs 30th reprint) and,
   // for a raw card, no graded slab.
-  const [n, total] = isCard && a.num ? String(a.num).split('/').map((x) => x.trim().replace(/^0+(?=\d)/, '')) : [];
+  const [n0, total0] = isCard && a.num ? String(a.num).split('/').map((x) => x.trim().replace(/^0+(?=\d)/, '')) : [];
+  const total = PROMO.test(a.tcgdexId || '') ? undefined : total0;   // a promo is printed without a set total
+  const n = n0 && !total ? (n0.match(/\d+/) || [])[0] : n0;   // "MEP 110" / "SVP 085" -> 110 / 85
   const numRe = n && total ? new RegExp(`(^|\\D)0*${n}\\s*/\\s*0*${total}(\\D|$)`) : null;
+  // A number without total (promos): the title must carry it, and an x/y number is another card.
+  const soloRe = n && !total ? new RegExp(`(^|\\D)0*${n}(\\D|$)`) : null;
   const raw = !a.grader || a.grader === 'raw';
   const items = answers.flat().filter((x) => {
     const key = x && x.title + '|' + x.price;    // the same listing comes back from both searches
@@ -60,6 +69,8 @@ export async function ebayListings(a, kind = 'card') {
     // Another number in the title (11/107, 11/128) is another card; no number at all is only accepted for a
     // reprint listed by its collection ("Metalosse 30 ans").
     if (numRe && !numRe.test(t) && (/\d+\s*\/\s*\d+/.test(t) || !(r && REPRINT_MARK.test(markText(x.title))))) return false;
+    if (soloRe && (!soloRe.test(t) || /\d+\s*\/\s*\d+/.test(t))) return false;
+    if (notSingle.test(t)) return false;
     if (raw && GRADED.test(t)) return false;
     if (a.lang === 'fr' && FOREIGN.test(t)) return false;   // a French card is priced on French copies only
     return sameEdition(a, x.title);

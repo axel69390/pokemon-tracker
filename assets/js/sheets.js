@@ -2,10 +2,10 @@
 import {
   store, find, addAsset, updateAsset, removeAsset, priceModeOf, sellAsset, deleteSale, savePhoto, photoUrl, imageOf, officialImage, setProgress, removeSet,
   worthOf, gainOf, gainPct, costOf, unitCost, unitValue, qtyOf, hasValue, salesSummary, saleRevenue, salePnl,
-  refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow,
+  refreshLocalPrices, refreshSealedPrices, refreshPrices, sealedMarketRow, refreshFrPrices, setFrValue, isFrRaw,
 } from './store.js?v=2.4.10-202611232339';
 import { EBAY_API } from './edition.js?v=2.4.10-202611232339';
-import { ebayListings, sameEdition } from './ebay.js?v=2.4.10-202611232339';
+import { ebayListings, sameEdition, EST_MIN_VALUE } from './ebay.js?v=2.4.10-202611232339';
 import {
   esc, phCard, money, signed, pct, pill, icon, flag, dateFr, today, toast, openSheet, confirmSheet, lightbox, resizeImage, pickImage,
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
@@ -84,13 +84,19 @@ export function openDetail(kind, id) {
 
       <div class="section">
         <div class="section-head"><h2>Cote</h2>
-          ${kind === 'card' || (a.market && a.market.src === 'GCC') ? `<div class="seg small" style="width:170px">
+          ${kind === 'card' && isFrRaw(a) ? `<div class="seg small" style="width:260px">
+            <button data-mode="fr" class="${priceModeOf(kind, a) === 'fr' ? 'on' : ''}">France</button>
+            <button data-mode="cm" class="${priceModeOf(kind, a) === 'auto' ? 'on' : ''}">Cardmarket</button>
+            <button data-mode="manual" class="${priceModeOf(kind, a) === 'manual' ? 'on' : ''}">Manuelle</button></div>`
+          : kind === 'card' || (a.market && a.market.src === 'GCC') ? `<div class="seg small" style="width:170px">
             <button data-mode="auto" class="${priceModeOf(kind, a) === 'auto' ? 'on' : ''}">Auto</button>
             <button data-mode="manual" class="${priceModeOf(kind, a) === 'manual' ? 'on' : ''}">Manuelle</button></div>` : ''}</div>
         ${a.pendingValue ? `<div class="banner" style="margin:0 0 10px">${icon('info')}<div class="main"><b>Nouvelle cote proposée : ${money(a.pendingValue.v)}</b><br>
           <small class="muted">${esc(a.pendingValue.src)} · variation de ${pct(((a.pendingValue.v - a.value) / a.value) * 100)}, à valider</small></div>
           <div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm primary" data-pending="apply">Appliquer</button><button class="btn sm" data-pending="skip">Ignorer</button></div></div>` : ''}
-        <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'auto'
+        <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'fr'
+          ? `Cote France : exemplaires français à prix fixe sur eBay France (30 % des annonces les moins chères, ${EST_MIN_VALUE} annonces minimum), mise à jour chaque jour${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
+          : priceModeOf(kind, a) === 'auto'
           ? `${kind === 'card' && (!a.grader || a.grader === 'raw') ? 'Cote Cardmarket (médiane des moyennes 7 j et 30 j et de la tendance), m' : 'M'}ise à jour automatique chaque jour${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
           : 'Cote saisie par vous : elle n’est jamais modifiée automatiquement.'}</p>
         <form class="quick-value" data-quick>
@@ -270,6 +276,7 @@ export function openDetail(kind, id) {
     ebay = { loading: true };
     try {
       ebay = await ebayListings(a, kind);
+      if (kind === 'card' && ebay.est != null) setFrValue(a.id, ebay.est, ebay.estCount);
     } catch (e) {
       ebay = { error: e.message };
     }
@@ -348,8 +355,15 @@ export function openDetail(kind, id) {
     if (t.dataset.variant) { market.selected = t.dataset.variant; updateAsset(kind, id, { tcgdexVariant: t.dataset.variant }); }
     if (t.dataset.use) { updateAsset(kind, id, { value: +(+t.dataset.use).toFixed(2), priceMode: 'manual', valueSource: null }); toast('Cote enregistrée (manuelle)'); }
     if (t.dataset.mode) {
-      updateAsset(kind, id, { priceMode: t.dataset.mode });
-      toast(t.dataset.mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
+      const mode = t.dataset.mode;
+      updateAsset(kind, id, { priceMode: mode });
+      if (mode === 'fr') {
+        if (ebay && ebay.est != null && ebay.estCount >= EST_MIN_VALUE) setFrValue(id, ebay.est, ebay.estCount);
+        else refreshFrPrices({ only: [id] }).catch(() => {});
+      } else if (mode === 'cm' || (mode === 'auto' && kind === 'card')) refreshLocalPrices({ only: [id] }).catch(() => {});
+      toast(mode === 'fr' ? 'Cote France (eBay) : mise à jour chaque jour'
+        : mode === 'cm' ? 'Cote Cardmarket : mise à jour chaque nuit'
+        : mode === 'auto' ? 'Cote automatique : mise à jour chaque nuit' : 'Cote manuelle');
     }
     if ('invest' in t.dataset) import('./views/invest.js?v=2.4.10-202611232339').then((mod) => mod.openInvest(kind, id));
     if (t.dataset.pending) {
