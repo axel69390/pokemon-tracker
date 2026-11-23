@@ -52,7 +52,7 @@ const EN = {
   'Achat unitaire': 'Unit cost', 'Coût total': 'Total cost', 'Quantité': 'Quantity', 'Date d’achat': 'Purchase date', 'Valeur mise à jour': 'Value updated',
   'Cote': 'Price', 'Auto': 'Auto', 'Manuelle': 'Manual', 'Prix du marché': 'Market price', 'Moyenne du jour': 'Daily average',
   'Moyenne 30 jours': '30-day average', 'Dernière vente': 'Last sale', 'Évolution de la valeur': 'Value history', 'Version de la carte': 'Card version',
-  'Changer de fiche': 'Change card', 'Cote du marché': 'Market price', 'Prix moyen': 'Average price', 'Tendance': 'Trend', 'Moyenne 30 j': '30-day avg',
+  'Changer de fiche': 'Change card', 'Cote du marché': 'Market price', 'Prix moyen': 'Average price', 'Tendance': 'Trend', 'Moyenne 30 j': '30-day avg', 'Moyenne 7 j': '7-day avg',
   'Plus bas': 'Lowest', 'Médiane': 'Median', 'Fourchette': 'Range', 'Ventes': 'Sales', 'Ventes GCC': 'GCC sales', 'Cartes gradées': 'Graded cards',
   'Toutes notes': 'All grades', 'Toutes éditions': 'All editions', '1ère édition': '1st edition', 'Illimitée': 'Unlimited',
   'Ventes et annonces': 'Sales & listings', 'Ventes eBay': 'eBay sales', 'Dernières ventes réussies': 'Latest sold listings',
@@ -99,7 +99,7 @@ const EN = {
   'Réessayez dans un instant.': 'Try again in a moment.', 'Choisir la carte': 'Choose the card', 'Nom de la carte': 'Card name',
   'Numéro (facultatif) : 4/102': 'Number (optional): 4/102', 'Tapez au moins 2 lettres.': 'Type at least 2 letters.', 'Ajouter un item': 'Add an item',
   'Rechercher : Display 151, ETB Évolutions…': 'Search: booster box, ETB…', 'Affinez la recherche pour voir plus de produits.': 'Refine your search to see more products.',
-  'Impossible de charger cette carte': 'Could not load this card', 'Toutes les extensions ': 'All sets', 'PRIX MOYEN CARDMARKET': 'CARDMARKET AVERAGE',
+  'Impossible de charger cette carte': 'Could not load this card', 'Toutes les extensions ': 'All sets', 'PRIX MOYEN CARDMARKET': 'CARDMARKET AVERAGE', 'COTE CARDMARKET': 'CARDMARKET PRICE',
 
   // Categories
   'Coffret': 'Collection box', 'Pokébox': 'Tin', 'Valisette': 'Collector chest', 'Tripack': '3-pack blister', 'Duo Pack': '2-pack',

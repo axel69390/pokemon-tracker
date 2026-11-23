@@ -1,7 +1,7 @@
 // Collection state, persistence (device or personal server) and portfolio maths.
 import { settings } from './settings.js?v=2.4.10-202611232333';
 import { IS_STORE, asset } from './edition.js?v=2.4.10-202611232333';
-import { server, ServerError, getCard, priceVariants, classicImage, promoImage } from './api.js?v=2.4.10-202611232333';
+import { server, ServerError, getCard, priceVariants, classicImage, promoImage, cmCote, CM_SRC } from './api.js?v=2.4.10-202611232333';
 import { today, uid, toast, debounce } from './ui.js?v=2.4.10-202611232333';
 import { hasAccess } from './billing.js?v=2.4.10-202611232333';
 import { take, put } from './db.js?v=2.4.10-202611232333';
@@ -336,7 +336,7 @@ export function removeSet(id) {
    Same rules as the server's nightly job, Cardmarket only (GCC and TCGplayer are not reachable from a
    browser): once a day, every card linked to the catalogue gets its day / 30-day average and trend; cards in
    automatic mode take the trend as their value (swings > 40 % are proposed for review instead). */
-const LOCAL_RUN_KEY = NS + '.localPriceRun.avg';   // renamed: the switch to the average price runs at once
+const LOCAL_RUN_KEY = NS + '.localPriceRun.cote';   // renamed: the switch to the median cote (Nov 2026) runs at once
 export async function refreshLocalPrices({ force = false, only = null } = {}) {
   if (!hasAccess()) return null;
   let vm = null;
@@ -378,7 +378,7 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
   state.cards.forEach((c) => {
     const cm = res[c.id];
     if (!cm || (only && !only.includes(c.id))) return;
-    const trend = r2(cm.avg != null ? cm.avg : cm.trend), d30 = r2(cm.avg30);   // chart follows the value (average price)
+    const trend = r2(cmCote(cm)), d30 = r2(cm.avg30);   // chart follows the value (the cote)
     c.market = { src: 'Cardmarket', d1: r2(cm.avg1 != null ? cm.avg1 : cm.avg), d1At: day, d30, at: day };
     if (trend != null) {
       let h = (c.hist || []).filter((x) => x.d !== day);
@@ -386,11 +386,11 @@ export async function refreshLocalPrices({ force = false, only = null } = {}) {
       h.push({ d: day, p: trend, a30: d30 });
       c.hist = h.slice(-400);
     }
-    // Value = Cardmarket average sale price ("Prix moyen"), the most reliable figure; manual cards are never touched,
-    // except when no value was ever entered (nothing of the user's to overwrite).
-    const avg = whole(r2(cm.avg != null ? cm.avg : (cm.trend != null ? cm.trend : null)));
+    // Value = Cardmarket cote (api.js cmCote: median of the 7-day and 30-day averages and the trend); manual cards
+    // are never touched, except when no value was ever entered (nothing of the user's to overwrite).
+    const avg = whole(r2(cmCote(cm)));
     if (avg == null || (priceModeOf('card', c) !== 'auto' && hasValue(c))) return;
-    const SRC = cm.srcLabel || 'Cardmarket · prix moyen';
+    const SRC = cm.srcLabel || CM_SRC;
     const old = hasValue(c) ? whole(+c.value) : null;   // compare with the old cote truncated like the new one
     if (old && c.valueSource === SRC && Math.abs(avg - old) / old > 0.4) { c.pendingValue = { v: avg, src: SRC, d: day }; pending++; return; }
     delete c.pendingValue;
@@ -512,9 +512,9 @@ export function setWatchlistTarget(id, target) {
 async function priceOfWatch(w) {
   if (w.kind === 'card') {
     const card = await getCard(w.tcgLang || 'fr', w.tcgdexId);
-    const vs = priceVariants(card).filter((v) => v.cm && (v.cm.avg != null || v.cm.trend != null));
+    const vs = priceVariants(card).filter((v) => cmCote(v.cm) != null);
     if (!vs.length) return null;
-    const av = (v) => (v.cm.avg != null ? v.cm.avg : v.cm.trend);
+    const av = (v) => cmCote(v.cm);
     const cheapest = vs.reduce((a, b) => (av(b) < av(a) ? b : a));
     return { p: wholeEur(av(cheapest)) };
   }
