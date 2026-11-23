@@ -1,6 +1,6 @@
 import { settings, parseConnect } from '../settings.js?v=2.4.10-202610291017';
 import { server } from '../api.js?v=2.4.10-202610291017';
-import { store, replaceAll, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.10-202610291017';
+import { store, replaceAll, replaceWatchlist, backupData, qtyOf, unitValue, costOf, worthOf } from '../store.js?v=2.4.10-202610291017';
 import { esc, icon, toast, download, confirmSheet, today, LANGS, GRADERS } from '../ui.js?v=2.4.10-202610291017';
 import { IS_STORE, APP_NAME, ICON } from '../edition.js?v=2.4.10-202610291017';
 import { langSetting, setLang } from '../i18n.js?v=2.4.10-202610291017';
@@ -53,7 +53,7 @@ export function render(main) {
     <section class="section">
       <div class="section-head"><h2>Mes données</h2></div>
       <div class="list">
-        <button class="row" data-export="json"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Sauvegarde complète</b><small>Fichier JSON (cartes, items, ventes, sets, historique)</small></span>${icon('chev', 'sm faint')}</button>
+        <button class="row" data-export="json"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Sauvegarde complète</b><small>Fichier JSON (cartes, items, ventes, sets, historique, surveillance)</small></span>${icon('chev', 'sm faint')}</button>
         <button class="row" data-export="csv"><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('download')}</span></span><span class="main"><b>Export tableur</b><small>Fichier CSV compatible Excel</small></span>${icon('chev', 'sm faint')}</button>
         <button class="row" data-import><span class="stat" style="padding:0;border:0;background:none"><span class="ico">${icon('upload')}</span></span><span class="main"><b>Restaurer une sauvegarde</b><small>Remplace la collection actuelle</small></span>${icon('chev', 'sm faint')}</button>
       </div>
@@ -84,7 +84,7 @@ export function render(main) {
       render(main);
     }
     if (t.dataset.export === 'json') {
-      download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', version: VERSION, exportedAt: new Date().toISOString(), ...store.get() }, null, 2));
+      download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.json`, JSON.stringify({ app: IS_STORE ? 'cardvault' : 'pokedex-invest', version: VERSION, exportedAt: new Date().toISOString(), ...backupData() }, null, 2));
     }
     if (t.dataset.export === 'csv') download(`${IS_STORE ? 'cardvault' : 'pokedex-invest'}-${today()}.csv`, toCsv(), 'text/csv;charset=utf-8');
     if ('import' in t.dataset) importBackup();
@@ -127,6 +127,7 @@ function importBackup() {
       if (!Array.isArray(data.cards) || !Array.isArray(data.items)) throw new Error('Ce fichier n’est pas une sauvegarde valide');
       if (!(await confirmSheet(`Remplacer la collection actuelle par cette sauvegarde (${data.cards.length} cartes, ${data.items.length} items) ?`, { ok: 'Restaurer', danger: true }))) return;
       replaceAll({ cards: data.cards, items: data.items, sales: data.sales || [], sets: data.sets || [], history: data.history || [] });
+      if (Array.isArray(data.watchlist)) replaceWatchlist(data.watchlist);   // older backups have none: keep the current one
       toast('Sauvegarde restaurée');
     } catch (e) { toast(e.message, { error: true }); }
   };

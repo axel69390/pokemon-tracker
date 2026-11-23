@@ -146,7 +146,7 @@ const EN = {
     'The server syncs your collection across devices, keeps the daily value history and enables the scanner.',
   'Les données sont enregistrées dans ce navigateur uniquement. Exportez-les régulièrement ou connectez un serveur personnel pour les synchroniser.':
     'Your data is stored on this device only. Export it regularly to keep a backup.',
-  'Mes données': 'My data', 'Sauvegarde complète': 'Full backup', 'Fichier JSON (cartes, items, ventes, sets, historique)': 'JSON file (cards, items, sales, sets, history)',
+  'Mes données': 'My data', 'Sauvegarde complète': 'Full backup', 'Fichier JSON (cartes, items, ventes, sets, historique, surveillance)': 'JSON file (cards, items, sales, sets, history, watchlist)',
   'Export tableur': 'Spreadsheet export', 'Fichier CSV compatible Excel': 'Excel-compatible CSV file', 'Restaurer une sauvegarde': 'Restore a backup',
   'Remplace la collection actuelle': 'Replaces the current collection', 'Sauvegarde restaurée': 'Backup restored', 'Restaurer': 'Restore', 'À propos': 'About',
   'Serveur connecté': 'Server connected', 'Clé d’accès refusée': 'Access key refused', 'Lien de connexion invalide': 'Invalid connection link',
