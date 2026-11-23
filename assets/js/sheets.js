@@ -11,7 +11,7 @@ import {
   LANGS, GRADERS, CONDITIONS, CATEGORIES, CATEGORY_ICON, gradeLabel, trend, attachSuggest,
 } from './ui.js?v=2.4.10-202611232333';
 import { searchSealed, sealedImage, sealedPrefill } from './sealed.js?v=2.4.10-202611232333';
-import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server } from './api.js?v=2.4.10-202611232333';
+import { getCard, getSetCards, searchCards, printedNumber, cleanSetName, priceVariants, links, tcgLang, cardImage, server, cmCote, CM_SRC } from './api.js?v=2.4.10-202611232333';
 import { settings } from './settings.js?v=2.4.10-202611232333';
 import { requireAccess } from './billing.js?v=2.4.10-202611232333';
 import { renderChart } from './chart.js?v=2.4.10-202611232333';
@@ -91,7 +91,7 @@ export function openDetail(kind, id) {
           <small class="muted">${esc(a.pendingValue.src)} · variation de ${pct(((a.pendingValue.v - a.value) / a.value) * 100)}, à valider</small></div>
           <div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm primary" data-pending="apply">Appliquer</button><button class="btn sm" data-pending="skip">Ignorer</button></div></div>` : ''}
         <p class="note" style="margin:-4px 0 10px">${priceModeOf(kind, a) === 'auto'
-          ? `${kind === 'card' && (!a.grader || a.grader === 'raw') ? 'Prix moyen Cardmarket, m' : 'M'}ise à jour automatique chaque jour${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
+          ? `${kind === 'card' && (!a.grader || a.grader === 'raw') ? 'Cote Cardmarket (médiane des moyennes 7 j et 30 j et de la tendance), m' : 'M'}ise à jour automatique chaque jour${a.valueSource ? ` · ${esc(a.valueSource)} · ${dateFr(a.valueUpdatedAt)}` : ''}.`
           : 'Cote saisie par vous : elle n’est jamais modifiée automatiquement.'}</p>
         <form class="quick-value" data-quick>
           <label class="field"><div class="suffix" data-suffix="€"><input name="value" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Valeur unitaire" value="${hasValue(a) ? +a.value : ''}"></div></label>
@@ -180,7 +180,7 @@ export function openDetail(kind, id) {
       const cm = v.cm || {};
       const cell = (label, val) => `<div class="m"><span><small>${label}</small><b class="num">${val != null ? money(val) : '—'}</b></span>${val != null ? `<button class="use" title="Fixe cette cote : elle ne suivra plus le marché" data-use="${val}">Utiliser</button>` : ''}</div>`;
       inner = `${market.variants.length > 1 ? `<div class="chips" style="margin-bottom:10px">${market.variants.map((x) => `<button data-variant="${esc(x.id)}" class="${x.id === v.id ? 'on' : ''}">${esc(x.label)}</button>`).join('')}</div>` : ''}
-        <div class="market">${cell('Prix moyen', cm.avg)}${cell('Tendance', cm.trend)}${cell('Moyenne 30 j', cm.avg30)}${cell('Plus bas', cm.low)}</div>
+        <div class="market">${cell('Cote', cmCote(cm))}${cell('Moyenne 7 j', cm.avg7)}${cell('Moyenne 30 j', cm.avg30)}${cell('Tendance', cm.trend)}</div>
         ${v.tp ? `<div class="note">TCGplayer (US) : ${v.tp.market != null ? '$' + v.tp.market.toFixed(2) : '—'} (market price)</div>` : ''}
         <div class="note">Source : Cardmarket via TCGdex${cm.updated ? ' · mis à jour le ' + dateFr(cm.updated) : ''}. Prix d’une carte non gradée, tous états confondus.</div>`;
     }
@@ -306,11 +306,11 @@ export function openDetail(kind, id) {
       // are for ungraded cards); a value the user typed is never touched.
       const cur = find(kind, a.id);
       const cm = variants.find((v) => v.id === market.selected)?.cm;
-      const t = cm && (cm.avg != null ? cm.avg : cm.trend);
+      const t = cmCote(cm);
       const raw = !cur?.grader || cur.grader === 'raw';
       if (cur && raw && t && !hasValue(cur)) {
         const v = Math.round(t * 100) / 100;
-        updateAsset(kind, cur.id, { value: v >= 1 ? Math.floor(v) : v, valueSource: 'Cardmarket · prix moyen' });
+        updateAsset(kind, cur.id, { value: v >= 1 ? Math.floor(v) : v, valueSource: CM_SRC });
       }
       // Cards added before the classic collections got a clean name keep TCGdex's raw one: rename them once.
       const clean = cleanSetName(card.set?.id, '');
@@ -875,12 +875,12 @@ export function openCatalogueCard(lang, id, { photoData = null, extra = {} } = {
           <div><h2>${esc(card.name)}</h2>
             <div class="sub">${esc(setName)} · ${esc(num)}</div>
             <div class="tags">${printed?.set ? `<span class="tag">Réédition · ${esc(printed.set)}</span>` : ''}${card.rarity ? `<span class="tag">${esc(card.rarity)}</span>` : ''}${card.illustrator ? `<span class="tag">${esc(card.illustrator)}</span>` : ''}</div>
-            ${cm.avg != null ? `<div class="price"><div class="faint" style="font-size:12px;font-weight:700">PRIX MOYEN CARDMARKET</div><div class="v num">${money(cm.avg)}</div></div>` : ''}
+            ${cmCote(cm) != null ? `<div class="price"><div class="faint" style="font-size:12px;font-weight:700">COTE CARDMARKET</div><div class="v num">${money(cmCote(cm))}</div></div>` : ''}
           </div>
         </div>
         ${variants.length ? `<div class="section"><div class="section-head"><h2>Cote du marché</h2></div>
           ${variants.length > 1 ? `<div class="chips" style="margin-bottom:10px">${variants.map((x) => `<button data-variant="${esc(x.id)}" class="${x.id === selected ? 'on' : ''}">${esc(x.label)}</button>`).join('')}</div>` : ''}
-          <div class="market">${[['Prix moyen', cm.avg], ['Tendance', cm.trend], ['Moyenne 30 j', cm.avg30], ['Plus bas', cm.low]].map(([l, x]) => `<div class="m"><span><small>${l}</small><b class="num">${x != null ? money(x) : '—'}</b></span></div>`).join('')}</div>
+          <div class="market">${[['Cote', cmCote(cm)], ['Moyenne 7 j', cm.avg7], ['Moyenne 30 j', cm.avg30], ['Tendance', cm.trend]].map(([l, x]) => `<div class="m"><span><small>${l}</small><b class="num">${x != null ? money(x) : '—'}</b></span></div>`).join('')}</div>
           <div class="note">Source : Cardmarket via TCGdex${cm.updated ? ' · ' + dateFr(cm.updated) : ''}.</div></div>` : ''}
         <div class="section"><div class="links">
           <a class="link-card" href="${esc(links.ebaySold(ref))}" target="_blank" rel="noopener"><span class="lg" style="background:#fff;color:#e53238">eB</span><span>Ventes eBay<small>Ventes réussies</small></span></a>
@@ -898,7 +898,7 @@ export function openCatalogueCard(lang, id, { photoData = null, extra = {} } = {
         const pre = await prefillFromCatalogue(lang, id);
         const v = variants.find((x) => x.id === selected);
         if (v && v.id !== 'default') { pre.tcgdexVariant = v.id; pre.variant = v.label.includes('1re') || v.label.includes('1ère') ? '1ère édition' : ''; }
-        if (v?.cm?.avg != null) pre.value = +v.cm.avg.toFixed(2);
+        if (cmCote(v?.cm) != null) pre.value = +cmCote(v.cm).toFixed(2);
         sheet.close();
         openForm('card', null, { ...pre, ...extra }, { photoData });
       }
