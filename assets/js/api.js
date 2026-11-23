@@ -60,18 +60,27 @@ const CLASSIC_IMAGES = {
     'fr/bw/bw3/101', 'en/dp/dp4/106', 'fr/xy/xy5/106', 'fr/neo/neo4/106', 'fr/ex/ex10/108', 'fr/swsh/swsh8/114', 'fr/swsh/swsh9/123', 'fr/swsh/swsh1/138', 'fr/ecard/ecard2/149', 'fr/sv/sv02/203'],
 };
 export const classicImage = (id) => { const m = typeof id === 'string' && id.match(/^(30th-c)-0*(\d+)$/); const u = m && CLASSIC_IMAGES[m[1]][+m[2] - 1]; return u ? 'https://assets.tcgdex.net/' + u + '/high.webp' : null; };
+// Promo cards (MEP…) have no illustration on TCGdex: the picture is TCGplayer's (assets/data/promo-img.json,
+// built daily by tools/build_promo_img.py: set id → card number → TCGplayer product id).
+let promoImg = {};
+const promoImgReady = fetch(asset('assets/data/promo-img.json')).then((r) => (r.ok ? r.json() : {})).then((d) => { promoImg = d || {}; }).catch(() => {});
+const promoUrl = (setId, localId) => { const pid = (promoImg[setId] || {})[String(localId).replace(/\D/g, '').padStart(3, '0')]; return pid ? `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_400w.jpg` : null; };
+export const promoImage = (id) => { const m = typeof id === 'string' && id.match(/^([a-z0-9]+)-(\d+)$/i); return m ? promoUrl(m[1], m[2]) : null; };
 function fillClassicImages(v) {
   if (Array.isArray(v)) { v.forEach(fillClassicImages); return v; }
   if (v && typeof v === 'object') {
     const m = typeof v.id === 'string' && v.id.match(/^(30th-c)-0*(\d+)$/);
     if (m && !v.image) { const u = CLASSIC_IMAGES[m[1]][+m[2] - 1]; if (u) v.image = 'https://assets.tcgdex.net/' + u; }
+    else if (!v.image && typeof v.id === 'string' && /^mep-\d+$/.test(v.id)) v.image = promoImage(v.id) || v.image;
     if (Array.isArray(v.cards)) fillClassicImages(v.cards);
   }
   return v;
 }
 
 async function tcg(path, ttlHours = 0) {
-  return fillClassicImages(await tcgRaw(path, ttlHours));
+  const v = await tcgRaw(path, ttlHours);
+  await promoImgReady;
+  return fillClassicImages(v);
 }
 
 async function tcgRaw(path, ttlHours = 0) {
@@ -228,7 +237,7 @@ const LOCAL_SETS = { me06: { name: 'Règne Delta', serie: 'me', total: 141, offi
 const RARITY_FR = { C: 'Commune', U: 'Peu commune', R: 'Rare', RR: 'Double rare', IR: 'Illustration rare', UR: 'Ultra rare', SIR: 'Illustration spéciale rare', MHR: 'Méga Hyper rare' };
 const extraCard = (setId, e) => ({
   id: `${setId}-${e.localId}`, localId: e.localId, name: e.name, extra: true,
-  image: e.pid ? `https://tcgplayer-cdn.tcgplayer.com/product/${e.pid}_400w.jpg` : null,
+  image: e.pid ? `https://tcgplayer-cdn.tcgplayer.com/product/${e.pid}_400w.jpg` : promoUrl(setId, e.localId),
   ...(e.rar ? { rarity: RARITY_FR[e.rar] || e.rar } : {}),
   // Same shape as TCGdex so the daily cote refresh works unchanged; it is labelled as the first French price.
   ...(e.fr ? { pricing: { cardmarket: { avg: e.fr, srcLabel: 'Cardmarket · 1er prix français' } } } : {}),
