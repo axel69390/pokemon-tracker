@@ -1,10 +1,10 @@
-import { store, costOf, worthOf, gainOf, qtyOf, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.10-202610291017';
-import { settings } from '../settings.js?v=2.4.10-202610291017';
-import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.10-202610291017';
-import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.10-202610291017';
-import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.4.10-202610291017';
-import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202610291017';
-import { openDetail, openSales } from '../sheets.js?v=2.4.10-202610291017';
+import { store, costOf, worthOf, gainOf, qtyOf, portfolio, monthPerformers, salesSummary, series, imageOf, refreshPrices, refreshLocalPrices, refreshSealedPrices, pendingPrices } from '../store.js?v=2.4.10-202611232332';
+import { settings } from '../settings.js?v=2.4.10-202611232332';
+import { IS_STORE, APP_NAME } from '../edition.js?v=2.4.10-202611232332';
+import { isPremium, trialDaysLeft, statusLabel, openPaywall } from '../billing.js?v=2.4.10-202611232332';
+import { money, signed, pct, pill, icon, esc, trend, toast, dateFr } from '../ui.js?v=2.4.10-202611232332';
+import { renderChart, filterPeriod, PERIODS } from '../chart.js?v=2.4.10-202611232332';
+import { openDetail, openSales } from '../sheets.js?v=2.4.10-202611232332';
 
 let period = '1m';   // the home chart always opens on the last month (Max flattens the recent evolution)
 let perfMode = 'eur';
