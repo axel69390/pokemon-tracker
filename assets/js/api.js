@@ -236,7 +236,11 @@ export async function searchCards(query, { lang = 'fr', number = '' } = {}) {
 let extras = null;
 const loadExtras = () => (extras ||= fetch(asset('assets/data/promo-extra.json')).then((r) => r.json()).catch(() => { extras = null; return {}; }));
 // Whole sets TCGdex does not have yet (cards in promo-extra.json with picture id `pid` and first French Cardmarket price `fr`).
-const LOCAL_SETS = { me06: { name: 'Règne Delta', serie: 'me', total: 141, official: 103, date: '2026-11-06' } };
+// 2026me: the 30th-anniversary McDonald's Happy Meal cards (M26, out in France on 24 Nov 2026); pictures are TCGplayer's (US print).
+const LOCAL_SETS = {
+  me06: { name: 'Règne Delta', serie: 'me', total: 141, official: 103, date: '2026-11-06' },
+  '2026me': { name: "Collection McDonald's 2026", serie: 'mc', total: 15, official: 15, date: '2026-11-24' },
+};
 const RARITY_FR = { C: 'Commune', U: 'Peu commune', R: 'Rare', RR: 'Double rare', IR: 'Illustration rare', UR: 'Ultra rare', SIR: 'Illustration spéciale rare', MHR: 'Méga Hyper rare' };
 const extraCard = (setId, e) => ({
   id: `${setId}-${e.localId}`, localId: e.localId, name: e.name, extra: true,
