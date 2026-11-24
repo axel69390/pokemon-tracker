@@ -238,8 +238,8 @@ const loadExtras = () => (extras ||= fetch(asset('assets/data/promo-extra.json')
 // Whole sets TCGdex does not have yet (cards in promo-extra.json with picture id `pid` and first French Cardmarket price `fr`).
 // 2026me: the 30th-anniversary McDonald's Happy Meal cards (M26, out in France on 24 Nov 2026); pictures are TCGplayer's (US print).
 const LOCAL_SETS = {
-  me06: { name: 'Règne Delta', serie: 'me', total: 141, official: 103, date: '2026-11-06' },
-  '2026me': { name: "Collection McDonald's 2026", serie: 'mc', total: 15, official: 15, date: '2026-11-24' },
+  me06: { name: 'Règne Delta', serie: 'me', serieName: 'Méga-Évolution', total: 141, official: 103, date: '2026-11-06' },
+  '2026me': { name: "Collection McDonald's 2026", serie: 'mc', serieName: "Collection McDonald's", total: 15, official: 15, date: '2026-11-24' },
 };
 const RARITY_FR = { C: 'Commune', U: 'Peu commune', R: 'Rare', RR: 'Double rare', IR: 'Illustration rare', UR: 'Ultra rare', SIR: 'Illustration spéciale rare', MHR: 'Méga Hyper rare' };
 const extraCard = (setId, e) => ({
@@ -255,7 +255,7 @@ export async function getSetCards(lang, setId) {
   const set = await tcg(`/${lang}/sets/${encodeURIComponent(setId)}`, 24).catch(async (err) => {
     const cards = local && (await loadExtras())[setId];
     if (!cards) throw err;
-    return { id: setId, name: local.name, logo: null, cardCount: { total: local.total, official: local.official }, releaseDate: local.date, cards: cards.map((e) => extraCard(setId, e)) };
+    return { id: setId, name: local.name, serie: { id: local.serie, name: local.serieName }, logo: null, cardCount: { total: local.total, official: local.official }, releaseDate: local.date, cards: cards.map((e) => extraCard(setId, e)) };
   });
   const add = lang === 'fr' ? (await loadExtras())[setId] : null;
   if (!add || !set?.cards) return set;
