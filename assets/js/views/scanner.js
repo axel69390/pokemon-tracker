@@ -1,8 +1,8 @@
-import { settings } from '../settings.js?v=2.4.10-202611242100';
-import { server, searchCards, findByNumber, tcgLang, cardImage } from '../api.js?v=2.4.10-202611242100';
-import { readCard, similar } from '../ocr.js?v=2.4.10-202611242100';
-import { esc, phCard, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js?v=2.4.10-202611242100';
-import { openCatalogueCard, openForm } from '../sheets.js?v=2.4.10-202611242100';
+import { settings } from '../settings.js?v=2.4.10-202611242132';
+import { server, searchCards, findByNumber, tcgLang, cardImage } from '../api.js?v=2.4.10-202611242132';
+import { readCard, similar } from '../ocr.js?v=2.4.10-202611242132';
+import { esc, phCard, icon, pickImage, resizeImage, toast, LANGS, CATEGORIES } from '../ui.js?v=2.4.10-202611242132';
+import { openCatalogueCard, openForm } from '../sheets.js?v=2.4.10-202611242132';
 
 // Two engines: the personal server's AI when one is configured, otherwise the text printed on the card is read on
 // the device (ocr.js) and matched against the catalogue, number first.

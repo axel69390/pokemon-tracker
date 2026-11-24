@@ -1,19 +1,19 @@
 // Pokédex Invest / CardVault — entry point & router.
-import { startAutoTranslate } from './i18n.js?v=2.4.10-202611242100';
-import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.10-202611242100';
-import { checkPurchases, trialStart } from './billing.js?v=2.4.10-202611242100';
-import { store, load, refreshLocalPrices, refreshSealedPrices, refreshFrPrices, backupData } from './store.js?v=2.4.10-202611242100';
-import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.10-202611242100';
-import { settings } from './settings.js?v=2.4.10-202611242100';
-import { avatarHtml } from './profile.js?v=2.4.10-202611242100';
-import { openForm } from './sheets.js?v=2.4.10-202611242100';
-import * as portfolio from './views/portfolio.js?v=2.4.10-202611242100';
-import * as collection from './views/collection.js?v=2.4.10-202611242100';
-import * as scanner from './views/scanner.js?v=2.4.10-202611242100';
-import * as catalogue from './views/catalogue.js?v=2.4.10-202611242100';
-import * as settingsView from './views/settings.js?v=2.4.10-202611242100';
-import * as invest from './views/invest.js?v=2.4.10-202611242100';
-import { BUILD } from './views/settings.js?v=2.4.10-202611242100';
+import { startAutoTranslate } from './i18n.js?v=2.4.10-202611242132';
+import { IS_STORE, APP_NAME, ICON, asset } from './edition.js?v=2.4.10-202611242132';
+import { checkPurchases, trialStart } from './billing.js?v=2.4.10-202611242132';
+import { store, load, refreshLocalPrices, refreshSealedPrices, refreshFrPrices, backupData } from './store.js?v=2.4.10-202611242132';
+import { icon, esc, download, today, closeAllSheets } from './ui.js?v=2.4.10-202611242132';
+import { settings } from './settings.js?v=2.4.10-202611242132';
+import { avatarHtml } from './profile.js?v=2.4.10-202611242132';
+import { openForm } from './sheets.js?v=2.4.10-202611242132';
+import * as portfolio from './views/portfolio.js?v=2.4.10-202611242132';
+import * as collection from './views/collection.js?v=2.4.10-202611242132';
+import * as scanner from './views/scanner.js?v=2.4.10-202611242132';
+import * as catalogue from './views/catalogue.js?v=2.4.10-202611242132';
+import * as settingsView from './views/settings.js?v=2.4.10-202611242132';
+import * as invest from './views/invest.js?v=2.4.10-202611242132';
+import { BUILD } from './views/settings.js?v=2.4.10-202611242132';
 
 const ROUTES = {
   '': { view: portfolio, title: 'Portefeuille', nav: 'home', live: true },

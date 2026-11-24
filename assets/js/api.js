@@ -1,6 +1,6 @@
 // External data: personal server (Node-RED API v2) and public catalogues (TCGdex).
-import { settings } from './settings.js?v=2.4.10-202611242100';
-import { asset } from './edition.js?v=2.4.10-202611242100';
+import { settings } from './settings.js?v=2.4.10-202611242132';
+import { asset } from './edition.js?v=2.4.10-202611242132';
 
 /* ---------- Personal server ---------- */
 export class ServerError extends Error {
