@@ -110,7 +110,9 @@ export const cardImage = (base, size = 'low') => (base ? (/\.(jpe?g|png|webp)$/i
 export const setLogo = (base) => (base ? `${base}.webp` : null);
 
 export async function getSets(lang = 'fr') {
-  const [sets, series] = await Promise.all([tcg(`/${lang}/sets`, 24), tcg(`/${lang}/series`, 24)]);
+  // Copy: the TCGdex list is memoised, and adding the local sets to it would file them under « Autre » on the next call.
+  const [tcgSets, series] = await Promise.all([tcg(`/${lang}/sets`, 24), tcg(`/${lang}/series`, 24)]);
+  const sets = [...tcgSets];
   // Set → serie mapping from each serie's detail (logos are missing on some sets, e.g. Set de Base).
   const details = await Promise.all(series.map((s) => tcg(`/${lang}/series/${encodeURIComponent(s.id)}`, 168).catch(() => null)));
   const serieOf = new Map();
