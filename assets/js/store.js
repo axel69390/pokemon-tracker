@@ -534,7 +534,7 @@ settings.on((c) => { if (connSig(c) !== sig) { sig = connSig(c); load(); } });
    Kept on this device (own storage key, never mixed with the portfolio or its totals). One price point per day
    (Cardmarket average price for cards, the market index for sealed products), up to ~10 years of history. */
 const WL_KEY = NS + '.watchlist';
-const WL_RUN = NS + '.watchlistRun';
+const WL_RUN = NS + '.watchlistRun.fr';   // renamed: the switch to the Cote France (Nov 2026) runs at once
 // Stored in IndexedDB like the collection (up to ~10 years of daily prices per entry does not fit in localStorage).
 let wl = [];
 const wlReady = take(WL_KEY).then((r) => { if (Array.isArray(r.value)) wl = r.value; }).catch(() => {}).then(() => emit());
@@ -567,6 +567,14 @@ export function setWatchlistTarget(id, target) {
   saveWl();
 }
 async function priceOfWatch(w) {
+  // A French card follows the same Cote France as in the collection (eBay France, EST_MIN_VALUE listings at least),
+  // Cardmarket otherwise.
+  if (w.kind === 'card' && (!w.tcgLang || w.tcgLang === 'fr') && w.tcgdexId && MODERN.test(w.tcgdexId)) {
+    try {
+      const r = await ebayListings({ name: w.name, num: w.num, tcgdexId: w.tcgdexId, lang: 'fr' }, 'card');
+      if (r.est != null && r.estCount >= EST_MIN_VALUE) return { p: wholeEur(r.est), src: 'fr' };
+    } catch { /* eBay unavailable: Cardmarket below */ }
+  }
   if (w.kind === 'card') {
     const card = await getCard(w.tcgLang || 'fr', w.tcgdexId);
     const vs = priceVariants(card).filter((v) => cmCote(v.cm) != null);
@@ -591,6 +599,10 @@ export async function refreshWatchlist({ force = false, only = null } = {}) {
       try {
         const r = await priceOfWatch(w);
         if (!r || r.p == null) return;
+        // Another source (Cardmarket -> eBay France) is another scale: start the curve and the "since" again.
+        const src = r.src || 'cm';
+        if (w.kind === 'card' && (w.src || 'cm') !== src) { w.hist = []; w.start = null; }
+        w.src = src;
         const have = new Map((w.hist || []).map((x) => [x.d, x.p]));
         (r.h || []).forEach((x) => { if (!have.has(x.d)) have.set(x.d, x.p); });   // market history of sealed products
         have.set(day, r.p);
