@@ -30,6 +30,12 @@ OTHER = {
     'Bundle': r'display|etb|blister|tripack|tri pack|duo|pokebox',
     'Duo Pack': r'display|etb|bundle|tripack|tri pack|pokebox',
     'Display': r'etb|bundle|blister|tripack|tri pack|duo|pokebox|booster seul',
+    # An UPC search also returns its promo cards, empty boxes, acrylic cases, playmats and boosters taken out of it.
+    'UPC': r'promos?|cartes?|protection|acrylique|playmat|tapis|vide|sans booster|reprint|booster classique|etb|case|x ?\d|\d ?x',
+}
+# How sellers name the versions of a product (catalogue word -> words found in titles), by category.
+ALIAS = {
+    'UPC': {'jour': ['jour', 'journee', 'mentali', 'espeon'], 'nuit': ['nuit', 'soiree', 'noctali', 'umbreon']},
 }
 ANNIV30 = re.compile(r'\b30 ?(e|eme|ans|th)\b|30e')   # 30th anniversary (2026) vs Célébrations = 25th anniversary (2021)
 GENERIC = {'pokemon', 'edition', 'promo', 'promos', 'coffret', 'display', 'booster', 'blister'}
@@ -58,16 +64,28 @@ def fetch(q):
     return None
 
 
-def one(p):
+def paren_words(p):
+    return words(' '.join(re.findall(r'\(([^)]*)\)', p['n'])))
+
+
+def one(p, common=frozenset(), rivals=()):
+    """common: words in brackets shared by every version of the product ("Premium, Ultra"), not required in a title.
+    rivals: words in brackets of the other versions; a title naming one of them is another version."""
     name = p['n']
     nw = words(name)
+    alias = ALIAS.get(p.get('c'), {})
+    pw = [w for w in paren_words(p) if w not in common]
+    own = [[stem(a) for a in alias.get(w, [w])] for w in pw]
+    other = [stem(a) for w in rivals if w not in pw for a in alias.get(w, [])]
     anniv30 = '30ᵉ' in (p.get('s') or '')
     if anniv30:
-        nw = [w for w in nw if not w.startswith('anniv')]   # sellers write "30 ans", "30e", "30th"
+        nw = [w for w in nw if not w.startswith('anniv') and w != '30e']   # sellers write "30 ans", "30e", "30th"; ANNIV30 checks it
     if not nw:
         return None
     sw = [w for w in words(p.get('s') or '') if w not in nw and w not in GENERIC]
     q = re.sub(r'\s+', ' ', re.sub(r'\([^)]*\)', ' ', name)).strip() + (' ' + ' '.join(sw[:2]) if sw else '') + ' pokemon'
+    if alias:   # sellers write "UPC 30 ans Mentali", not "UPC 30e Anniversaire (Premium, Ultra, Jour)"
+        q = re.sub(r'\s+', ' ', re.sub(r'\([^)]*\)', ' ', name)).strip().replace('30ᵉ Anniversaire', '30 ans') + ' pokemon' + ''.join(' ' + alias[w][2] for w in pw if w in alias and len(alias[w]) > 2)
     items = fetch(q)
     if not items:
         return None
@@ -82,7 +100,9 @@ def one(p):
             continue
         if anniv30 and not ANNIV30.search(t):
             continue
-        if BAD.search(t) or not all(stem(w) in t for w in nw + words(' '.join(re.findall(r'\(([^)]*)\)', name)))):
+        if BAD.search(t) or not all(stem(w) in t for w in nw) or not all(any(a in t for a in al) for al in own):
+            continue
+        if any(a in t for a in other):
             continue
         prices.append(float(x['price']))
     if len(prices) < 3:
@@ -93,8 +113,22 @@ def one(p):
 
 def main():
     products = json.loads((DATA / 'sealed.json').read_text())['products']
+    # Versions of one product: same set, category and name outside the brackets (UPC Jour / UPC Nuit).
+    fam = {}
+    for p in products:
+        fam.setdefault((p.get('g'), p.get('c'), re.sub(r'\s*\([^)]*\)', '', p['n'])), []).append(p)
+    args = []
+    for p in products:
+        sib = fam[(p.get('g'), p.get('c'), re.sub(r'\s*\([^)]*\)', '', p['n']))]
+        if len(sib) > 1:
+            sets = [set(paren_words(x)) for x in sib]
+            common = frozenset(set.intersection(*sets))
+            rivals = tuple(sorted(set().union(*sets) - set(paren_words(p))))
+        else:
+            common, rivals = frozenset(), ()
+        args.append((p, common, rivals))
     with ThreadPoolExecutor(6) as ex:
-        res = list(ex.map(one, products))
+        res = list(ex.map(lambda a: one(*a), args))
     rows = {str(p['id']): r for p, r in zip(products, res) if r}
     if len(rows) < 20:
         sys.exit(f'Only {len(rows)} eBay rows: keeping the previous file')

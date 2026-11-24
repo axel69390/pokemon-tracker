@@ -375,7 +375,7 @@ function watchlistHtml() {
       : `<div class="empty"><div class="ico">${icon('search', 'lg')}</div><h3>Rien à surveiller</h3>
         <p>Ajoutez une carte ou un produit scellé que vous ne possédez pas : l’appli garde son prix chaque jour pour voir comment il évolue avant d’acheter. Il n’entre pas dans votre portefeuille.</p>
         <button class="btn primary" data-wadd>${icon('plus')}Ajouter une carte</button></div>`}
-    ${list.length ? '<p class="note">Ces cartes ne comptent pas dans votre portefeuille. Suivi enregistré sur cet appareil, un prix par jour (cote Cardmarket).</p>' : ''}
+    ${list.length ? '<p class="note">Ces cartes ne comptent pas dans votre portefeuille. Suivi enregistré sur cet appareil, un prix par jour (cote France eBay pour les cartes françaises, sinon cote Cardmarket).</p>' : ''}
   </section>`;
 }
 
